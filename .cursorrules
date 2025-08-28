@@ -1,0 +1,27 @@
+[priority]
+docs/system_overview.md
+docs/api_specs/api_endpoints.md
+docs/api_specs/data_schemas.md
+docs/ui_design/components_guide.md
+docs/product_docs/PRD_main.md
+[deprioritize]
+docs/ui_design/design_assets/**
+docs/product_docs/**/*.pdf
+docs/product_docs/**/*.png
+docs/product_docs/**/*.jpg
+[ignore]
+unpackage/**
+dist/**
+node_modules/**
+*.zip
+*.log
+[style]
+language=zh-en
+framework=uni-app
+enforce_consistent_imports=true
+require_error_toast=true
+[instructions]
+# When editing /pages/** or /uniCloud/cloudfunctions/**:
+# - Consult the priority docs above first.
+# - Update pages.json or docs/api_specs/* when adding routes or endpoints.
+# - Align data with docs/api_specs/data_schemas.md.
