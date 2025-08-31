@@ -24,7 +24,7 @@
 - `title` string  
 - `course` string  
 - `desc` string  
-- `totalScore` number  
+  
 - `deadline` number|null (ms timestamp)  
 - `createdBy` string (uid of teacher)  
 - `createdAt` number  
@@ -36,7 +36,7 @@
   "title": "周一作业",
   "course": "申论",
   "desc": "写一篇小作文",
-  "totalScore": 100,
+
   "deadline": 1695000000000,
   "createdBy": "u-teacher-1",
   "createdAt": 1694000000000
@@ -53,7 +53,7 @@
 - `text` string  
 - `submittedAt` number  
 - `status` enum("submitted","graded")  
-- `score` number?  
+- `grade` enum("待复盘","优秀","极佳")?  
 - `comment` string?  
 - `gradedBy` string?  
 - `gradedAt` number?  
@@ -67,7 +67,20 @@
   "imgs": ["cloud://xxx/1.jpg"],
   "text": "我的答案",
   "submittedAt": 1694500000000,
-  "status": "submitted"
+      "status": "submitted"
+  },
+  {
+    "_id": "s2",
+    "taskId": "t1",
+    "studentId": "u2",
+    "imgs": ["cloud://xxx/2.jpg"],
+    "text": "我的答案",
+    "submittedAt": 1694500000000,
+    "status": "graded",
+    "grade": "优秀",
+    "comment": "结构清晰，论述有力",
+    "gradedBy": "u-teacher-1",
+    "gradedAt": 1694600000000
 }
 ```
 

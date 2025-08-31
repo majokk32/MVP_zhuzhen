@@ -16,7 +16,7 @@
 ---
 
 ## cf-task
-- **`createTask({ title, course, desc, totalScore, deadline })`** → `{ code }`  
+- **`createTask({ title, course, desc, deadline })`** → `{ code }`  
   - 教师端创建任务  
 - **`listTasks()`** → `{ data: Task[] }`  
   - 获取任务列表（按创建时间倒序）  
@@ -34,8 +34,8 @@
 ---
 
 ## cf-grade
-- **`gradeSubmission({ submissionId, score, comment })`** → `{ code }`  
-  - 教师批改提交，打分 + 评语  
+- **`gradeSubmission({ submissionId, grade, comment })`** → `{ code }`  
+  - 教师批改提交，评价档位 + 评语  
 - **`taskProgress({ taskId })`** → `{ submitted, graded }`  
   - 获取任务提交/批改进度  
 
