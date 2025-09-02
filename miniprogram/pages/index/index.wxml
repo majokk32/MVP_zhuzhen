@@ -1,0 +1,101 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <!-- 顶部信息栏 -->
+  <view class="header">
+    <view class="user-info">
+      <image class="avatar" src="{{userInfo.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
+      <view class="info">
+        <view class="nickname">{{userInfo.nickname || '同学'}}</view>
+        <view class="role-badge" wx:if="{{isTeacher}}">
+          <text class="role-icon">👨‍🏫</text>
+          <text>教师</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 教师快捷操作 -->
+    <view wx:if="{{isTeacher}}" class="teacher-actions">
+      <button class="action-btn" bindtap="onCreateTask">
+        <text class="action-icon">➕</text>
+        <text>发布</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 筛选标签 -->
+  <view class="filter-tabs">
+    <view 
+      class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}"
+      data-filter="all"
+      bindtap="onFilterChange"
+    >
+      全部
+    </view>
+    <view 
+      class="filter-tab {{currentFilter === 'ongoing' ? 'active' : ''}}"
+      data-filter="ongoing"
+      bindtap="onFilterChange"
+    >
+      进行中
+    </view>
+    <view 
+      class="filter-tab {{currentFilter === 'ended' ? 'active' : ''}}"
+      data-filter="ended"
+      bindtap="onFilterChange"
+    >
+      已结束
+    </view>
+  </view>
+
+  <!-- 任务列表 -->
+  <scroll-view 
+    class="task-list"
+    scroll-y
+    enable-back-to-top
+    refresher-enabled
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+    bindscrolltolower="onLoadMore"
+  >
+    <!-- 任务卡片 -->
+    <block wx:for="{{taskList}}" wx:key="id">
+      <task-card 
+        task="{{item}}"
+        index="{{index}}"
+        bind:click="onTaskClick"
+        bind:toggleStatus="onToggleStatus"
+        bind:share="onShareTask"
+        bind:viewStats="onViewStats"
+      />
+    </block>
+
+    <!-- 加载更多 -->
+    <view wx:if="{{loadingMore}}" class="loading-more">
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view wx:if="{{!hasMore && taskList.length > 0}}" class="no-more">
+      <text class="no-more-text">- 没有更多了 -</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:if="{{isEmpty && !loading}}" class="empty-state">
+      <image class="empty-image" src="/assets/images/empty-task.png" mode="aspectFit"></image>
+      <text class="empty-text">暂无任务</text>
+      <text class="empty-hint">{{currentFilter === 'ongoing' ? '没有进行中的任务' : currentFilter === 'ended' ? '没有已结束的任务' : '老师还没有发布任务'}}</text>
+      <button wx:if="{{isTeacher}}" class="empty-btn" bindtap="onCreateTask">
+        立即创建任务
+      </button>
+    </view>
+
+    <!-- 加载中 -->
+    <view wx:if="{{loading && taskList.length === 0}}" class="loading-state">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+  </scroll-view>
+
+  <!-- 底部安全区 -->
+  <view class="safe-bottom"></view>
+</view>
