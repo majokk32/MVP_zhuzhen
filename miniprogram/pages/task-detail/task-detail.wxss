@@ -1,0 +1,656 @@
+/* 任务详情页样式 */
+.container {
+  min-height: 100vh;
+  background: #f5f6fa;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 任务信息卡片 */
+.task-info-card {
+  background: white;
+  padding: 32rpx;
+  margin-bottom: 20rpx;
+}
+
+.task-header {
+  margin-bottom: 24rpx;
+}
+
+.task-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #1a1a1a;
+  line-height: 1.4;
+  margin-bottom: 16rpx;
+}
+
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.task-type {
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+  font-size: 24rpx;
+}
+
+.task-type.live {
+  background: #ffe4e1;
+  color: #ff6b6b;
+}
+
+.task-type.extra {
+  background: #fff3cd;
+  color: #ffc107;
+}
+
+.task-type.normal {
+  background: #e3f2fd;
+  color: #2196f3;
+}
+
+.task-date {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 任务要求 */
+.task-requirements {
+  padding: 24rpx 0;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+  margin: 24rpx 0;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+.section-title .icon {
+  font-size: 32rpx;
+}
+
+.requirements-content {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 截止时间 */
+.deadline-info {
+  display: flex;
+  align-items: center;
+  padding-top: 24rpx;
+}
+
+.deadline-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.deadline-time {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.deadline-time.overdue {
+  color: #ff4757;
+}
+
+.remaining-time {
+  font-size: 24rpx;
+  color: #ff9800;
+  margin-left: 8rpx;
+}
+
+/* 提交限制提示 */
+.submit-limit-tip {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 20rpx;
+  background: #f0f9ff;
+  border-radius: 12rpx;
+  margin-top: 24rpx;
+  font-size: 26rpx;
+  color: #0984e3;
+}
+
+/* 通用卡片样式 */
+.section-card {
+  background: white;
+  padding: 32rpx;
+  margin-bottom: 20rpx;
+}
+
+/* 上传区域 */
+.upload-area {
+  margin-top: 24rpx;
+}
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20rpx;
+}
+
+.upload-item {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.upload-item image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.delete-btn {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24rpx;
+}
+
+.upload-btn {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%;
+  background: #f5f5f5;
+  border: 2rpx dashed #ddd;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  font-size: 48rpx;
+  color: #999;
+}
+
+.upload-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 10%);
+  font-size: 24rpx;
+  color: #999;
+}
+
+.upload-tip {
+  position: absolute;
+  bottom: 16rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 20rpx;
+  color: #bbb;
+}
+
+.upload-tips {
+  margin-top: 20rpx;
+  padding: 16rpx;
+  background: #f9f9f9;
+  border-radius: 8rpx;
+}
+
+.upload-tips text {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  line-height: 1.8;
+}
+
+/* 文字输入区域 */
+.text-input-area {
+  margin-top: 32rpx;
+  position: relative;
+}
+
+.text-input {
+  width: 100%;
+  min-height: 200rpx;
+  padding: 20rpx;
+  background: #f9f9f9;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.text-counter {
+  position: absolute;
+  bottom: 20rpx;
+  right: 20rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 提交按钮 */
+.submit-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  margin-top: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.submit-btn.disabled {
+  background: #ddd;
+  color: #999;
+}
+
+/* 历史提交 */
+.history-section {
+  background: white;
+  padding: 32rpx;
+  margin-top: 20rpx;
+}
+
+.history-list {
+  margin-top: 24rpx;
+}
+
+.history-item {
+  padding: 20rpx;
+  background: #f9f9f9;
+  border-radius: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.submission-time {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.submission-status {
+  font-size: 24rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 6rpx;
+}
+
+.submission-status.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.submission-status.reviewed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.history-grade {
+  display: flex;
+  align-items: center;
+}
+
+.grade-label {
+  font-size: 24rpx;
+  color: #999;
+  margin-right: 12rpx;
+}
+
+.grade-value {
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+.grade-value.excellent {
+  color: #28a745;
+}
+
+.grade-value.good {
+  color: #ffc107;
+}
+
+.grade-value.review {
+  color: #dc3545;
+}
+
+/* 待批改状态 */
+.status-banner {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+  background: linear-gradient(135deg, #fff9e6 0%, #ffe4b3 100%);
+  border-radius: 16rpx;
+  margin-bottom: 32rpx;
+}
+
+.status-banner.pending {
+  background: linear-gradient(135deg, #fff9e6 0%, #ffe4b3 100%);
+}
+
+.status-icon {
+  width: 80rpx;
+  height: 80rpx;
+  margin-right: 24rpx;
+}
+
+.status-info {
+  flex: 1;
+}
+
+.status-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.status-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+}
+
+/* 提交内容预览 */
+.submission-preview {
+  padding-top: 32rpx;
+  border-top: 1px solid #f0f0f0;
+}
+
+.submit-time {
+  font-size: 26rpx;
+  color: #999;
+  margin-bottom: 24rpx;
+}
+
+.preview-images {
+  margin: 24rpx 0;
+}
+
+.image-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.image-list {
+  display: inline-flex;
+  gap: 16rpx;
+}
+
+.preview-image {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}
+
+.preview-text {
+  padding: 20rpx;
+  background: #f9f9f9;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* 已批改状态 */
+.grade-result-card {
+  padding: 32rpx;
+  border-radius: 16rpx;
+  margin-bottom: 32rpx;
+}
+
+.grade-result-card.excellent {
+  background: linear-gradient(135deg, #d4f8d4 0%, #a8e6a8 100%);
+}
+
+.grade-result-card.good {
+  background: linear-gradient(135deg, #fff9e6 0%, #ffe4b3 100%);
+}
+
+.grade-result-card.review {
+  background: linear-gradient(135deg, #ffe4e4 0%, #ffb3b3 100%);
+}
+
+.grade-header {
+  display: flex;
+  align-items: center;
+}
+
+.grade-icon {
+  width: 80rpx;
+  height: 80rpx;
+  margin-right: 24rpx;
+}
+
+.grade-info {
+  flex: 1;
+}
+
+.grade-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.grade-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+}
+
+.score-detail {
+  display: flex;
+  align-items: baseline;
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.score-label {
+  font-size: 28rpx;
+  color: #666;
+  margin-right: 12rpx;
+}
+
+.score-value {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.score-total {
+  font-size: 28rpx;
+  color: #666;
+  margin-left: 8rpx;
+}
+
+/* 老师评语 */
+.teacher-feedback {
+  padding: 32rpx;
+  background: #f9f9f9;
+  border-radius: 16rpx;
+  margin-bottom: 32rpx;
+}
+
+.feedback-content {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.8;
+  margin-bottom: 24rpx;
+}
+
+.feedback-footer {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 20rpx;
+  border-top: 1px solid #eee;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 作业内容 */
+.submission-content {
+  padding-top: 32rpx;
+  border-top: 1px solid #f0f0f0;
+}
+
+.content-images {
+  margin: 24rpx 0;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+}
+
+.content-image {
+  width: 100%;
+  padding-bottom: 100%;
+  border-radius: 12rpx;
+  background: #f5f5f5;
+}
+
+.content-text {
+  padding: 20rpx;
+  background: #f9f9f9;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 32rpx;
+}
+
+.action-buttons button {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.resubmit-btn {
+  background: #fff;
+  color: #667eea;
+  border: 2rpx solid #667eea;
+}
+
+.resubmit-btn.outline {
+  background: transparent;
+}
+
+.share-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+/* 教师视图 */
+.teacher-section {
+  margin-top: 20rpx;
+}
+
+.teacher-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 32rpx 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 26rpx;
+  color: #999;
+  margin-bottom: 12rpx;
+}
+
+.stat-value {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.teacher-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  padding-top: 32rpx;
+}
+
+.action-btn {
+  height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  background: #fff;
+  color: #667eea;
+  border: 2rpx solid #667eea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+/* 安全区域 */
+.safe-bottom {
+  height: env(safe-area-inset-bottom);
+}

@@ -1,0 +1,251 @@
+/* components/task-card/task-card.wxss */
+.task-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  /* 初始状态（用于动画） */
+  opacity: 0;
+  transform: translateY(20rpx);
+}
+
+.task-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 置顶卡片特殊样式 */
+.task-card-extra {
+  border: 2rpx solid var(--primary-color);
+  background: linear-gradient(135deg, #fff 0%, #f0f8ff 100%);
+}
+
+/* 置顶标记 */
+.pin-badge {
+  position: absolute;
+  top: -10rpx;
+  right: 30rpx;
+  background: var(--primary-color);
+  color: white;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  z-index: 1;
+}
+
+.pin-icon {
+  font-size: 20rpx;
+}
+
+/* 卡片主体 */
+.card-body {
+  position: relative;
+}
+
+/* 上部分 */
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20rpx;
+}
+
+.card-title {
+  flex: 1;
+  margin-right: 20rpx;
+}
+
+.title-text {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+  display: block;
+  margin-bottom: 8rpx;
+  /* 文本省略 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.course-text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 状态徽章 */
+.card-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8rpx;
+}
+
+.status-badge {
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+.status-default {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.status-primary {
+  background: rgba(25, 137, 250, 0.1);
+  color: var(--primary-color);
+}
+
+.status-warning {
+  background: rgba(255, 151, 106, 0.1);
+  color: var(--warning-color);
+}
+
+.status-success {
+  background: rgba(7, 193, 96, 0.1);
+  color: var(--success-color);
+}
+
+.score-text {
+  font-size: 22rpx;
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+/* 中间部分 */
+.card-middle {
+  margin-bottom: 20rpx;
+}
+
+.desc-text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+  /* 最多显示2行 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* 下部分 */
+.card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-label {
+  display: flex;
+  gap: 12rpx;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 16rpx;
+  font-size: 22rpx;
+}
+
+.label-default {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.label-primary {
+  background: rgba(25, 137, 250, 0.1);
+  color: var(--primary-color);
+}
+
+.label-warning {
+  background: rgba(255, 151, 106, 0.1);
+  color: var(--warning-color);
+}
+
+.label-success {
+  background: rgba(7, 193, 96, 0.1);
+  color: var(--success-color);
+}
+
+.label-live {
+  background: rgba(255, 0, 0, 0.05);
+  color: #ff4d4f;
+}
+
+.label-extra {
+  background: rgba(52, 120, 246, 0.05);
+  color: #3478f6;
+}
+
+.label-icon {
+  font-size: 20rpx;
+}
+
+/* 日期 */
+.card-date {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.date-icon {
+  font-size: 24rpx;
+}
+
+/* 提交状态指示器 */
+.submit-indicator {
+  position: absolute;
+  top: 30rpx;
+  left: 10rpx;
+  width: 8rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+}
+
+.indicator-dot {
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: #ddd;
+}
+
+.indicator-empty {
+  background: #ddd;
+}
+
+.indicator-pending {
+  background: var(--warning-color);
+  animation: pulse 2s infinite;
+}
+
+.indicator-done {
+  background: var(--success-color);
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 151, 106, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10rpx rgba(255, 151, 106, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 151, 106, 0);
+  }
+}

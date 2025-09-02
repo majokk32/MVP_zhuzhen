@@ -1,0 +1,221 @@
+/* pages/login/login.wxss */
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  padding: 0 40rpx;
+}
+
+/* 头部 */
+.login-header {
+  padding-top: 120rpx;
+  text-align: center;
+  margin-bottom: 80rpx;
+}
+
+.logo {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 30rpx;
+  background: white;
+  border-radius: 30rpx;
+  padding: 20rpx;
+}
+
+.logo-text {
+  font-size: 100rpx;
+  margin-bottom: 30rpx;
+}
+
+.avatar-icon {
+  font-size: 60rpx;
+  line-height: 120rpx;
+}
+
+.title {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 20rpx;
+}
+
+.subtitle {
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 登录内容 */
+.login-content {
+  flex: 1;
+  background: white;
+  border-radius: 40rpx 40rpx 0 0;
+  padding: 60rpx 40rpx;
+  margin: 0 -40rpx;
+}
+
+/* 快速登录 */
+.quick-login-section {
+  margin-bottom: 60rpx;
+}
+
+.btn-primary {
+  width: 100%;
+  height: 96rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 32rpx;
+  font-weight: 500;
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  margin-bottom: 20rpx;
+}
+
+.btn-primary[disabled] {
+  opacity: 0.6;
+}
+
+.tips {
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 分割线 */
+.divider-wrapper {
+  display: flex;
+  align-items: center;
+  margin: 60rpx 0;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1rpx;
+  background: #e5e5e5;
+}
+
+.divider-text {
+  padding: 0 30rpx;
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 资料完善 */
+.profile-section {
+  margin-top: 40rpx;
+}
+
+.profile-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 40rpx;
+  text-align: center;
+}
+
+/* 头像 */
+.avatar-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40rpx;
+}
+
+.avatar-btn {
+  position: relative;
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.avatar-btn::after {
+  border: none;
+}
+
+.avatar {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  border: 4rpx solid #f0f0f0;
+}
+
+.avatar-edit {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 24rpx;
+  padding: 8rpx 0;
+  border-radius: 0 0 80rpx 80rpx;
+  text-align: center;
+}
+
+/* 昵称输入 */
+.input-wrapper {
+  margin-bottom: 40rpx;
+}
+
+.nickname-input {
+  width: 100%;
+  height: 96rpx;
+  padding: 0 30rpx;
+  font-size: 30rpx;
+  border: 2rpx solid #e5e5e5;
+  border-radius: 48rpx;
+  box-sizing: border-box;
+}
+
+.placeholder {
+  color: #ccc;
+}
+
+/* 次要按钮 */
+.btn-secondary {
+  width: 100%;
+  height: 96rpx;
+  background: white;
+  color: #667eea;
+  font-size: 32rpx;
+  font-weight: 500;
+  border: 2rpx solid #667eea;
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-secondary[disabled] {
+  opacity: 0.6;
+}
+
+/* 底部 */
+.login-footer {
+  padding: 40rpx 0;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.agreement {
+  text-align: center;
+  font-size: 24rpx;
+  color: white;
+  opacity: 0.8;
+}
+
+.agreement .link {
+  color: white;
+  text-decoration: underline;
+  margin: 0 8rpx;
+}
+
+.skip-btn {
+  text-align: center;
+  margin-top: 30rpx;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: underline;
+}

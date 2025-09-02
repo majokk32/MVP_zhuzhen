@@ -1,0 +1,47 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/index/index",
+    "pages/task-detail/task-detail",
+    "pages/grading/grading",
+    "pages/profile/profile",
+    "pages/admin/index/index",
+    "pages/admin/task-manage/task-manage",
+    "pages/admin/grading/grading",
+    "pages/admin/students/students"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#1989fa",
+    "navigationBarTitleText": "公考督学助手",
+    "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "color": "#666666",
+    "selectedColor": "#667eea",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "任务"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "requiredBackgroundModes": ["audio"],
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "permission": {
+    "scope.userLocation": {
+      "desc": "你的位置信息将用于小程序定位"
+    }
+  },
+  "networkTimeout": {
+    "request": 10000,
+    "downloadFile": 10000
+  }
+}
