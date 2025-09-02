@@ -1,0 +1,186 @@
+<!-- 个人中心页 -->
+<view class="container">
+  <!-- 顶部背景 -->
+  <view class="header-bg">
+    <view class="gradient-bg"></view>
+  </view>
+
+  <!-- 用户信息卡片 -->
+  <view class="user-card">
+    <view class="user-info">
+      <image class="avatar" src="{{userInfo.avatar}}" mode="aspectFill" wx:if="{{userInfo.avatar}}"/>
+      <view class="avatar avatar-placeholder" wx:else>
+        <text class="avatar-icon">👤</text>
+      </view>
+      <view class="user-detail">
+        <text class="nickname">{{userInfo.nickname || '用户'}}</text>
+        <view class="user-role">
+          <text class="role-tag {{userInfo.role}}">{{roleText}}</text>
+          <text wx:if="{{userInfo.created_at}}" class="join-time">{{joinTime}}</text>
+        </view>
+      </view>
+      <view class="edit-btn" bindtap="editProfile">
+        <text class="icon">✏️</text>
+      </view>
+    </view>
+
+    <!-- 学习统计 -->
+    <view class="stats-grid">
+      <view class="stat-item">
+        <text class="stat-value">{{stats.totalTasks || 0}}</text>
+        <text class="stat-label">总任务</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.completedTasks || 0}}</text>
+        <text class="stat-label">已完成</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.excellentCount || 0}}</text>
+        <text class="stat-label">极佳作品</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.completionRate || '0%'}}</text>
+        <text class="stat-label">完成率</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-section">
+    <view class="menu-title">学习记录</view>
+    <view class="menu-list">
+      <view class="menu-item" bindtap="goToMySubmissions">
+        <view class="menu-left">
+          <text class="menu-icon">📝</text>
+          <text class="menu-name">我的作业</text>
+        </view>
+        <view class="menu-right">
+          <text class="menu-value">{{stats.totalSubmissions || 0}}</text>
+          <text class="arrow">›</text>
+        </view>
+      </view>
+      
+      <view class="menu-item" bindtap="goToAchievements">
+        <view class="menu-left">
+          <text class="menu-icon">🏆</text>
+          <text class="menu-name">成就墙</text>
+        </view>
+        <view class="menu-right">
+          <text class="menu-value">{{stats.achievements || 0}}</text>
+          <text class="arrow">›</text>
+        </view>
+      </view>
+
+      <view class="menu-item" bindtap="goToLearningReport">
+        <view class="menu-left">
+          <text class="menu-icon">📊</text>
+          <text class="menu-name">学习报告</text>
+        </view>
+        <view class="menu-right">
+          <text class="menu-desc">查看详情</text>
+          <text class="arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 教师专属功能 -->
+  <view wx:if="{{isTeacher}}" class="menu-section">
+    <view class="menu-title">教研管理</view>
+    <view class="menu-list">
+      <view class="menu-item" bindtap="goToTaskManage">
+        <view class="menu-left">
+          <text class="menu-icon">📋</text>
+          <text class="menu-name">任务管理</text>
+        </view>
+        <view class="menu-right">
+          <text class="arrow">›</text>
+        </view>
+      </view>
+      
+      <view class="menu-item" bindtap="goToStudentManage">
+        <view class="menu-left">
+          <text class="menu-icon">👥</text>
+          <text class="menu-name">学生管理</text>
+        </view>
+        <view class="menu-right">
+          <text class="menu-value">{{stats.studentCount || 0}}</text>
+          <text class="arrow">›</text>
+        </view>
+      </view>
+
+      <view class="menu-item" bindtap="goToGradingCenter">
+        <view class="menu-left">
+          <text class="menu-icon">✍️</text>
+          <text class="menu-name">批改中心</text>
+        </view>
+        <view class="menu-right">
+          <text wx:if="{{stats.pendingGrading > 0}}" class="badge">{{stats.pendingGrading}}</text>
+          <text class="arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 设置菜单 -->
+  <view class="menu-section">
+    <view class="menu-title">设置</view>
+    <view class="menu-list">
+      <view class="menu-item" bindtap="goToNotificationSettings">
+        <view class="menu-left">
+          <text class="menu-icon">🔔</text>
+          <text class="menu-name">通知设置</text>
+        </view>
+        <view class="menu-right">
+          <text class="menu-desc">{{notificationStatus}}</text>
+          <text class="arrow">›</text>
+        </view>
+      </view>
+
+      <view class="menu-item" bindtap="goToHelp">
+        <view class="menu-left">
+          <text class="menu-icon">❓</text>
+          <text class="menu-name">帮助中心</text>
+        </view>
+        <view class="menu-right">
+          <text class="arrow">›</text>
+        </view>
+      </view>
+
+      <view class="menu-item" bindtap="goToFeedback">
+        <view class="menu-left">
+          <text class="menu-icon">💬</text>
+          <text class="menu-name">意见反馈</text>
+        </view>
+        <view class="menu-right">
+          <text class="arrow">›</text>
+        </view>
+      </view>
+
+      <view class="menu-item" bindtap="goToAbout">
+        <view class="menu-left">
+          <text class="menu-icon">ℹ️</text>
+          <text class="menu-name">关于我们</text>
+        </view>
+        <view class="menu-right">
+          <text class="menu-desc">v1.0.0</text>
+          <text class="arrow">›</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 退出登录按钮 -->
+  <view class="logout-section">
+    <button class="logout-btn" bindtap="logout">退出登录</button>
+  </view>
+
+  <!-- 底部版权信息 -->
+  <view class="footer">
+    <text>© 2024 公考督学助手</text>
+    <text>让学习更高效</text>
+  </view>
+</view>
+
+<!-- 底部安全区域 -->
+<view class="safe-bottom"></view>

@@ -1,0 +1,259 @@
+/* 个人中心样式 */
+.container {
+  min-height: 100vh;
+  background: #f5f6fa;
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+}
+
+/* 顶部背景 */
+.header-bg {
+  position: relative;
+  height: 320rpx;
+  overflow: hidden;
+}
+
+.gradient-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* 用户信息卡片 */
+.user-card {
+  position: relative;
+  margin: -120rpx 32rpx 32rpx;
+  background: white;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  padding-bottom: 32rpx;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: #f0f0f0;
+  margin-right: 24rpx;
+}
+
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-icon {
+  font-size: 60rpx;
+  color: #999;
+}
+
+.user-detail {
+  flex: 1;
+}
+
+.nickname {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.user-role {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.role-tag {
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+}
+
+.role-tag.student {
+  background: #e3f2fd;
+  color: #2196f3;
+}
+
+.role-tag.teacher {
+  background: #fce4ec;
+  color: #e91e63;
+}
+
+.join-time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.edit-btn {
+  width: 60rpx;
+  height: 60rpx;
+  background: #f5f5f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+}
+
+/* 统计网格 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24rpx;
+  padding-top: 32rpx;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.stat-label {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 功能菜单 */
+.menu-section {
+  margin: 0 32rpx 24rpx;
+  background: white;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.menu-title {
+  padding: 24rpx 24rpx 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.menu-list {
+  padding: 0;
+}
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28rpx 24rpx;
+  border-bottom: 1px solid #f5f5f5;
+  transition: background 0.2s;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:active {
+  background: #f5f5f5;
+}
+
+.menu-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  flex: 1;
+}
+
+.menu-icon {
+  font-size: 36rpx;
+}
+
+.menu-name {
+  font-size: 30rpx;
+  color: #333;
+}
+
+.menu-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.menu-value {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.menu-desc {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.arrow {
+  font-size: 32rpx;
+  color: #ccc;
+}
+
+.badge {
+  padding: 4rpx 12rpx;
+  background: #ff4757;
+  color: white;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+/* 退出登录 */
+.logout-section {
+  margin: 40rpx 32rpx;
+}
+
+.logout-btn {
+  width: 100%;
+  height: 88rpx;
+  background: white;
+  color: #ff4757;
+  border: 2rpx solid #ff4757;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-btn:active {
+  background: #fff5f5;
+}
+
+/* 底部版权 */
+.footer {
+  text-align: center;
+  padding: 40rpx 0;
+  color: #999;
+}
+
+.footer text {
+  display: block;
+  font-size: 24rpx;
+  line-height: 1.8;
+}
+
+/* 安全区域 */
+.safe-bottom {
+  height: env(safe-area-inset-bottom);
+}

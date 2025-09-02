@@ -1,0 +1,253 @@
+<!-- 批改页面 -->
+<view class="container">
+  <!-- 顶部任务信息 -->
+  <view class="task-header">
+    <view class="task-title">{{task.title}}</view>
+    <view class="task-stats">
+      <view class="stat-item">
+        <text class="stat-label">待批改</text>
+        <text class="stat-value">{{pendingCount}}</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-label">已批改</text>
+        <text class="stat-value">{{reviewedCount}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 批改列表或批改详情 -->
+  <view wx:if="{{!currentSubmission}}" class="submission-list">
+    <!-- 筛选栏 -->
+    <view class="filter-bar">
+      <view class="filter-tabs">
+        <view 
+          class="filter-tab {{filterStatus === 'all' ? 'active' : ''}}"
+          bindtap="onFilterChange"
+          data-status="all"
+        >
+          全部
+        </view>
+        <view 
+          class="filter-tab {{filterStatus === 'pending' ? 'active' : ''}}"
+          bindtap="onFilterChange"
+          data-status="pending"
+        >
+          待批改
+        </view>
+        <view 
+          class="filter-tab {{filterStatus === 'reviewed' ? 'active' : ''}}"
+          bindtap="onFilterChange"
+          data-status="reviewed"
+        >
+          已批改
+        </view>
+      </view>
+    </view>
+
+    <!-- 提交列表 -->
+    <view class="submissions">
+      <view 
+        wx:for="{{submissions}}" 
+        wx:key="id"
+        class="submission-item"
+        bindtap="selectSubmission"
+        data-index="{{index}}"
+      >
+        <view class="student-info">
+          <image class="student-avatar" src="{{item.user.avatar}}" mode="aspectFill" wx:if="{{item.user.avatar}}"/>
+          <view class="student-avatar avatar-placeholder" wx:else>
+            <text>👤</text>
+          </view>
+          <view class="student-detail">
+            <text class="student-name">{{item.user.nickname || '学生'}}</text>
+            <text class="submit-time">{{item.submitted_at}}</text>
+          </view>
+        </view>
+        
+        <view class="submission-status">
+          <view wx:if="{{item.status === 'pending'}}" class="status-badge pending">待批改</view>
+          <view wx:elif="{{item.grade}}" class="grade-badge {{item.grade}}">
+            {{item.gradeText}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:if="{{submissions.length === 0}}" class="empty-state">
+      <text class="empty-icon">📦</text>
+      <text>暂无提交的作业</text>
+    </view>
+  </view>
+
+  <!-- 批改详情视图 -->
+  <view wx:else class="grading-detail">
+    <!-- 学生信息栏 -->
+    <view class="student-bar">
+      <view class="student-info">
+        <image class="student-avatar" src="{{currentSubmission.user.avatar}}" mode="aspectFill" wx:if="{{currentSubmission.user.avatar}}"/>
+        <view class="student-avatar avatar-placeholder" wx:else>
+          <text>👤</text>
+        </view>
+        <view class="student-detail">
+          <text class="student-name">{{currentSubmission.user.nickname || '学生'}}</text>
+          <text class="submit-info">第{{currentSubmission.attemptNumber}}次提交 · {{currentSubmission.submitted_at}}</text>
+        </view>
+      </view>
+      
+      <view class="navigation-btns">
+        <button class="nav-btn" bindtap="previousSubmission" disabled="{{currentIndex === 0}}">
+          上一份
+        </button>
+        <text class="nav-indicator">{{currentIndex + 1}}/{{submissions.length}}</text>
+        <button class="nav-btn" bindtap="nextSubmission" disabled="{{currentIndex === submissions.length - 1}}">
+          下一份
+        </button>
+      </view>
+    </view>
+
+    <!-- 作业内容 -->
+    <view class="submission-content">
+      <view class="section-title">
+        <text class="icon">📝</text>
+        <text>作业内容</text>
+      </view>
+      
+      <!-- 图片展示 -->
+      <view wx:if="{{currentSubmission.images && currentSubmission.images.length > 0}}" class="content-images">
+        <scroll-view scroll-x class="image-scroll">
+          <view class="image-list">
+            <image 
+              wx:for="{{currentSubmission.images}}" 
+              wx:key="index"
+              src="{{item}}" 
+              mode="aspectFill"
+              class="content-image"
+              bindtap="previewImage"
+              data-url="{{item}}"
+            />
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 文字内容 -->
+      <view wx:if="{{currentSubmission.text}}" class="content-text">
+        <text>{{currentSubmission.text}}</text>
+      </view>
+    </view>
+
+    <!-- 批改区域 -->
+    <view class="grading-section">
+      <view class="section-title">
+        <text class="icon">✍️</text>
+        <text>批改评价</text>
+      </view>
+
+      <!-- 评分档位 -->
+      <view class="grade-options">
+        <view 
+          class="grade-option {{gradeData.grade === 'excellent' ? 'selected' : ''}}"
+          bindtap="selectGrade"
+          data-grade="excellent"
+        >
+          <view class="grade-icon excellent">🌟</view>
+          <text class="grade-name">极佳</text>
+          <text class="grade-desc">完成质量优异</text>
+        </view>
+        
+        <view 
+          class="grade-option {{gradeData.grade === 'good' ? 'selected' : ''}}"
+          bindtap="selectGrade"
+          data-grade="good"
+        >
+          <view class="grade-icon good">👍</view>
+          <text class="grade-name">优秀</text>
+          <text class="grade-desc">完成质量良好</text>
+        </view>
+        
+        <view 
+          class="grade-option {{gradeData.grade === 'review' ? 'selected' : ''}}"
+          bindtap="selectGrade"
+          data-grade="review"
+        >
+          <view class="grade-icon review">📚</view>
+          <text class="grade-name">待复盘</text>
+          <text class="grade-desc">需要改进</text>
+        </view>
+      </view>
+
+      <!-- 分数输入 -->
+      <view class="score-input-area">
+        <view class="input-label">得分（选填）</view>
+        <view class="score-input-wrapper">
+          <input 
+            type="number"
+            class="score-input"
+            placeholder="请输入分数"
+            value="{{gradeData.score}}"
+            bindinput="onScoreInput"
+          />
+          <text class="score-total">/ {{task.total_score || 100}}</text>
+        </view>
+      </view>
+
+      <!-- 评语输入 -->
+      <view class="feedback-input-area">
+        <view class="input-label">批改评语</view>
+        <textarea 
+          class="feedback-input"
+          placeholder="请输入批改评语，给学生一些建议和鼓励..."
+          maxlength="500"
+          bindinput="onFeedbackInput"
+          value="{{gradeData.feedback}}"
+        />
+        <view class="text-counter">{{gradeData.feedback.length}}/500</view>
+      </view>
+
+      <!-- 快捷评语 -->
+      <view class="quick-feedback">
+        <view class="quick-title">快捷评语</view>
+        <scroll-view scroll-x class="quick-list">
+          <view class="quick-items">
+            <view 
+              wx:for="{{quickFeedbacks}}" 
+              wx:key="index"
+              class="quick-item"
+              bindtap="useQuickFeedback"
+              data-text="{{item}}"
+            >
+              {{item}}
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="action-buttons">
+        <button class="btn-secondary" bindtap="cancelGrading">取消</button>
+        <button 
+          class="btn-primary {{canSubmitGrade ? '' : 'disabled'}}"
+          disabled="{{!canSubmitGrade || isSubmitting}}"
+          bindtap="submitGrade"
+        >
+          {{isSubmitting ? '提交中...' : '提交批改'}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 批量操作浮动按钮 -->
+  <view wx:if="{{!currentSubmission && isTeacher}}" class="float-actions">
+    <view class="float-btn" bindtap="batchGrade">
+      <text class="icon">📊</text>
+      <text>批量批改</text>
+    </view>
+    <view class="float-btn" bindtap="exportGrades">
+      <text class="icon">📥</text>
+      <text>导出成绩</text>
+    </view>
+  </view>
+</view>
+
+<!-- 底部安全区域 -->
+<view class="safe-bottom"></view>
