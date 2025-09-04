@@ -82,33 +82,34 @@ Page({
     
     try {
       const res = await app.request({
-        url: '/api/v1/users/stats',
+        url: '/users/stats',
         method: 'GET'
       });
       
-      if (res.data.code === 200) {
-        const stats = res.data.data || {};
-        
-        // 计算完成率
-        let completionRate = '0%';
-        if (stats.total_tasks > 0) {
-          const rate = Math.round((stats.completed_tasks / stats.total_tasks) * 100);
-          completionRate = `${rate}%`;
-        }
-        
-        this.setData({
-          stats: {
-            totalTasks: stats.total_tasks || 0,
-            completedTasks: stats.completed_tasks || 0,
-            excellentCount: stats.excellent_count || 0,
-            completionRate,
-            totalSubmissions: stats.total_submissions || 0,
-            achievements: stats.achievements || 0,
-            studentCount: stats.student_count || 0,
-            pendingGrading: stats.pending_grading || 0
-          }
-        });
+      // 直接使用返回的数据，因为app.request已经处理了ResponseBase格式
+      const stats = res || {};
+      
+      // 计算完成率
+      let completionRate = '0%';
+      if (stats.completion_rate) {
+        completionRate = `${stats.completion_rate}%`;
+      } else if (stats.total_submissions > 0) {
+        const rate = Math.round((stats.graded_submissions / stats.total_submissions) * 100);
+        completionRate = `${rate}%`;
       }
+      
+      this.setData({
+        stats: {
+          totalTasks: stats.total_tasks || 0,
+          completedTasks: stats.graded_submissions || 0,
+          excellentCount: 0, // 暂未实现
+          completionRate,
+          totalSubmissions: stats.total_submissions || 0,
+          achievements: 0, // 暂未实现
+          studentCount: 0, // 教师端功能
+          pendingGrading: stats.pending_grading || 0
+        }
+      });
     } catch (error) {
       console.error('加载统计数据失败:', error);
     } finally {

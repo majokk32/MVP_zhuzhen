@@ -172,6 +172,10 @@ App({
       const baseUrl = this.globalData.baseUrl
       const token = this.globalData.token || wx.getStorageSync('token')
       
+      console.log('uploadFile调用 - URL:', baseUrl + options.url)
+      console.log('uploadFile调用 - Token存在:', !!token)
+      console.log('uploadFile调用 - Token前20字符:', token ? token.substring(0, 20) + '...' : 'null')
+      
       wx.uploadFile({
         url: baseUrl + options.url,
         filePath: options.filePath,
@@ -205,7 +209,8 @@ App({
     isTeacher: false,
     systemInfo: null,
     // API基础地址
-    baseUrl: 'http://localhost:8000/api/v1',  // 开发环境
+    // baseUrl: 'http://120.77.57.53:8000/api/v1',  // 开发环境
+    baseUrl: 'http://192.168.1.139:8000/api/v1',
     // baseUrl: 'https://api.zhuzhen.com/api/v1',  // 生产环境
   }
 })

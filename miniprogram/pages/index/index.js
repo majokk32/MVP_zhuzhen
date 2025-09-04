@@ -36,8 +36,19 @@ Page({
       return
     }
     
-    // 设置用户信息
+    // 强制同步token到app全局状态
+    const app = getApp()
+    const token = auth.getToken()
     const userInfo = auth.getUserInfo()
+    
+    if (token && userInfo) {
+      app.globalData.token = token
+      app.globalData.userInfo = userInfo
+      app.globalData.isLogin = true
+      console.log('主页强制同步token:', token.substring(0, 20) + '...')
+    }
+    
+    // 设置用户信息
     this.setData({
       userInfo,
       isTeacher: auth.isTeacher()
