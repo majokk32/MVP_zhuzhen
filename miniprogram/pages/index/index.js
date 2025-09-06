@@ -69,6 +69,12 @@ Page({
   },
 
   onShow() {
+    // 更新自定义tabBar
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().updateTabBarData()
+      this.getTabBar().updateSelected()
+    }
+    
     // 页面显示时刷新（如果需要）
     if (this.data.userInfo) {
       // 检查是否需要刷新（比如从详情页返回）
@@ -105,8 +111,8 @@ Page({
       let tasks = result.tasks || []
       if (!loadMore) {
         // 分离置顶任务和普通任务
-        const pinnedTasks = tasks.filter(t => t.isExtra && t.submission_status === '未提交')
-        const normalTasks = tasks.filter(t => !(t.isExtra && t.submission_status === '未提交'))
+        const pinnedTasks = tasks.filter(t => t.task_type === "extra" && t.submission_status === '未提交')
+        const normalTasks = tasks.filter(t => !(t.task_type === "extra" && t.submission_status === '未提交'))
         tasks = [...pinnedTasks, ...normalTasks]
       }
       
@@ -280,5 +286,11 @@ Page({
       query: '',
       // imageUrl: '/assets/images/share-timeline.png'
     }
+  },
+
+  // 图片加载错误处理
+  onImageError(e) {
+    console.warn('图片加载失败:', e.detail.errMsg);
+    // 可以在这里添加默认图片或重试逻辑
   }
 })

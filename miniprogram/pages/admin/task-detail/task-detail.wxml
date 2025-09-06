@@ -1,0 +1,208 @@
+<!-- 任务详情管理页 -->
+<view class="container">
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 主要内容 -->
+  <view wx:else>
+    <!-- 任务基本信息 -->
+    <view class="task-info-card">
+      <view class="card-header">
+        <view class="task-title">{{taskInfo.title}}</view>
+        <view class="task-status {{taskInfo.status}}">
+          {{taskInfo.status === 'published' ? '已发布' : (taskInfo.status === 'draft' ? '草稿' : '已结束')}}
+        </view>
+      </view>
+      
+      <view class="task-meta">
+        <view class="meta-item">
+          <text class="meta-label">课程类型：</text>
+          <text class="meta-value course-type {{taskInfo.course_type}}">
+            {{taskInfo.course_type === 'essay' ? '申论' : '面试'}}
+          </text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">发布时间：</text>
+          <text class="meta-value">{{taskInfo.created_at}}</text>
+        </view>
+        <view class="meta-item" wx:if="{{taskInfo.deadline}}">
+          <text class="meta-label">截止时间：</text>
+          <text class="meta-value {{taskInfo.isOverdue ? 'overdue' : ''}}">{{taskInfo.deadline}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">创建老师：</text>
+          <text class="meta-value">{{taskInfo.creator_name}}</text>
+        </view>
+      </view>
+
+      <view class="task-description" wx:if="{{taskInfo.description}}">
+        <view class="desc-title">任务描述</view>
+        <view class="desc-content">{{taskInfo.description}}</view>
+      </view>
+    </view>
+
+    <!-- 统计概览 -->
+    <view class="stats-overview">
+      <view class="stats-item">
+        <text class="stats-number">{{statisticsData.total_students}}</text>
+        <text class="stats-label">总学生数</text>
+      </view>
+      <view class="stats-divider"></view>
+      <view class="stats-item">
+        <text class="stats-number">{{statisticsData.submitted_count}}</text>
+        <text class="stats-label">已提交</text>
+      </view>
+      <view class="stats-divider"></view>
+      <view class="stats-item">
+        <text class="stats-number">{{statisticsData.graded_count}}</text>
+        <text class="stats-label">已批改</text>
+      </view>
+      <view class="stats-divider"></view>
+      <view class="stats-item">
+        <text class="stats-number">{{statisticsData.completion_rate}}%</text>
+        <text class="stats-label">完成率</text>
+      </view>
+    </view>
+
+    <!-- 操作按钮区 -->
+    <view class="action-buttons">
+      <button class="action-btn primary" bindtap="onStartGrading" wx:if="{{statisticsData.submitted_count > 0}}">
+        <text class="btn-icon">✏️</text>
+        <text class="btn-text">开始批改</text>
+      </button>
+      <button class="action-btn secondary" bindtap="onEditTask">
+        <text class="btn-icon">📝</text>
+        <text class="btn-text">编辑任务</text>
+      </button>
+      <button class="action-btn warning" bindtap="onDeleteTask" wx:if="{{taskInfo.status === 'draft'}}">
+        <text class="btn-icon">🗑️</text>
+        <text class="btn-text">删除任务</text>
+      </button>
+    </view>
+
+    <!-- 学生提交列表 -->
+    <view class="submissions-section">
+      <view class="section-header">
+        <view class="section-title">学生提交情况</view>
+        <view class="filter-tabs">
+          <text 
+            class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}" 
+            bindtap="onFilterChange"
+            data-filter="all"
+          >全部</text>
+          <text 
+            class="filter-tab {{currentFilter === 'submitted' ? 'active' : ''}}" 
+            bindtap="onFilterChange"
+            data-filter="submitted"
+          >已提交</text>
+          <text 
+            class="filter-tab {{currentFilter === 'graded' ? 'active' : ''}}" 
+            bindtap="onFilterChange"
+            data-filter="graded"
+          >已批改</text>
+          <text 
+            class="filter-tab {{currentFilter === 'pending' ? 'active' : ''}}" 
+            bindtap="onFilterChange"
+            data-filter="pending"
+          >未提交</text>
+        </view>
+      </view>
+
+      <!-- 学生列表 -->
+      <view class="submissions-list">
+        <view 
+          class="submission-card" 
+          wx:for="{{submissionsList}}" 
+          wx:key="student_id"
+          bindtap="onSubmissionClick"
+          data-submission="{{item}}"
+        >
+          <view class="submission-basic">
+            <view class="student-info">
+              <image 
+                class="student-avatar" 
+                src="{{item.student_avatar}}" 
+                mode="aspectFill"
+                wx:if="{{item.student_avatar}}"
+              ></image>
+              <view class="avatar-placeholder" wx:else>
+                <text class="avatar-icon">👤</text>
+              </view>
+              <view class="student-details">
+                <view class="student-name">{{item.student_name}}</view>
+                <view class="submit-time" wx:if="{{item.submitted_at}}">
+                  提交时间：{{item.submitted_at}}
+                </view>
+                <view class="submit-time pending" wx:else>
+                  尚未提交
+                </view>
+              </view>
+            </view>
+            <view class="submission-status">
+              <view class="status-badge {{item.status}}">
+                {{item.status === 'graded' ? '已批改' : (item.status === 'submitted' ? '已提交' : '未提交')}}
+              </view>
+              <view class="grade-info" wx:if="{{item.status === 'graded'}}">
+                <text class="grade-value {{item.evaluation}}">{{item.evaluation}}</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 提交内容预览 -->
+          <view class="submission-preview" wx:if="{{item.submission_images && item.submission_images.length > 0}}">
+            <view class="preview-images">
+              <image 
+                class="preview-image" 
+                src="{{image}}" 
+                mode="aspectFill"
+                wx:for="{{item.submission_images}}" 
+                wx:for-item="image"
+                wx:key="*this"
+              ></image>
+              <view class="image-count" wx:if="{{item.submission_images.length > 3}}">
+                +{{item.submission_images.length - 3}}
+              </view>
+            </view>
+          </view>
+
+          <view class="submission-arrow">
+            <text class="arrow-icon">›</text>
+          </view>
+        </view>
+
+        <!-- 加载更多 -->
+        <view class="loading-more" wx:if="{{loadingMore}}">
+          <view class="loading-spinner"></view>
+          <text class="loading-text">加载更多...</text>
+        </view>
+
+        <!-- 没有更多 -->
+        <view class="no-more" wx:elif="{{!hasMore && submissionsList.length > 0}}">
+          <text class="no-more-text">没有更多了</text>
+        </view>
+      </view>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{isEmpty}}">
+        <view class="empty-icon">📝</view>
+        <view class="empty-text">{{getEmptyText()}}</view>
+        <view class="empty-hint">{{getEmptyHint()}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-actions" wx:if="{{!loading}}">
+    <button class="bottom-btn secondary" bindtap="onExportData">
+      <text class="btn-icon">📊</text>
+      <text class="btn-text">导出数据</text>
+    </button>
+    <button class="bottom-btn primary" bindtap="onSendReminder" wx:if="{{statisticsData.pending_count > 0}}">
+      <text class="btn-icon">📢</text>
+      <text class="btn-text">发送催办</text>
+    </button>
+  </view>
+</view>

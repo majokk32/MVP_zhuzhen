@@ -125,6 +125,20 @@
   color: #0984e3;
 }
 
+/* 待复盘重置提示 */
+.review-reset-tip {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 20rpx;
+  background: #f0fff4;
+  border-radius: 12rpx;
+  margin-top: 16rpx;
+  font-size: 26rpx;
+  color: #00b894;
+  border-left: 4rpx solid #00b894;
+}
+
 /* 通用卡片样式 */
 .section-card {
   background: white;

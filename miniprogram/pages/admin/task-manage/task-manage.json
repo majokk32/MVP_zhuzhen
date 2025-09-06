@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "课程作业管理",
+  "navigationBarBackgroundColor": "#667eea",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark"
+}

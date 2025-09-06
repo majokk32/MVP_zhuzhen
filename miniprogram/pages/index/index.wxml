@@ -1,50 +1,43 @@
 <!--pages/index/index.wxml-->
 <view class="container">
-  <!-- 顶部信息栏 -->
-  <view class="header">
-    <view class="user-info">
-      <image class="avatar" src="{{userInfo.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill"></image>
-      <view class="info">
-        <view class="nickname">{{userInfo.nickname || '同学'}}</view>
-        <view class="role-badge" wx:if="{{isTeacher}}">
-          <text class="role-icon">👨‍🏫</text>
-          <text>教师</text>
-        </view>
+  <!-- 顶部用户信息栏（简化版） -->
+  <view class="header" wx:if="{{userInfo}}">
+    <view class="user-greeting">
+      <image class="user-avatar" src="{{userInfo.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" lazy-load="true" binderror="onImageError"></image>
+      <view class="greeting-text">
+        <text class="greeting">你好，{{userInfo.nickname || '同学'}}</text>
+        <view class="role-tag" wx:if="{{isTeacher}}">教师</view>
       </view>
-    </view>
-    
-    <!-- 教师快捷操作 -->
-    <view wx:if="{{isTeacher}}" class="teacher-actions">
-      <button class="action-btn" bindtap="onCreateTask">
-        <text class="action-icon">➕</text>
-        <text>发布</text>
-      </button>
     </view>
   </view>
 
-  <!-- 筛选标签 -->
-  <view class="filter-tabs">
-    <view 
-      class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}"
-      data-filter="all"
-      bindtap="onFilterChange"
-    >
-      全部
-    </view>
-    <view 
-      class="filter-tab {{currentFilter === 'ongoing' ? 'active' : ''}}"
-      data-filter="ongoing"
-      bindtap="onFilterChange"
-    >
-      进行中
-    </view>
-    <view 
-      class="filter-tab {{currentFilter === 'ended' ? 'active' : ''}}"
-      data-filter="ended"
-      bindtap="onFilterChange"
-    >
-      已结束
-    </view>
+  <!-- 任务筛选器 -->
+  <view class="task-filter">
+    <scroll-view class="filter-scroll" scroll-x>
+      <view class="filter-tabs">
+        <view 
+          class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}"
+          data-filter="all"
+          bindtap="onFilterChange"
+        >
+          全部
+        </view>
+        <view 
+          class="filter-tab {{currentFilter === 'ongoing' ? 'active' : ''}}"
+          data-filter="ongoing"
+          bindtap="onFilterChange"
+        >
+          进行中
+        </view>
+        <view 
+          class="filter-tab {{currentFilter === 'ended' ? 'active' : ''}}"
+          data-filter="ended"
+          bindtap="onFilterChange"
+        >
+          已结束
+        </view>
+      </view>
+    </scroll-view>
   </view>
 
   <!-- 任务列表 -->
@@ -57,8 +50,11 @@
     bindrefresherrefresh="onRefresh"
     bindscrolltolower="onLoadMore"
   >
+    <!-- 骨架屏 -->
+    <skeleton show="{{loading}}" type="task-list" count="{{3}}"></skeleton>
+    
     <!-- 任务卡片 -->
-    <block wx:for="{{taskList}}" wx:key="id">
+    <block wx:for="{{taskList}}" wx:key="id" wx:if="{{!loading}}">
       <task-card 
         task="{{item}}"
         index="{{index}}"
@@ -80,14 +76,16 @@
     </view>
 
     <!-- 空状态 -->
-    <view wx:if="{{isEmpty && !loading}}" class="empty-state">
-      <image class="empty-image" src="/assets/images/empty-task.png" mode="aspectFit"></image>
-      <text class="empty-text">暂无任务</text>
-      <text class="empty-hint">{{currentFilter === 'ongoing' ? '没有进行中的任务' : currentFilter === 'ended' ? '没有已结束的任务' : '老师还没有发布任务'}}</text>
-      <button wx:if="{{isTeacher}}" class="empty-btn" bindtap="onCreateTask">
-        立即创建任务
-      </button>
-    </view>
+    <empty-state
+      show="{{isEmpty && !loading}}"
+      icon="📝"
+      title="暂无任务"
+      description="{{currentFilter === 'ongoing' ? '没有进行中的任务' : currentFilter === 'ended' ? '没有已结束的任务' : '老师还没有发布任务'}}"
+      show-action="{{isTeacher}}"
+      action-text="立即创建任务"
+      action-type="primary"
+      bind:actionClick="onCreateTask"
+    ></empty-state>
 
     <!-- 加载中 -->
     <view wx:if="{{loading && taskList.length === 0}}" class="loading-state">

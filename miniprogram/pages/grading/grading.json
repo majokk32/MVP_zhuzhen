@@ -1,5 +1,11 @@
 {
   "navigationBarTitleText": "批改作业",
-  "enablePullDownRefresh": false,
-  "usingComponents": {}
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "skeleton": "/components/skeleton/skeleton",
+    "grading-history": "/components/grading-history/grading-history",
+    "mixed-input": "/components/mixed-input/mixed-input",
+    "grading-navigator": "/components/grading-navigator/grading-navigator",
+    "grading-analytics": "/components/grading-analytics/grading-analytics"
+  }
 }

@@ -1,0 +1,267 @@
+<!-- 批改数据统计面板 -->
+<view class="analytics-container" wx:if="{{show}}">
+  
+  <!-- 遮罩层 -->
+  <view class="analytics-mask" bindtap="close"></view>
+  
+  <!-- 面板内容 -->
+  <view class="analytics-panel" catchtap="stopPropagation">
+    
+    <!-- 头部 -->
+    <view class="analytics-header">
+      <view class="header-left">
+        <text class="title">📊 批改数据统计</text>
+        <text class="subtitle">{{taskTitle}}的批改分析报告</text>
+      </view>
+      <button class="close-btn" bindtap="close">✕</button>
+    </view>
+    
+    <!-- 滚动内容区域 -->
+    <scroll-view class="analytics-content" scroll-y enhanced show-scrollbar="{{false}}">
+      
+      <!-- 总览卡片 -->
+      <view class="overview-section">
+        <view class="section-title">
+          <text class="title-icon">📋</text>
+          <text class="title-text">批改总览</text>
+        </view>
+        
+        <view class="overview-cards">
+          <view class="overview-card total">
+            <text class="card-number">{{analytics.totalSubmissions}}</text>
+            <text class="card-label">总提交数</text>
+            <view class="card-trend up" wx:if="{{analytics.submissionTrend > 0}}">
+              <text class="trend-icon">↗</text>
+              <text class="trend-text">+{{analytics.submissionTrend}}%</text>
+            </view>
+          </view>
+          
+          <view class="overview-card completed">
+            <text class="card-number">{{analytics.completedCount}}</text>
+            <text class="card-label">已批改</text>
+            <view class="card-progress">
+              <view class="progress-bar">
+                <view class="progress-fill" style="width: {{analytics.completionRate}}%"></view>
+              </view>
+              <text class="progress-text">{{analytics.completionRate}}%</text>
+            </view>
+          </view>
+          
+          <view class="overview-card efficiency">
+            <text class="card-number">{{analytics.avgGradingTime}}</text>
+            <text class="card-label">平均用时</text>
+            <view class="efficiency-level {{analytics.efficiencyLevel}}">
+              <text class="level-text">{{analytics.efficiencyText}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 档位分布图表 -->
+      <view class="grade-distribution-section">
+        <view class="section-title">
+          <text class="title-icon">📈</text>
+          <text class="title-text">成绩档位分布</text>
+          <view class="title-action" bindtap="toggleGradeView">
+            <text class="action-text">{{gradeViewMode === 'chart' ? '列表视图' : '图表视图'}}</text>
+          </view>
+        </view>
+        
+        <!-- 图表视图 -->
+        <view class="grade-chart" wx:if="{{gradeViewMode === 'chart'}}">
+          <view class="chart-container">
+            <view class="chart-bars">
+              <view 
+                wx:for="{{analytics.gradeDistribution}}" 
+                wx:key="grade"
+                class="chart-bar"
+                style="height: {{item.percentage}}%"
+              >
+                <view class="bar-fill {{item.grade}}"></view>
+                <text class="bar-label">{{item.label}}</text>
+                <text class="bar-count">{{item.count}}</text>
+              </view>
+            </view>
+          </view>
+          
+          <view class="chart-legend">
+            <view 
+              wx:for="{{analytics.gradeDistribution}}" 
+              wx:key="grade"
+              class="legend-item"
+            >
+              <view class="legend-color {{item.grade}}"></view>
+              <text class="legend-text">{{item.label}} ({{item.count}})</text>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 列表视图 -->
+        <view class="grade-list" wx:else>
+          <view 
+            wx:for="{{analytics.gradeDistribution}}" 
+            wx:key="grade"
+            class="grade-item {{item.grade}}"
+          >
+            <view class="grade-info">
+              <text class="grade-icon">{{item.icon}}</text>
+              <view class="grade-detail">
+                <text class="grade-name">{{item.label}}</text>
+                <text class="grade-desc">{{item.description}}</text>
+              </view>
+            </view>
+            
+            <view class="grade-stats">
+              <text class="grade-count">{{item.count}}人</text>
+              <view class="grade-progress">
+                <view class="progress-track">
+                  <view class="progress-fill {{item.grade}}" style="width: {{item.percentage}}%"></view>
+                </view>
+                <text class="progress-percent">{{item.percentage}}%</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 效率分析 -->
+      <view class="efficiency-section">
+        <view class="section-title">
+          <text class="title-icon">⚡</text>
+          <text class="title-text">批改效率分析</text>
+        </view>
+        
+        <view class="efficiency-metrics">
+          <view class="metric-card">
+            <text class="metric-label">今日批改</text>
+            <text class="metric-value">{{analytics.todayGraded}}</text>
+            <text class="metric-unit">份</text>
+          </view>
+          
+          <view class="metric-card">
+            <text class="metric-label">本周批改</text>
+            <text class="metric-value">{{analytics.weekGraded}}</text>
+            <text class="metric-unit">份</text>
+          </view>
+          
+          <view class="metric-card">
+            <text class="metric-label">峰值速度</text>
+            <text class="metric-value">{{analytics.peakSpeed}}</text>
+            <text class="metric-unit">分/份</text>
+          </view>
+        </view>
+        
+        <!-- 时间分布 -->
+        <view class="time-distribution">
+          <view class="distribution-title">批改时间分布</view>
+          <view class="time-slots">
+            <view 
+              wx:for="{{analytics.timeDistribution}}" 
+              wx:key="hour"
+              class="time-slot"
+            >
+              <view class="slot-bar">
+                <view class="slot-fill" style="height: {{item.percentage}}%"></view>
+              </view>
+              <text class="slot-time">{{item.hour}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 学生表现洞察 -->
+      <view class="insights-section">
+        <view class="section-title">
+          <text class="title-icon">💡</text>
+          <text class="title-text">学生表现洞察</text>
+        </view>
+        
+        <view class="insights-cards">
+          <!-- 优秀学生 -->
+          <view class="insight-card excellent">
+            <view class="card-header">
+              <text class="card-icon">⭐</text>
+              <text class="card-title">优秀表现</text>
+            </view>
+            <view class="card-content">
+              <text class="highlight-number">{{analytics.excellentCount}}</text>
+              <text class="highlight-desc">学生获得极佳/优秀评价</text>
+            </view>
+            <view class="card-trend up">
+              <text class="trend-text">比上次提升 {{analytics.excellentTrend}}%</text>
+            </view>
+          </view>
+          
+          <!-- 需关注学生 -->
+          <view class="insight-card review">
+            <view class="card-header">
+              <text class="card-icon">🔍</text>
+              <text class="card-title">需要关注</text>
+            </view>
+            <view class="card-content">
+              <text class="highlight-number">{{analytics.reviewCount}}</text>
+              <text class="highlight-desc">学生需要额外辅导</text>
+            </view>
+            <view class="card-action" bindtap="showReviewStudents">
+              <text class="action-text">查看详情</text>
+            </view>
+          </view>
+          
+          <!-- 进步趋势 -->
+          <view class="insight-card progress">
+            <view class="card-header">
+              <text class="card-icon">📈</text>
+              <text class="card-title">整体趋势</text>
+            </view>
+            <view class="card-content">
+              <text class="highlight-number">{{analytics.avgScore}}</text>
+              <text class="highlight-desc">平均分数</text>
+            </view>
+            <view class="trend-indicator {{analytics.scoreTrend > 0 ? 'up' : 'down'}}">
+              <text class="trend-icon">{{analytics.scoreTrend > 0 ? '↗' : '↘'}}</text>
+              <text class="trend-text">{{analytics.scoreTrend > 0 ? '+' : ''}}{{analytics.scoreTrend}}分</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 个性化建议 -->
+      <view class="suggestions-section">
+        <view class="section-title">
+          <text class="title-icon">🎯</text>
+          <text class="title-text">个性化建议</text>
+        </view>
+        
+        <view class="suggestion-list">
+          <view 
+            wx:for="{{analytics.suggestions}}" 
+            wx:key="id"
+            class="suggestion-item {{item.type}}"
+          >
+            <view class="suggestion-icon">{{item.icon}}</view>
+            <view class="suggestion-content">
+              <text class="suggestion-title">{{item.title}}</text>
+              <text class="suggestion-desc">{{item.description}}</text>
+            </view>
+            <button class="suggestion-action" bindtap="applySuggestion" data-suggestion="{{item}}">
+              {{item.actionText}}
+            </button>
+          </view>
+        </view>
+      </view>
+      
+    </scroll-view>
+    
+    <!-- 底部操作 -->
+    <view class="analytics-footer">
+      <button class="footer-btn secondary" bindtap="exportReport">
+        <text class="btn-icon">📥</text>
+        <text class="btn-text">导出报告</text>
+      </button>
+      <button class="footer-btn primary" bindtap="close">
+        <text class="btn-text">知道了</text>
+      </button>
+    </view>
+    
+  </view>
+</view>

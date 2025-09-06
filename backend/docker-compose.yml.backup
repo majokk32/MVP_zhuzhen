@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: zhuzhen-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      - ./.env:/app/.env
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/app.db
+    restart: unless-stopped
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    networks:
+      - zhuzhen-network
+
+  # Optional: PostgreSQL for production
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: zhuzhen-db
+  #   environment:
+  #     POSTGRES_USER: zhuzhen
+  #     POSTGRES_PASSWORD: your-secure-password
+  #     POSTGRES_DB: zhuzhen
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   restart: unless-stopped
+  #   networks:
+  #     - zhuzhen-network
+
+networks:
+  zhuzhen-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

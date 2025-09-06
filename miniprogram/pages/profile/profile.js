@@ -30,6 +30,12 @@ Page({
   },
 
   onShow() {
+    // 更新自定义tabBar
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().updateTabBarData()
+      this.getTabBar().updateSelected()
+    }
+    
     // 每次显示页面时刷新数据
     this.loadUserInfo();
     this.loadStats();
@@ -238,5 +244,11 @@ Page({
     return {
       title: '公考督学助手 - 高效提升申论成绩'
     };
+  },
+
+  // 图片加载错误处理
+  onImageError(e) {
+    console.warn('图片加载失败:', e.detail.errMsg);
+    // 可以在这里添加默认图片或重试逻辑
   }
 });

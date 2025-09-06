@@ -1,0 +1,29 @@
+<!-- 空状态组件 -->
+<view class="empty-state-container" wx:if="{{show}}">
+  <view class="empty-content">
+    <!-- 图标 -->
+    <view class="empty-icon">{{icon || '📝'}}</view>
+    
+    <!-- 标题 -->
+    <view class="empty-title">{{title || '暂无数据'}}</view>
+    
+    <!-- 描述 -->
+    <view class="empty-description" wx:if="{{description}}">{{description}}</view>
+    
+    <!-- 操作按钮 -->
+    <view class="empty-actions" wx:if="{{showAction}}">
+      <button 
+        class="empty-action-btn {{actionType}}" 
+        bindtap="onActionClick"
+        wx:if="{{actionText}}"
+      >
+        {{actionText}}
+      </button>
+      
+      <!-- 自定义操作区域 -->
+      <view wx:else>
+        <slot name="actions"></slot>
+      </view>
+    </view>
+  </view>
+</view>

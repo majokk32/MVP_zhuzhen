@@ -239,6 +239,27 @@
   padding: 0 16rpx;
 }
 
+/* 历史按钮 */
+.history-btn {
+  padding: 12rpx 20rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.history-btn::after {
+  border: none;
+}
+
+.history-icon {
+  font-size: 20rpx;
+}
+
 /* 作业内容 */
 .submission-content {
   padding: 32rpx;
@@ -369,7 +390,27 @@
   color: #666;
 }
 
-/* 评语输入 */
+/* 混合输入评语区域 */
+.feedback-input-section {
+  margin-bottom: 32rpx;
+}
+
+.feedback-input-section .input-label {
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.feedback-input-section .input-label::before {
+  content: '✍️';
+  font-size: 24rpx;
+}
+
+/* 兼容传统评语输入 */
 .feedback-input-area {
   margin-bottom: 32rpx;
   position: relative;
@@ -404,6 +445,14 @@
   font-size: 26rpx;
   color: #666;
   margin-bottom: 16rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.quick-title::before {
+  content: '💬';
+  font-size: 20rpx;
 }
 
 .quick-list {

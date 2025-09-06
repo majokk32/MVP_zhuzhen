@@ -1,0 +1,158 @@
+<!-- 批改历史时间线组件 -->
+<view class="grading-history-container" wx:if="{{show}}">
+  
+  <!-- 头部信息 -->
+  <view class="history-header">
+    <view class="header-title">
+      <text class="title-text">批改历史</text>
+      <text class="subtitle-text">{{studentName || '学生'}}的作业批改记录</text>
+    </view>
+    <view class="close-btn" bindtap="close">
+      <text class="close-icon">✕</text>
+    </view>
+  </view>
+
+  <!-- 统计信息卡片 -->
+  <view class="stats-card">
+    <view class="stat-item">
+      <text class="stat-number">{{historyData.totalSubmissions || 0}}</text>
+      <text class="stat-label">总提交次数</text>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <text class="stat-number">{{historyData.gradedCount || 0}}</text>
+      <text class="stat-label">已批改次数</text>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <text class="stat-number">{{historyData.avgScore || '--'}}</text>
+      <text class="stat-label">平均得分</text>
+    </view>
+  </view>
+
+  <!-- 时间线内容 -->
+  <scroll-view class="timeline-container" scroll-y>
+    
+    <!-- 加载状态 -->
+    <view wx:if="{{loading}}" class="loading-container">
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 时间线列表 -->
+    <view wx:else class="timeline-list">
+      <view 
+        wx:for="{{timelineItems}}" 
+        wx:key="id" 
+        class="timeline-item {{item.type}}"
+      >
+        <!-- 时间线点 -->
+        <view class="timeline-dot {{item.type}}">
+          <text class="dot-icon">{{item.icon}}</text>
+        </view>
+        
+        <!-- 时间线内容 -->
+        <view class="timeline-content">
+          <!-- 时间标签 -->
+          <view class="timeline-time">{{item.timeText}}</view>
+          
+          <!-- 提交记录 -->
+          <view wx:if="{{item.type === 'submission'}}" class="submission-record">
+            <view class="record-header">
+              <text class="record-title">第{{item.attemptNumber}}次提交</text>
+              <text class="record-status {{item.status}}">{{item.statusText}}</text>
+            </view>
+            
+            <!-- 作业内容预览 -->
+            <view wx:if="{{item.hasContent}}" class="content-preview">
+              <view wx:if="{{item.images && item.images.length > 0}}" class="preview-images">
+                <image 
+                  wx:for="{{item.images}}" 
+                  wx:key="index" 
+                  wx:for-item="img"
+                  src="{{img}}" 
+                  mode="aspectFill"
+                  class="preview-thumb"
+                  bindtap="previewImage"
+                  data-url="{{img}}"
+                  lazy-load="true"
+                />
+                <view wx:if="{{item.images.length > 3}}" class="more-images">
+                  +{{item.images.length - 3}}
+                </view>
+              </view>
+              
+              <view wx:if="{{item.text}}" class="preview-text">
+                <text>{{item.text}}</text>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 批改记录 -->
+          <view wx:elif="{{item.type === 'grading'}}" class="grading-record">
+            <view class="record-header">
+              <text class="record-title">批改评价</text>
+              <view class="grade-badge {{item.grade}}">{{item.gradeText}}</view>
+            </view>
+            
+            <!-- 批改详情 -->
+            <view class="grading-details">
+              <!-- 得分 -->
+              <view wx:if="{{item.score}}" class="score-info">
+                <text class="score-label">得分：</text>
+                <text class="score-value">{{item.score}}</text>
+                <text class="score-total">/{{item.totalScore || 100}}</text>
+              </view>
+              
+              <!-- 评语 -->
+              <view wx:if="{{item.feedback}}" class="feedback-content">
+                <text class="feedback-label">评语：</text>
+                <text class="feedback-text">{{item.feedback}}</text>
+              </view>
+              
+              <!-- 批改信息 -->
+              <view class="grading-info">
+                <text class="grader-name">批改老师：{{item.graderName || '系统'}}</text>
+                <text class="grading-duration" wx:if="{{item.gradingDuration}}">
+                  耗时：{{item.gradingDurationText}}
+                </text>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 系统事件 -->
+          <view wx:elif="{{item.type === 'system'}}" class="system-record">
+            <view class="record-header">
+              <text class="record-title">{{item.title}}</text>
+              <text class="system-tag">系统</text>
+            </view>
+            <view wx:if="{{item.description}}" class="system-description">
+              <text>{{item.description}}</text>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 连接线 -->
+        <view wx:if="{{index < timelineItems.length - 1}}" class="timeline-connector"></view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:if="{{!loading && timelineItems.length === 0}}" class="empty-state">
+      <text class="empty-icon">📋</text>
+      <text class="empty-text">暂无批改历史记录</text>
+    </view>
+  </scroll-view>
+
+  <!-- 底部操作按钮 -->
+  <view class="action-footer">
+    <button class="action-btn secondary" bindtap="exportHistory" wx:if="{{allowExport}}">
+      导出记录
+    </button>
+    <button class="action-btn primary" bindtap="close">
+      关闭
+    </button>
+  </view>
+</view>
+
+<!-- 背景遮罩 -->
+<view class="history-mask" wx:if="{{show}}" bindtap="close"></view>

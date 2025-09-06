@@ -15,11 +15,12 @@ Page({
     
     // 提交相关
     uploadedImages: [],
-    maxImages: 9,
+    maxImages: 6,
     submissionText: '',
     canSubmit: false,
     isSubmitting: false,
     submissionCount: 0,
+    hasReviewReset: false,
     
     // 当前提交
     currentSubmission: null,
@@ -35,7 +36,22 @@ Page({
       submitted: 0,
       pending: 0,
       reviewed: 0
-    }
+    },
+    
+    // 上传进度相关
+    showUploadProgress: false,
+    showSimpleProgress: false,
+    uploadProgressData: {
+      completed: 0,
+      total: 0,
+      progress: 0
+    },
+    
+    // 我的批改历史
+    showMyGradingHistory: false,
+    
+    // 用户信息（用于历史组件）
+    userInfo: {}
   },
 
   onLoad(options) {
@@ -71,9 +87,35 @@ Page({
       });
       return;
     }
+
+    // 检查任务访问权限
+    if (!authModule.checkTaskAccess({
+      onUpgrade: this.handleUpgradeContact
+    })) {
+      // 权限不足，返回上一页
+      setTimeout(() => {
+        wx.navigateBack();
+      }, 1000);
+      return;
+    }
     
     this.setData({
-      isTeacher: userInfo.role === 'teacher'
+      isTeacher: userInfo.role === 'teacher',
+      userInfo: {
+        id: userInfo.id,
+        nickname: userInfo.nickname || userInfo.name || '用户'
+      }
+    });
+  },
+
+  // 处理升级联系客服
+  handleUpgradeContact() {
+    // 这里可以添加联系客服的逻辑，比如打开客服会话或跳转到联系页面
+    wx.showModal({
+      title: '联系客服',
+      content: '请通过微信群联系客服或拨打客服电话升级为付费学员',
+      confirmText: '我知道了',
+      showCancel: false
     });
   },
 
@@ -154,21 +196,39 @@ Page({
         attemptNumber: submissionCount - index - 1
       }));
         
+      // 检查"待复盘"自动重置逻辑
+      let effectiveSubmissionCount = submissionCount;
+      let hasReviewReset = false;
+      
+      if (currentSubmission && 
+          (currentSubmission.status === 'reviewed' || currentSubmission.status === 'graded') &&
+          currentSubmission.grade === 'review') {
+        // 如果最新提交被评为"待复盘"，重置提交次数
+        effectiveSubmissionCount = 0;
+        hasReviewReset = true;
+      }
+      
       // 确定视图类型
       let viewType = 'toSubmit';
-      if (currentSubmission) {
+      if (currentSubmission && effectiveSubmissionCount > 0) {
         if (currentSubmission.status === 'pending') {
           viewType = 'pending';
         } else if (currentSubmission.status === 'reviewed' || currentSubmission.status === 'graded') {
-          viewType = 'reviewed';
-          this.setGradeInfo(currentSubmission.grade);
+          if (currentSubmission.grade === 'review') {
+            // 待复盘状态，显示重新提交界面
+            viewType = 'toSubmit';
+          } else {
+            viewType = 'reviewed';
+            this.setGradeInfo(currentSubmission.grade);
+          }
         }
       }
       
       this.setData({
         currentSubmission,
         historySubmissions,
-        submissionCount,
+        submissionCount: effectiveSubmissionCount,
+        hasReviewReset,
         viewType
       });
     } catch (error) {
@@ -259,6 +319,12 @@ Page({
     });
   },
 
+  // 图片加载错误处理
+  onImageError(e) {
+    console.warn('图片加载失败:', e.detail.errMsg);
+    // 可以在这里添加默认图片或重试逻辑
+  },
+
   // 输入文字
   onTextInput(e) {
     const text = e.detail.value;
@@ -282,9 +348,12 @@ Page({
       return;
     }
     
+    const remainingAttempts = 3 - this.data.submissionCount - 1;
+    const resetMessage = this.data.hasReviewReset ? '(因"待复盘"评价已重置提交次数) ' : '';
+    
     wx.showModal({
       title: '确认提交',
-      content: `确定要提交作业吗？您还有 ${3 - this.data.submissionCount - 1} 次提交机会`,
+      content: `确定要提交作业吗？${resetMessage}您还有 ${remainingAttempts} 次提交机会`,
       success: async (res) => {
         if (res.confirm) {
           await this.doSubmit();
@@ -296,14 +365,38 @@ Page({
   // 执行提交
   async doSubmit() {
     this.setData({ isSubmitting: true });
-    wx.showLoading({ title: '提交中...' });
     
     try {
       // 压缩图片
       const compressedImages = await submissionModule.compressImages(this.data.uploadedImages);
       
-      // 上传图片
-      const imageUrls = await submissionModule.uploadImages(compressedImages);
+      // 显示上传进度
+      if (compressedImages.length > 0) {
+        this.setData({ 
+          showSimpleProgress: true,
+          uploadProgressData: { completed: 0, total: compressedImages.length, progress: 0 }
+        });
+      }
+      
+      // 上传图片（使用增强的上传系统）
+      const imageUrls = await submissionModule.uploadImages(compressedImages, {
+        showProgress: true,
+        showPartialError: true,
+        onProgress: (data) => {
+          this.setData({
+            uploadProgressData: {
+              completed: data.completedCount,
+              total: data.totalCount,
+              progress: data.progress
+            }
+          });
+        }
+      });
+      
+      // 隐藏上传进度
+      this.setData({ showSimpleProgress: false });
+      
+      wx.showLoading({ title: '提交中...' });
       
       // 提交作业
       await submissionModule.submitHomework({
@@ -311,6 +404,8 @@ Page({
         images: imageUrls,
         text: this.data.submissionText.trim()
       });
+      
+      wx.hideLoading();
       wx.showToast({
         title: '提交成功',
         icon: 'success'
@@ -327,13 +422,38 @@ Page({
       this.loadSubmissions();
     } catch (error) {
       console.error('提交作业失败:', error);
-      wx.showToast({
-        title: error.message || '提交失败',
-        icon: 'none'
+      
+      // 隐藏进度
+      this.setData({ showSimpleProgress: false });
+      wx.hideLoading();
+      
+      // 显示具体错误信息
+      let errorMessage = '提交失败';
+      if (error.message) {
+        if (error.message.includes('网络')) {
+          errorMessage = '网络连接失败，请检查网络后重试';
+        } else if (error.message.includes('上传')) {
+          errorMessage = '图片上传失败，请重试';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      wx.showModal({
+        title: '提交失败',
+        content: errorMessage,
+        showCancel: true,
+        confirmText: '重试',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            // 用户选择重试
+            setTimeout(() => this.doSubmit(), 500);
+          }
+        }
       });
     } finally {
       this.setData({ isSubmitting: false });
-      wx.hideLoading();
     }
   },
 
@@ -346,6 +466,16 @@ Page({
         icon: 'none'
       });
       return;
+    }
+    
+    const resetMessage = this.data.hasReviewReset ? 
+      '\n(因"待复盘"评价，您已重新获得3次提交机会)' : '';
+    
+    if (resetMessage) {
+      wx.showToast({
+        title: '提交次数已重置',
+        icon: 'success'
+      });
     }
     
     this.setData({
@@ -435,5 +565,92 @@ Page({
     return {
       title: this.data.task.title || '快来完成作业'
     };
+  },
+
+  // 上传进度相关事件处理
+  
+  // 关闭上传进度面板
+  onUploadProgressClose() {
+    this.setData({ 
+      showUploadProgress: false,
+      showSimpleProgress: false 
+    });
+  },
+
+  // 上传进度更新
+  onUploadProgressUpdate(e) {
+    const { progress, completedCount, totalCount } = e.detail;
+    this.setData({
+      uploadProgressData: {
+        completed: completedCount,
+        total: totalCount,
+        progress: progress
+      }
+    });
+    
+    // 如果全部上传完成，显示简化进度条
+    if (progress === 100) {
+      this.setData({ showSimpleProgress: true });
+      
+      // 3秒后自动隐藏
+      setTimeout(() => {
+        this.setData({ showSimpleProgress: false });
+      }, 3000);
+    }
+  },
+
+  // 单个文件上传成功
+  onUploadSuccess(e) {
+    const { id, url, uploadTime } = e.detail;
+    console.log('文件上传成功:', { id, url, uploadTime });
+    
+    // 这里可以处理上传成功的逻辑，比如更新UI等
+  },
+
+  // 单个文件上传失败
+  onUploadError(e) {
+    const { id, error } = e.detail;
+    console.error('文件上传失败:', { id, error });
+    
+    // 显示友好的错误提示
+    wx.showToast({
+      title: '部分图片上传失败',
+      icon: 'none',
+      duration: 2000
+    });
+  },
+
+  // 上传被取消
+  onUploadCanceled(e) {
+    const { id } = e.detail;
+    console.log('文件上传被取消:', id);
+  },
+
+  // 显示详细上传进度
+  showDetailedProgress() {
+    this.setData({ 
+      showUploadProgress: true,
+      showSimpleProgress: false 
+    });
+  },
+
+  // 学生批改历史相关方法
+  
+  // 显示我的批改历史
+  showMyGradingHistory() {
+    if (!this.data.taskId) {
+      wx.showToast({
+        title: '任务信息加载中',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    this.setData({ showMyGradingHistory: true });
+  },
+
+  // 关闭我的批改历史
+  onMyGradingHistoryClose() {
+    this.setData({ showMyGradingHistory: false });
   }
 });

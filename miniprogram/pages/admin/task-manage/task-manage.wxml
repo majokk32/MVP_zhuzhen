@@ -1,2 +1,156 @@
-<!--pages/admin/task-manage/task-manage.wxml-->
-<text>pages/admin/task-manage/task-manage.wxml</text>
+<!-- 课程作业管理页 -->
+<view class="container">
+  <!-- 搜索和筛选栏 -->
+  <view class="search-filter-bar">
+    <view class="search-wrapper">
+      <input 
+        class="search-input" 
+        placeholder="搜索课程或任务名称..."
+        value="{{searchKeyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+      />
+      <text class="search-icon">🔍</text>
+    </view>
+    
+    <view class="filter-tabs">
+      <scroll-view class="filter-scroll" scroll-x>
+        <view class="filter-list">
+          <view 
+            class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}"
+            data-filter="all"
+            bindtap="onFilterChange"
+          >
+            全部
+          </view>
+          <view 
+            class="filter-tab {{currentFilter === 'ongoing' ? 'active' : ''}}"
+            data-filter="ongoing"
+            bindtap="onFilterChange"
+          >
+            进行中
+          </view>
+          <view 
+            class="filter-tab {{currentFilter === 'ended' ? 'active' : ''}}"
+            data-filter="ended"
+            bindtap="onFilterChange"
+          >
+            已结束
+          </view>
+          <view 
+            class="filter-tab {{currentFilter === 'draft' ? 'active' : ''}}"
+            data-filter="draft"
+            bindtap="onFilterChange"
+          >
+            草稿
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 任务列表 -->
+  <scroll-view 
+    class="task-list"
+    scroll-y
+    enable-back-to-top
+    refresher-enabled
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+    bindscrolltolower="onLoadMore"
+  >
+    <!-- 任务卡片 -->
+    <view wx:for="{{taskList}}" wx:key="id" class="task-manage-card" bindtap="onTaskClick" data-task="{{item}}">
+      <view class="task-header">
+        <view class="task-title">{{item.title}}</view>
+        <view class="task-status status-{{item.status}}">{{item.statusText}}</view>
+      </view>
+      
+      <view class="task-meta">
+        <view class="meta-item">
+          <text class="meta-label">创建时间：</text>
+          <text class="meta-value">{{item.created_at}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">直播时间：</text>
+          <text class="meta-value">{{item.course_date || '未设置'}}</text>
+        </view>
+      </view>
+
+      <!-- 进度统计 -->
+      <view class="task-progress">
+        <view class="progress-item">
+          <view class="progress-number">{{item.stats.submitted || 0}}</view>
+          <view class="progress-label">已提交</view>
+        </view>
+        <view class="progress-divider">/</view>
+        <view class="progress-item">
+          <view class="progress-number">{{item.stats.reviewed || 0}}</view>
+          <view class="progress-label">已批改</view>
+        </view>
+        <view class="progress-divider">/</view>
+        <view class="progress-item">
+          <view class="progress-number">{{item.stats.total_students || 0}}</view>
+          <view class="progress-label">总学生</view>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="task-actions" catchtap="onActionTap">
+        <view class="action-btn" data-action="edit" data-task="{{item}}" bindtap="onActionClick">
+          <text class="action-icon">✏️</text>
+          <text class="action-text">编辑</text>
+        </view>
+        <view class="action-btn" data-action="view" data-task="{{item}}" bindtap="onActionClick">
+          <text class="action-icon">👁️</text>
+          <text class="action-text">查看</text>
+        </view>
+        <view class="action-btn" data-action="share" data-task="{{item}}" bindtap="onActionClick">
+          <text class="action-icon">📤</text>
+          <text class="action-text">分享</text>
+        </view>
+        <view class="action-btn danger" data-action="delete" data-task="{{item}}" bindtap="onActionClick" wx:if="{{item.status === 'draft'}}">
+          <text class="action-icon">🗑️</text>
+          <text class="action-text">删除</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view wx:if="{{loadingMore}}" class="loading-more">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view wx:if="{{!hasMore && taskList.length > 0}}" class="no-more">
+      <text class="no-more-text">- 没有更多了 -</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:if="{{isEmpty && !loading}}" class="empty-state">
+      <image class="empty-image" src="/assets/images/empty-tasks.png" mode="aspectFit"></image>
+      <text class="empty-text">{{getEmptyText()}}</text>
+      <text class="empty-hint">{{getEmptyHint()}}</text>
+      <button class="empty-btn" bindtap="onCreateTask" wx:if="{{currentFilter === 'all'}}">
+        立即创建任务
+      </button>
+    </view>
+
+    <!-- 加载中 -->
+    <view wx:if="{{loading && taskList.length === 0}}" class="loading-state">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+  </scroll-view>
+
+  <!-- 创建任务浮动按钮 -->
+  <view class="fab-container">
+    <view class="fab-btn" bindtap="onCreateTask">
+      <text class="fab-icon">+</text>
+    </view>
+  </view>
+</view>
+
+<!-- 底部安全区域 -->
+<view class="safe-bottom"></view>

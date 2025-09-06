@@ -17,6 +17,12 @@
 
   <!-- 批改列表或批改详情 -->
   <view wx:if="{{!currentSubmission}}" class="submission-list">
+    
+    <!-- 骨架屏加载状态 -->
+    <skeleton show="{{loading}}" type="student-list" count="{{5}}"></skeleton>
+    
+    <!-- 实际内容 -->
+    <view wx:if="{{!loading}}">
     <!-- 筛选栏 -->
     <view class="filter-bar">
       <view class="filter-tabs">
@@ -54,7 +60,7 @@
         data-index="{{index}}"
       >
         <view class="student-info">
-          <image class="student-avatar" src="{{item.user.avatar}}" mode="aspectFill" wx:if="{{item.user.avatar}}"/>
+          <image class="student-avatar" src="{{item.user.avatar}}" mode="aspectFill" wx:if="{{item.user.avatar}}" lazy-load="true" binderror="onImageError"/>
           <view class="student-avatar avatar-placeholder" wx:else>
             <text>👤</text>
           </view>
@@ -78,14 +84,21 @@
       <text class="empty-icon">📦</text>
       <text>暂无提交的作业</text>
     </view>
+    
+    </view> <!-- 结束实际内容 -->
   </view>
 
   <!-- 批改详情视图 -->
   <view wx:else class="grading-detail">
+    <!-- 批改详情加载状态 -->
+    <skeleton show="{{loadingSubmission}}" type="grading-detail" />
+    
+    <!-- 批改内容 -->
+    <view wx:if="{{!loadingSubmission}}">
     <!-- 学生信息栏 -->
     <view class="student-bar">
       <view class="student-info">
-        <image class="student-avatar" src="{{currentSubmission.user.avatar}}" mode="aspectFill" wx:if="{{currentSubmission.user.avatar}}"/>
+        <image class="student-avatar" src="{{currentSubmission.user.avatar}}" mode="aspectFill" wx:if="{{currentSubmission.user.avatar}}" lazy-load="true" binderror="onImageError"/>
         <view class="student-avatar avatar-placeholder" wx:else>
           <text>👤</text>
         </view>
@@ -95,15 +108,19 @@
         </view>
       </view>
       
-      <view class="navigation-btns">
-        <button class="nav-btn" bindtap="previousSubmission" disabled="{{currentIndex === 0}}">
-          上一份
-        </button>
-        <text class="nav-indicator">{{currentIndex + 1}}/{{submissions.length}}</text>
-        <button class="nav-btn" bindtap="nextSubmission" disabled="{{currentIndex === submissions.length - 1}}">
-          下一份
-        </button>
-      </view>
+      <!-- 使用新的导航组件 -->
+      <grading-navigator
+        currentIndex="{{currentIndex}}"
+        totalCount="{{submissions.length}}"
+        submissionList="{{submissions}}"
+        currentStudent="{{currentSubmission.user}}"
+        taskInfo="{{task}}"
+        gradingStats="{{gradingStats}}"
+        showSmartNav="{{true}}"
+        showEfficiency="{{true}}"
+        bind:navigate="onNavigatorNavigate"
+        bind:action="onNavigatorAction"
+      />
     </view>
 
     <!-- 作业内容 -->
@@ -125,6 +142,9 @@
               class="content-image"
               bindtap="previewImage"
               data-url="{{item}}"
+              lazy-load="true"
+              show-menu-by-longpress="false"
+              binderror="onImageError"
             />
           </view>
         </scroll-view>
@@ -191,22 +211,24 @@
         </view>
       </view>
 
-      <!-- 评语输入 -->
-      <view class="feedback-input-area">
+      <!-- 混合输入评语区域 -->
+      <view class="feedback-input-section">
         <view class="input-label">批改评语</view>
-        <textarea 
-          class="feedback-input"
+        <mixed-input 
           placeholder="请输入批改评语，给学生一些建议和鼓励..."
-          maxlength="500"
-          bindinput="onFeedbackInput"
+          maxLength="500"
           value="{{gradeData.feedback}}"
+          bind:input="onMixedInput"
+          bind:confirm="onFeedbackConfirm"
+          bind:transcriptionComplete="onTranscriptionComplete"
+          showQuickActions="{{true}}"
+          showClearBtn="{{true}}"
         />
-        <view class="text-counter">{{gradeData.feedback.length}}/500</view>
       </view>
 
-      <!-- 快捷评语 -->
-      <view class="quick-feedback">
-        <view class="quick-title">快捷评语</view>
+      <!-- 快捷评语（保留作为补充） -->
+      <view class="quick-feedback" wx:if="{{quickFeedbacks.length > 0}}">
+        <view class="quick-title">常用评语模板</view>
         <scroll-view scroll-x class="quick-list">
           <view class="quick-items">
             <view 
@@ -234,12 +256,17 @@
         </button>
       </view>
     </view>
+    </view> <!-- 结束批改内容 -->
   </view>
 
   <!-- 批量操作浮动按钮 -->
   <view wx:if="{{!currentSubmission && isTeacher}}" class="float-actions">
-    <view class="float-btn" bindtap="batchGrade">
+    <view class="float-btn" bindtap="showGradingAnalytics">
       <text class="icon">📊</text>
+      <text>数据统计</text>
+    </view>
+    <view class="float-btn" bindtap="batchGrade">
+      <text class="icon">⚡</text>
       <text>批量批改</text>
     </view>
     <view class="float-btn" bindtap="exportGrades">
@@ -248,6 +275,28 @@
     </view>
   </view>
 </view>
+
+<!-- 批改历史组件 -->
+<grading-history 
+  show="{{showGradingHistory}}"
+  studentName="{{currentSubmission.user.nickname}}"
+  taskId="{{taskId}}"
+  studentId="{{currentSubmission.user.id}}"
+  allowExport="{{isTeacher}}"
+  bind:close="onGradingHistoryClose"
+/>
+
+<!-- 数据统计面板 -->
+<grading-analytics
+  show="{{showAnalytics}}"
+  taskId="{{taskId}}"
+  taskTitle="{{task.title}}"
+  submissions="{{submissions}}"
+  bind:close="onAnalyticsClose"
+  bind:showReviewStudents="onShowReviewStudents"
+  bind:applySuggestion="onApplySuggestion"
+  bind:exportReport="onExportReport"
+/>
 
 <!-- 底部安全区域 -->
 <view class="safe-bottom"></view>

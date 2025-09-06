@@ -1,4 +1,6 @@
 // components/task-card/task-card.js
+const authModule = require('../../modules/auth/auth');
+
 Component({
   /**
    * 组件的属性列表
@@ -21,7 +23,14 @@ Component({
    */
   data: {
     // 动画数据
-    animation: null
+    animation: null,
+    // PRD状态显示
+    rightStatus: "",
+    leftStatus: "",
+    cardStyle: "normal",
+    // 权限状态
+    userPermission: null,
+    showPermissionBadge: false
   },
 
   /**
@@ -29,6 +38,10 @@ Component({
    */
   lifetimes: {
     attached() {
+      // 计算PRD状态显示
+      this.calculateDisplayStatus()
+      // 检查用户权限
+      this.checkUserPermission()
       // 创建渐入动画
       const animation = wx.createAnimation({
         duration: 300,
@@ -55,10 +68,38 @@ Component({
       // 触发点击事件
       this.triggerEvent('click', { task })
       
+      // 检查任务访问权限
+      if (!authModule.checkTaskAccess({
+        onUpgrade: this.handleUpgradeContact
+      })) {
+        return; // 权限不足，不跳转
+      }
+      
       // 跳转到任务详情页
       wx.navigateTo({
         url: `/pages/task-detail/task-detail?id=${task.id}`
       })
+    },
+
+    // 处理升级联系客服
+    handleUpgradeContact() {
+      wx.showModal({
+        title: '联系客服',
+        content: '请通过微信群联系客服或拨打客服电话升级为付费学员',
+        confirmText: '我知道了',
+        showCancel: false
+      });
+    },
+
+    // 检查用户权限状态
+    checkUserPermission() {
+      const userPermission = authModule.getUserPermissionStatus();
+      const showPermissionBadge = userPermission.type === 'trial';
+      
+      this.setData({
+        userPermission,
+        showPermissionBadge
+      });
     },
 
     // 长按卡片（可选功能）
@@ -95,3 +136,64 @@ Component({
     }
   }
 })
+    // 计算PRD状态显示
+    calculateDisplayStatus() {
+      const task = this.properties.task
+      if (!task) return
+
+      // 优先使用后端返回的状态显示字段
+      if (task.display_right_status && task.display_left_status && task.display_card_style) {
+        this.setData({
+          rightStatus: task.display_right_status,
+          leftStatus: task.display_left_status,
+          cardStyle: task.display_card_style
+        })
+        return
+      }
+
+      // 如果后端没有返回状态字段，则使用前端计算逻辑作为兜底
+      let rightStatus = ''
+      let leftStatus = ''
+      let cardStyle = 'normal'
+
+      // 计算右上角状态（PRD要求：待提交/待批改/评价档位）
+      if (!task.submission_status || task.submission_status === '未提交') {
+        rightStatus = '待提交'
+      } else if (task.submission_status === 'submitted') {
+        rightStatus = '待批改'
+      } else if (task.submission_grade) {
+        rightStatus = task.submission_grade // 待复盘/优秀/极佳
+      } else {
+        rightStatus = '已批改'
+      }
+
+      // 计算左下角状态（PRD要求：正在进行中/课后加餐/已结束/已完成）
+      const now = new Date()
+      const deadline = task.deadline ? new Date(task.deadline) : null
+
+      if (task.task_type === 'extra') {
+        leftStatus = '课后加餐'
+      } else if (task.status === 'ongoing') {
+        if (deadline && now > deadline) {
+          leftStatus = '已结束'
+        } else {
+          leftStatus = '正在进行中'
+        }
+      } else if (task.status === 'ended') {
+        if (task.submission_status === 'graded' && task.submission_grade) {
+          leftStatus = '已完成'
+          cardStyle = 'completed'
+        } else {
+          leftStatus = '已结束'
+          cardStyle = 'ended'
+        }
+      } else {
+        leftStatus = '正在进行中'
+      }
+
+      this.setData({
+        rightStatus,
+        leftStatus,
+        cardStyle
+      })
+    }

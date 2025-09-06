@@ -4,45 +4,49 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   flex-direction: column;
-  padding: 0 40rpx;
+  padding: 60rpx 40rpx;
 }
 
-/* 头部 */
-.login-header {
+/* 应用头部Logo区域 */
+.app-header {
   padding-top: 120rpx;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 60rpx;
+}
+
+.logo-container {
   text-align: center;
-  margin-bottom: 80rpx;
 }
 
-.logo {
-  width: 160rpx;
-  height: 160rpx;
-  margin-bottom: 30rpx;
-  background: white;
-  border-radius: 30rpx;
-  padding: 20rpx;
+.logo-icon {
+  font-size: 120rpx;
+  margin-bottom: 20rpx;
+  display: block;
 }
 
-.logo-text {
-  font-size: 100rpx;
-  margin-bottom: 30rpx;
-}
-
-.avatar-icon {
-  font-size: 60rpx;
-  line-height: 120rpx;
-}
-
-.title {
+.app-name {
   font-size: 48rpx;
   font-weight: bold;
   color: white;
-  margin-bottom: 20rpx;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
 }
 
-.subtitle {
+/* 授权说明区域 */
+.auth-description {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 60rpx;
+  backdrop-filter: blur(10rpx);
+}
+
+.auth-description text {
   font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.5;
+  text-align: center;
+  display: block;
 }
 
 /* 登录内容 */
@@ -54,54 +58,47 @@
   margin: 0 -40rpx;
 }
 
-/* 快速登录 */
-.quick-login-section {
-  margin-bottom: 60rpx;
+/* 授权按钮区域 */
+.auth-buttons {
+  margin-bottom: 80rpx;
 }
 
-.btn-primary {
+.auth-btn {
   width: 100%;
   height: 96rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-size: 32rpx;
-  font-weight: 500;
   border-radius: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  margin-bottom: 20rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
 }
 
-.btn-primary[disabled] {
+.auth-btn.primary {
+  background: white;
+  color: #667eea;
+}
+
+.auth-btn.secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.auth-btn[disabled] {
   opacity: 0.6;
 }
 
-.tips {
-  text-align: center;
-  font-size: 24rpx;
-  color: #999;
-}
-
-/* 分割线 */
-.divider-wrapper {
+.btn-content {
   display: flex;
   align-items: center;
-  margin: 60rpx 0;
+  justify-content: center;
 }
 
-.divider-line {
-  flex: 1;
-  height: 1rpx;
-  background: #e5e5e5;
-}
-
-.divider-text {
-  padding: 0 30rpx;
-  font-size: 26rpx;
-  color: #999;
-}
 
 /* 资料完善 */
 .profile-section {
@@ -192,30 +189,37 @@
   opacity: 0.6;
 }
 
-/* 底部 */
-.login-footer {
-  padding: 40rpx 0;
+/* 服务条款 */
+.service-terms {
+  text-align: center;
+  margin-bottom: 40rpx;
   padding-bottom: constant(safe-area-inset-bottom);
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-.agreement {
-  text-align: center;
+.service-terms text {
   font-size: 24rpx;
-  color: white;
-  opacity: 0.8;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.agreement .link {
+.service-terms .link {
   color: white;
   text-decoration: underline;
-  margin: 0 8rpx;
+  margin: 0 4rpx;
+  font-weight: 500;
+}
+
+/* 开发环境控制 */
+.dev-controls {
+  text-align: center;
+  margin-top: 20rpx;
 }
 
 .skip-btn {
-  text-align: center;
-  margin-top: 30rpx;
-  font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.6);
-  text-decoration: underline;
+  background: none;
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 24rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
 }

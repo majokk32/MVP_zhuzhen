@@ -1,0 +1,468 @@
+/* 批改历史时间线组件样式 */
+
+/* 背景遮罩 */
+.history-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+/* 主容器 */
+.grading-history-container {
+  position: fixed;
+  top: 10vh;
+  left: 5vw;
+  right: 5vw;
+  bottom: 10vh;
+  background: white;
+  border-radius: 24rpx;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.15);
+}
+
+/* 头部区域 */
+.history-header {
+  padding: 40rpx 30rpx 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-title {
+  flex: 1;
+}
+
+.title-text {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.subtitle-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.close-btn {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 30rpx;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.close-btn:active {
+  background: #e0e0e0;
+}
+
+.close-icon {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 统计卡片 */
+.stats-card {
+  margin: 30rpx;
+  padding: 30rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.stat-number {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: white;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.stat-divider {
+  width: 1rpx;
+  height: 80rpx;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 时间线容器 */
+.timeline-container {
+  flex: 1;
+  padding: 20rpx 30rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200rpx;
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* 时间线列表 */
+.timeline-list {
+  position: relative;
+}
+
+/* 时间线项目 */
+.timeline-item {
+  position: relative;
+  display: flex;
+  margin-bottom: 50rpx;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 20rpx;
+}
+
+/* 时间线点 */
+.timeline-dot {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  flex-shrink: 0;
+  margin-top: 10rpx;
+}
+
+.timeline-dot.submission {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.3);
+}
+
+.timeline-dot.grading {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  box-shadow: 0 4rpx 12rpx rgba(33, 150, 243, 0.3);
+}
+
+.timeline-dot.system {
+  background: linear-gradient(135deg, #FF9800, #F57C00);
+  box-shadow: 0 4rpx 12rpx rgba(255, 152, 0, 0.3);
+}
+
+.dot-icon {
+  font-size: 24rpx;
+  color: white;
+}
+
+/* 时间线连接线 */
+.timeline-connector {
+  position: absolute;
+  left: 30rpx;
+  top: 70rpx;
+  width: 2rpx;
+  height: calc(100% - 50rpx);
+  background: linear-gradient(to bottom, #e0e0e0, transparent);
+  z-index: 1;
+}
+
+/* 时间线内容 */
+.timeline-content {
+  flex: 1;
+  margin-left: 25rpx;
+}
+
+.timeline-time {
+  font-size: 22rpx;
+  color: #999;
+  margin-bottom: 15rpx;
+}
+
+/* 记录卡片通用样式 */
+.submission-record,
+.grading-record,
+.system-record {
+  background: white;
+  border: 1rpx solid #f0f0f0;
+  border-radius: 16rpx;
+  padding: 25rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.record-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.record-title {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #333;
+}
+
+/* 状态标签 */
+.record-status {
+  padding: 6rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.record-status.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.record-status.graded {
+  background: #d4edda;
+  color: #155724;
+}
+
+/* 评分标签 */
+.grade-badge {
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.grade-badge.excellent {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+}
+
+.grade-badge.good {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+  color: white;
+}
+
+.grade-badge.review {
+  background: linear-gradient(135deg, #FF9800, #F57C00);
+  color: white;
+}
+
+/* 内容预览 */
+.content-preview {
+  margin-top: 15rpx;
+}
+
+.preview-images {
+  display: flex;
+  gap: 10rpx;
+  margin-bottom: 15rpx;
+  position: relative;
+}
+
+.preview-thumb {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 8rpx;
+}
+
+.more-images {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 80rpx;
+  height: 80rpx;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+}
+
+.preview-text {
+  background: #f8f9fa;
+  border-radius: 8rpx;
+  padding: 15rpx;
+  border-left: 4rpx solid #667eea;
+}
+
+.preview-text text {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 批改详情 */
+.grading-details {
+  margin-top: 15rpx;
+}
+
+.score-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.score-label {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.score-value {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #2196F3;
+  margin: 0 8rpx;
+}
+
+.score-total {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.feedback-content {
+  margin-bottom: 15rpx;
+}
+
+.feedback-label {
+  font-size: 26rpx;
+  color: #666;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.feedback-text {
+  background: #f8f9fa;
+  border-radius: 8rpx;
+  padding: 15rpx;
+  border-left: 4rpx solid #4CAF50;
+  font-size: 26rpx;
+  color: #333;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.grading-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 15rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.grader-name,
+.grading-duration {
+  font-size: 22rpx;
+  color: #999;
+}
+
+/* 系统记录 */
+.system-tag {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4rpx 10rpx;
+  border-radius: 10rpx;
+  font-size: 20rpx;
+}
+
+.system-description {
+  margin-top: 10rpx;
+}
+
+.system-description text {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300rpx;
+  gap: 20rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  opacity: 0.3;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* 底部操作区 */
+.action-footer {
+  padding: 30rpx;
+  border-top: 1rpx solid #f0f0f0;
+  display: flex;
+  gap: 20rpx;
+}
+
+.action-btn {
+  flex: 1;
+  height: 80rpx;
+  border-radius: 40rpx;
+  font-size: 30rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn.secondary {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.action-btn::after {
+  border: none;
+}
+
+/* 响应式适配 */
+@media screen and (max-width: 375px) {
+  .grading-history-container {
+    left: 20rpx;
+    right: 20rpx;
+  }
+  
+  .timeline-content {
+    margin-left: 20rpx;
+  }
+  
+  .record-title {
+    font-size: 28rpx;
+  }
+}

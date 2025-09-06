@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "批改工作台",
+  "navigationBarBackgroundColor": "#667eea",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark"
+}

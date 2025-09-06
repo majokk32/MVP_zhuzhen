@@ -1,2 +1,118 @@
-<!--pages/admin/index/index.wxml-->
-<text>pages/admin/index/index.wxml</text>
+<!-- 教研功能主页 -->
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <view class="header-title">教研中心</view>
+    <view class="header-subtitle">管理课程、批改作业、跟踪学生进度</view>
+  </view>
+
+  <!-- 统计数据概览 -->
+  <view class="stats-overview">
+    <!-- 骨架屏 -->
+    <skeleton show="{{loading}}" type="stats" count="{{3}}"></skeleton>
+    
+    <!-- 真实数据 -->
+    <block wx:if="{{!loading}}">
+      <view class="stats-card">
+        <view class="stat-number">{{stats.totalTasks || 0}}</view>
+        <view class="stat-label">总任务数</view>
+      </view>
+      <view class="stats-card">
+        <view class="stat-number">{{stats.pendingGrade || 0}}</view>
+        <view class="stat-label">待批改</view>
+      </view>
+      <view class="stats-card">
+        <view class="stat-number">{{stats.totalStudents || 0}}</view>
+        <view class="stat-label">学生总数</view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 功能入口列表 -->
+  <view class="function-list">
+    <!-- 课程作业管理 -->
+    <view class="function-card" bindtap="goToTaskManage">
+      <view class="card-icon">
+        <text class="icon">📚</text>
+      </view>
+      <view class="card-content">
+        <view class="card-title">课程作业管理</view>
+        <view class="card-desc">创建和管理所有课程任务，查看提交情况</view>
+        <view class="card-stats" wx:if="{{stats.recentTasks}}">
+          最近创建：{{stats.recentTasks}}个任务
+        </view>
+      </view>
+      <view class="card-arrow">
+        <text class="arrow-icon">›</text>
+      </view>
+    </view>
+
+    <!-- 申论作业批改 -->
+    <view class="function-card" bindtap="goToGrading">
+      <view class="card-icon">
+        <text class="icon">✍️</text>
+      </view>
+      <view class="card-content">
+        <view class="card-title">申论作业批改</view>
+        <view class="card-desc">批改学生提交的作业，给出评价和建议</view>
+        <view class="card-stats" wx:if="{{stats.pendingGrade > 0}}">
+          <text class="urgent-tag">待批改：{{stats.pendingGrade}}份</text>
+        </view>
+        <view class="card-stats" wx:else>
+          暂无待批改作业
+        </view>
+      </view>
+      <view class="card-arrow">
+        <text class="arrow-icon">›</text>
+      </view>
+    </view>
+
+    <!-- 学生详情查询 -->
+    <view class="function-card" bindtap="goToStudentList">
+      <view class="card-icon">
+        <text class="icon">👥</text>
+      </view>
+      <view class="card-content">
+        <view class="card-title">学生详情查询</view>
+        <view class="card-desc">查看学生花名册和个人学习档案</view>
+        <view class="card-stats" wx:if="{{stats.activeStudents}}">
+          活跃学生：{{stats.activeStudents}}人
+        </view>
+      </view>
+      <view class="card-arrow">
+        <text class="arrow-icon">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快捷操作 -->
+  <view class="quick-actions">
+    <view class="quick-action-btn" bindtap="createTask">
+      <text class="quick-icon">+</text>
+      <text class="quick-text">快速创建任务</text>
+    </view>
+    <view class="quick-action-btn" bindtap="viewAllGrading">
+      <text class="quick-icon">📊</text>
+      <text class="quick-text">批改工作台</text>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-state">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 空状态（首次使用） -->
+  <view wx:if="{{isEmpty && !loading}}" class="empty-state">
+    <image class="empty-image" src="/assets/images/empty-admin.png" mode="aspectFit"></image>
+    <text class="empty-title">欢迎使用教研中心</text>
+    <text class="empty-desc">您可以在这里管理课程、批改作业、查看学生进度</text>
+    <button class="empty-btn" bindtap="createTask">
+      创建第一个任务
+    </button>
+  </view>
+</view>
+
+<!-- 底部安全区域 -->
+<view class="safe-bottom"></view>

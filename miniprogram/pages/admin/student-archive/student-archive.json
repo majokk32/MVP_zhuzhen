@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "个人学习档案",
+  "navigationBarBackgroundColor": "#667eea",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "usingComponents": {
+    "empty-state": "/components/empty-state/empty-state"
+  }
+}

@@ -60,44 +60,150 @@ class SubmissionModule {
     }
   }
 
-  // 上传图片
-  uploadImage(filePath) {
+  // 单张图片上传（使用增强的上传系统）
+  uploadImage(filePath, options = {}) {
     return new Promise((resolve, reject) => {
-      const token = wx.getStorageSync('token');
+      const app = getApp();
       
-      wx.uploadFile({
-        url: `${this.baseUrl}/api/v1/submissions/upload-image`,
+      app.uploadFile({
+        url: '/api/v1/submissions/upload-image',
         filePath: filePath,
         name: 'file',
-        header: {
-          'Authorization': `Bearer ${token}`
-        },
-        success: (res) => {
-          try {
-            const data = JSON.parse(res.data);
-            if (data.code === 200) {
-              resolve(data.data.url);
-            } else {
-              reject(new Error(data.message || '上传失败'));
-            }
-          } catch (error) {
-            reject(new Error('解析响应失败'));
-          }
-        },
-        fail: (error) => {
-          reject(new Error('网络请求失败'));
-        }
-      });
+        showError: options.showError !== false,
+        onProgress: options.onProgress,
+        onComplete: options.onComplete,
+        onTaskCreated: options.onTaskCreated
+      }).then(result => {
+        resolve(result.url || result);
+      }).catch(reject);
     });
   }
 
-  // 批量上传图片
-  async uploadImages(imagePaths) {
-    const uploadPromises = imagePaths.map(path => this.uploadImage(path));
+  // 批量上传图片（使用上传进度组件）
+  async uploadImages(imagePaths, options = {}) {
+    return new Promise((resolve, reject) => {
+      const uploadResults = [];
+      let completedCount = 0;
+      let hasError = false;
+      
+      // 获取上传管理器
+      const uploadManager = getApp().globalData.uploadManager;
+      
+      if (!uploadManager) {
+        // 降级到原有方式
+        return this._legacyUploadImages(imagePaths).then(resolve).catch(reject);
+      }
+      
+      // 为每张图片创建上传任务
+      const uploadIds = imagePaths.map((path, index) => {
+        return uploadManager.addUpload({
+          url: '/api/v1/submissions/upload-image',
+          filePath: path,
+          name: `image_${index + 1}.jpg`,
+          type: 'image',
+          size: 1024 * 1024, // 估算1MB
+          onSuccess: (result) => {
+            uploadResults[index] = { success: true, url: result.url, index };
+            completedCount++;
+            this._checkUploadComplete();
+          },
+          onError: (error) => {
+            uploadResults[index] = { success: false, error: error.message, index };
+            completedCount++;
+            hasError = true;
+            this._checkUploadComplete();
+          }
+        });
+      });
+      
+      // 检查上传是否全部完成
+      const _checkUploadComplete = () => {
+        if (completedCount === imagePaths.length) {
+          const successResults = uploadResults.filter(r => r && r.success).map(r => r.url);
+          const failedResults = uploadResults.filter(r => r && !r.success);
+          
+          // 如果全部失败，抛出错误
+          if (successResults.length === 0) {
+            reject(new Error('所有图片上传失败，请检查网络连接'));
+            return;
+          }
+          
+          // 如果有部分失败，显示警告但继续
+          if (failedResults.length > 0) {
+            const failedIndexes = failedResults.map(r => r.index + 1).join('、');
+            
+            if (options.showPartialError !== false) {
+              wx.showModal({
+                title: '部分图片上传失败',
+                content: `第${failedIndexes}张图片上传失败，是否继续提交其他图片？`,
+                confirmText: '继续',
+                cancelText: '取消',
+                success: (res) => {
+                  if (res.confirm) {
+                    resolve(successResults);
+                  } else {
+                    reject(new Error('用户取消提交'));
+                  }
+                }
+              });
+            } else {
+              resolve(successResults);
+            }
+          } else {
+            resolve(successResults);
+          }
+        }
+      };
+      
+      this._checkUploadComplete = _checkUploadComplete;
+      
+      // 显示上传进度（如果启用）
+      if (options.showProgress !== false) {
+        this.triggerEvent?.('showUploadProgress');
+      }
+    });
+  }
+
+  // 降级上传方式（原有逻辑）
+  async _legacyUploadImages(imagePaths) {
+    const uploadPromises = imagePaths.map(async (path, index) => {
+      try {
+        const app = getApp();
+        const result = await app.uploadFile({
+          url: '/api/v1/submissions/upload-image',
+          filePath: path,
+          name: 'file'
+        });
+        return { success: true, url: result.url || result, index, error: null };
+      } catch (error) {
+        console.error(`图片${index + 1}上传失败:`, error);
+        return { success: false, url: null, index, error: error.message };
+      }
+    });
     
     try {
       const results = await Promise.all(uploadPromises);
-      return results;
+      
+      // 分离成功和失败的结果
+      const successResults = results.filter(r => r.success).map(r => r.url);
+      const failedResults = results.filter(r => !r.success);
+      
+      // 如果全部失败，抛出错误
+      if (successResults.length === 0) {
+        throw new Error('所有图片上传失败，请检查网络连接');
+      }
+      
+      // 如果有部分失败，显示警告但继续
+      if (failedResults.length > 0) {
+        const failedIndexes = failedResults.map(r => r.index + 1).join('、');
+        wx.showToast({
+          title: `第${failedIndexes}张图片上传失败`,
+          icon: 'none',
+          duration: 3000
+        });
+      }
+      
+      return successResults;
     } catch (error) {
       console.error('批量上传图片失败:', error);
       throw error;
@@ -199,16 +305,50 @@ class SubmissionModule {
     return stats.canSubmit;
   }
 
-  // 压缩图片
-  compressImage(filePath, quality = 80) {
+  // 压缩图片（智能压缩）
+  compressImage(filePath, quality = null) {
     return new Promise((resolve, reject) => {
-      wx.compressImage({
-        src: filePath,
-        quality: quality,
-        success: (res) => {
-          resolve(res.tempFilePath);
+      // 获取文件信息来决定压缩策略
+      wx.getFileInfo({
+        filePath: filePath,
+        success: (fileInfo) => {
+          // 根据文件大小智能调整压缩质量
+          let targetQuality = quality;
+          if (!quality) {
+            const sizeInMB = fileInfo.size / (1024 * 1024);
+            if (sizeInMB > 10) {
+              targetQuality = 40; // 大文件低质量
+            } else if (sizeInMB > 5) {
+              targetQuality = 60; // 中等文件中等质量
+            } else if (sizeInMB > 2) {
+              targetQuality = 75; // 小文件较高质量
+            } else {
+              targetQuality = 85; // 很小的文件保持高质量
+            }
+          }
+          
+          wx.compressImage({
+            src: filePath,
+            quality: targetQuality,
+            success: (res) => {
+              console.log(`图片压缩: ${fileInfo.size} -> 质量${targetQuality}`);
+              resolve(res.tempFilePath);
+            },
+            fail: (error) => {
+              console.warn('图片压缩失败，使用原图:', error);
+              resolve(filePath); // 压缩失败时返回原图
+            }
+          });
         },
-        fail: reject
+        fail: (error) => {
+          console.warn('获取文件信息失败，使用默认压缩:', error);
+          wx.compressImage({
+            src: filePath,
+            quality: quality || 75,
+            success: (res) => resolve(res.tempFilePath),
+            fail: () => resolve(filePath) // 压缩失败返回原图
+          });
+        }
       });
     });
   }

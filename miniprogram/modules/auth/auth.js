@@ -29,6 +29,34 @@ class AuthModule {
   }
 
   /**
+   * 检查是否为付费用户
+   * @returns {boolean}
+   */
+  isPaidUser() {
+    return this.userInfo && (this.userInfo.permission_type === 'paid' || this.userInfo.userType === 'paid')
+  }
+
+  /**
+   * 检查是否为试用用户
+   * @returns {boolean}
+   */
+  isTrialUser() {
+    return this.userInfo && (this.userInfo.permission_type === 'trial' || this.userInfo.userType === 'trial')
+  }
+
+  /**
+   * 检查用户权限是否过期
+   * @returns {boolean}
+   */
+  isPermissionExpired() {
+    if (!this.userInfo || !this.userInfo.permission_expire) {
+      return false
+    }
+    const expireDate = new Date(this.userInfo.permission_expire)
+    return expireDate < new Date()
+  }
+
+  /**
    * 微信登录（静默登录，不需要用户授权）
    * @returns {Promise<{token: string, user: object}>}
    */
@@ -205,6 +233,85 @@ class AuthModule {
       return false
     }
     return true
+  }
+
+  /**
+   * 检查任务访问权限（试用用户无法访问任务详情）
+   * @param {object} options - {showModal: boolean, onUpgrade: function} 配置选项
+   * @returns {boolean}
+   */
+  checkTaskAccess(options = {}) {
+    // 教师用户有完全权限
+    if (this.isTeacher()) {
+      return true
+    }
+
+    // 检查是否为试用用户
+    if (this.isTrialUser()) {
+      if (options.showModal !== false) {
+        wx.showModal({
+          title: '试用用户无权限',
+          content: '试用用户只能浏览课程目录，无法查看任务详情。请联系客服升级为付费学员。',
+          confirmText: '联系客服',
+          cancelText: '返回',
+          success: (res) => {
+            if (res.confirm && options.onUpgrade) {
+              options.onUpgrade()
+            }
+          }
+        })
+      }
+      return false
+    }
+
+    // 检查权限是否过期
+    if (this.isPermissionExpired()) {
+      if (options.showModal !== false) {
+        wx.showModal({
+          title: '权限已过期',
+          content: '您的学习权限已过期，请联系客服续费。',
+          confirmText: '联系客服',
+          cancelText: '返回',
+          success: (res) => {
+            if (res.confirm && options.onUpgrade) {
+              options.onUpgrade()
+            }
+          }
+        })
+      }
+      return false
+    }
+
+    return true
+  }
+
+  /**
+   * 获取用户权限状态描述
+   * @returns {object} {type: string, status: string, expire: string}
+   */
+  getUserPermissionStatus() {
+    if (!this.userInfo) {
+      return { type: 'unknown', status: '未知', expire: null }
+    }
+
+    if (this.isTeacher()) {
+      return { type: 'teacher', status: '教师', expire: null }
+    }
+
+    if (this.isPaidUser()) {
+      return { 
+        type: 'paid', 
+        status: '付费学员', 
+        expire: this.userInfo.permission_expire,
+        isExpired: this.isPermissionExpired()
+      }
+    }
+
+    if (this.isTrialUser()) {
+      return { type: 'trial', status: '试用学员', expire: null }
+    }
+
+    return { type: 'unknown', status: '未知', expire: null }
   }
 }
 

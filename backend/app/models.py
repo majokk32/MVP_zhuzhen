@@ -115,3 +115,65 @@ class Submission(Base):
         # (We'll handle multiple submissions in application logic)
         {"mysql_engine": "InnoDB"}
     )
+
+# 增强数据模型 - 新增表
+from sqlalchemy import JSON, Boolean
+
+class NotificationStatus(str, enum.Enum):
+    PENDING = "pending"     # 待发送
+    SENT = "sent"          # 已发送
+    FAILED = "failed"      # 发送失败
+
+
+class Notification(Base):
+    """通知记录表"""
+    __tablename__ = "notifications"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    
+    # 通知类型和内容
+    notification_type = Column(String(50), nullable=False, index=True)
+    title = Column(String(100), nullable=False)
+    content = Column(Text, nullable=False)
+    
+    # 关联信息
+    related_task_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
+    related_submission_id = Column(Integer, ForeignKey("submissions.id"), nullable=True)
+    
+    # 发送状态
+    status = Column(SQLEnum(NotificationStatus), default=NotificationStatus.PENDING, nullable=False)
+    sent_at = Column(DateTime, nullable=True)
+    error_message = Column(Text, nullable=True)
+    retry_count = Column(Integer, default=0, nullable=False)
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    user = relationship("User")
+    task = relationship("Task")
+    submission = relationship("Submission")
+
+
+class ShareRecord(Base):
+    """分享记录表"""
+    __tablename__ = "share_records"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False, index=True)
+    shared_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # 分享信息
+    share_code = Column(String(50), nullable=False, unique=True, index=True)
+    share_channel = Column(String(20), default="wechat", nullable=False)
+    view_count = Column(Integer, default=0, nullable=False)
+    conversion_count = Column(Integer, default=0, nullable=False)
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    task = relationship("Task")
+    user = relationship("User")
+
+

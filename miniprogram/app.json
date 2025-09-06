@@ -7,8 +7,11 @@
     "pages/profile/profile",
     "pages/admin/index/index",
     "pages/admin/task-manage/task-manage",
+    "pages/admin/task-create/task-create",
     "pages/admin/grading/grading",
-    "pages/admin/students/students"
+    "pages/admin/students/students",
+    "pages/admin/student-archive/student-archive",
+    "pages/admin/task-detail/task-detail"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -17,6 +20,7 @@
     "navigationBarTextStyle": "white"
   },
   "tabBar": {
+    "custom": true,
     "color": "#666666",
     "selectedColor": "#667eea",
     "backgroundColor": "#ffffff",
@@ -29,6 +33,10 @@
       {
         "pagePath": "pages/profile/profile",
         "text": "我的"
+      },
+      {
+        "pagePath": "pages/admin/index/index",
+        "text": "教研"
       }
     ]
   },
