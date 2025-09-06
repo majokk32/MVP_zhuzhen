@@ -46,8 +46,8 @@ async def login(
             await db.commit()
             await db.refresh(user)
         
-        # Create access token
-        access_token = create_access_token(data={"sub": user.id})
+        # Create access token (sub must be string)
+        access_token = create_access_token(data={"sub": str(user.id)})
         
         return ResponseBase(
             data={
@@ -138,3 +138,83 @@ async def grant_teacher_role(
     await db.commit()
     
     return ResponseBase(msg="Teacher role granted successfully")
+
+
+@router.get("/stats", response_model=ResponseBase)
+async def get_user_stats(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get current user statistics
+    """
+    from sqlalchemy import func
+    from app.models import Task, Submission
+    
+    try:
+        # 获取用户提交统计
+        submission_stats = await db.execute(
+            select(
+                func.count(Submission.id).label('total_submissions'),
+                func.count(
+                    func.case(
+                        (Submission.status == 'graded', 1),
+                        else_=None
+                    )
+                ).label('graded_submissions')
+            ).where(Submission.student_id == current_user.id)
+        )
+        stats_result = submission_stats.fetchone()
+        
+        # 如果是老师，获取老师相关统计
+        if current_user.role.value == 'teacher':
+            # 获取创建的任务数
+            task_count = await db.execute(
+                select(func.count(Task.id))
+                .where(Task.created_by == current_user.id)
+            )
+            total_tasks = task_count.scalar()
+            
+            # 获取待批改数量
+            pending_count = await db.execute(
+                select(func.count(Submission.id))
+                .join(Task, Task.id == Submission.task_id)
+                .where(
+                    Task.created_by == current_user.id,
+                    Submission.status == 'submitted'
+                )
+            )
+            pending_grading = pending_count.scalar()
+            
+            return ResponseBase(
+                data={
+                    "user_role": "teacher",
+                    "total_tasks": total_tasks or 0,
+                    "total_submissions": stats_result.total_submissions or 0,
+                    "graded_submissions": stats_result.graded_submissions or 0,
+                    "pending_grading": pending_grading or 0
+                }
+            )
+        else:
+            # 学生统计
+            return ResponseBase(
+                data={
+                    "user_role": "student", 
+                    "total_submissions": stats_result.total_submissions or 0,
+                    "graded_submissions": stats_result.graded_submissions or 0,
+                    "completion_rate": round(
+                        (stats_result.graded_submissions or 0) / max(stats_result.total_submissions or 1, 1) * 100
+                    ) if stats_result.total_submissions else 0
+                }
+            )
+    
+    except Exception as e:
+        # 如果查询失败，返回默认值
+        return ResponseBase(
+            data={
+                "user_role": current_user.role.value,
+                "total_submissions": 0,
+                "graded_submissions": 0,
+                "completion_rate": 0
+            }
+        )

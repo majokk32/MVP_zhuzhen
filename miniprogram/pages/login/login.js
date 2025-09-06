@@ -95,6 +95,12 @@ Page({
       // 先执行登录
       if (!auth.isLogin()) {
         await auth.login()
+        
+        // 确保token已同步到app全局状态
+        const app = getApp()
+        app.globalData.token = auth.getToken()
+        app.globalData.userInfo = auth.getUserInfo()
+        app.globalData.isLogin = true
       }
       
       // 上传头像（如果选择了自定义头像）
@@ -102,6 +108,8 @@ Page({
       if (avatarUrl && avatarUrl !== '/assets/images/default-avatar.png') {
         // 如果是临时文件，需要上传到服务器
         if (avatarUrl.startsWith('http://tmp/') || avatarUrl.startsWith('wxfile://')) {
+          console.log('准备上传头像，当前token:', auth.getToken()?.substring(0, 20) + '...')
+          
           const uploadResult = await app.uploadFile({
             url: '/submissions/upload-image',
             filePath: avatarUrl,
