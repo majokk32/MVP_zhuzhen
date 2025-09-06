@@ -50,7 +50,7 @@
     "disableSWC": true
   },
   "compileType": "miniprogram",
-  "libVersion": "2.24.6",
+  "libVersion": "3.9.3",
   "appid": "wxe0256a399255e0d0",
   "projectname": "zhuzhen",
   "isGameTourist": false,
