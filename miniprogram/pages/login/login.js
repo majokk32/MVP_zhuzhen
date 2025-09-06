@@ -7,6 +7,7 @@ Page({
     loading: false,
     canUseGetUserProfile: false,  // 是否可以使用getUserProfile
     canUseNicknameInput: false,   // 是否可以使用头像昵称填写
+    showPhoneLogin: false,        // 是否显示手机号登录
     avatarUrl: '/assets/images/default-avatar.png',
     nickname: ''
   },
@@ -23,6 +24,13 @@ Page({
     if (wx.canIUse('input.type.nickname')) {
       this.setData({
         canUseNicknameInput: true
+      })
+    }
+
+    // 检查是否支持手机号授权（基础库 2.21.0）
+    if (wx.canIUse('button.open-type.getPhoneNumber')) {
+      this.setData({
+        showPhoneLogin: true
       })
     }
 
@@ -144,17 +152,115 @@ Page({
     }
   },
 
+  // 手机号授权登录
+  async handlePhoneLogin(e) {
+    if (this.data.loading) return
+    
+    // 检查用户是否同意授权
+    if (e.detail.errMsg !== 'getPhoneNumber:ok') {
+      wx.showToast({
+        title: '需要授权手机号才能登录',
+        icon: 'none'
+      })
+      return
+    }
+    
+    this.setData({ loading: true })
+    
+    try {
+      // 获取微信登录凭证
+      const loginRes = await wx.login()
+      if (!loginRes.code) {
+        throw new Error('获取登录凭证失败')
+      }
+      
+      // 调用后端接口，使用code和加密数据进行登录
+      const app = getApp()
+      const result = await new Promise((resolve, reject) => {
+        wx.request({
+          url: `${app.globalData.baseUrl}/users/phone-login`,
+          method: 'POST',
+          data: {
+            code: loginRes.code,
+            encryptedData: e.detail.encryptedData,
+            iv: e.detail.iv
+          },
+          header: {
+            'Content-Type': 'application/json'
+          },
+          success: (res) => {
+            if (res.statusCode === 200) {
+              resolve(res.data)
+            } else {
+              reject(new Error(`请求失败: ${res.statusCode}`))
+            }
+          },
+          fail: reject
+        })
+      })
+      
+      if (result.code === 0) {
+        // 保存登录状态
+        const { token, user } = result.data
+        wx.setStorageSync('token', token)
+        wx.setStorageSync('userInfo', user)
+        
+        // 更新全局状态
+        app.globalData.token = token
+        app.globalData.userInfo = user
+        app.globalData.isLogin = true
+        
+        if (user.role === 'teacher') {
+          app.globalData.isTeacher = true
+        }
+        
+        // 更新tabBar
+        if (app.updateTabBar) {
+          app.updateTabBar()
+        }
+        
+        wx.showToast({
+          title: '登录成功',
+          icon: 'success'
+        })
+        
+        setTimeout(() => {
+          this.navigateToHome()
+        }, 1500)
+      } else {
+        throw new Error(result.msg || '手机号登录失败')
+      }
+    } catch (error) {
+      console.error('手机号登录失败:', error)
+      wx.showToast({
+        title: error.message || '手机号登录失败',
+        icon: 'error'
+      })
+    } finally {
+      this.setData({ loading: false })
+    }
+  },
+
   // 跳转到首页
   navigateToHome() {
+    const app = getApp();
+    
+    // 检查是否有深链接参数需要处理
+    if (app.globalData.launchQuery) {
+      // 处理深链接跳转
+      app.handleDeepLink();
+      return;
+    }
+    
     // 如果是从其他页面跳转过来的，返回
-    const pages = getCurrentPages()
+    const pages = getCurrentPages();
     if (pages.length > 1) {
-      wx.navigateBack()
+      wx.navigateBack();
     } else {
       // 否则跳转到首页
       wx.switchTab({
         url: '/pages/index/index'
-      })
+      });
     }
   },
 

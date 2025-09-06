@@ -1,0 +1,804 @@
+/* 批改数据统计面板样式 */
+.analytics-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* 遮罩层 */
+.analytics-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.3s ease;
+}
+
+/* 面板主体 */
+.analytics-panel {
+  width: 100%;
+  max-height: 85vh;
+  background: white;
+  border-radius: 24rpx 24rpx 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    transform: translateY(100%); 
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0); 
+    opacity: 1;
+  }
+}
+
+/* 头部 */
+.analytics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40rpx 30rpx 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.subtitle {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.close-btn {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 30rpx;
+  background: #f8f9fa;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: #6c757d;
+  transition: all 0.2s ease;
+}
+
+.close-btn:active {
+  background: #e9ecef;
+  transform: scale(0.95);
+}
+
+.close-btn::after {
+  border: none;
+}
+
+/* 内容区域 */
+.analytics-content {
+  flex: 1;
+  padding: 0 30rpx 30rpx;
+}
+
+/* 通用节标题 */
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 40rpx 0 24rpx;
+}
+
+.title-icon {
+  font-size: 32rpx;
+  margin-right: 12rpx;
+}
+
+.title-text {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.title-action {
+  padding: 8rpx 16rpx;
+  background: #f8f9fa;
+  border-radius: 16rpx;
+}
+
+.action-text {
+  font-size: 24rpx;
+  color: #667eea;
+}
+
+/* 总览卡片 */
+.overview-cards {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.overview-card {
+  flex: 1;
+  padding: 30rpx 24rpx;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 20rpx;
+  border: 1rpx solid #e9ecef;
+  position: relative;
+  overflow: hidden;
+}
+
+.overview-card.total {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.overview-card.completed {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+}
+
+.overview-card.efficiency {
+  background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%);
+  color: white;
+}
+
+.card-number {
+  display: block;
+  font-size: 48rpx;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 8rpx;
+}
+
+.card-label {
+  font-size: 24rpx;
+  opacity: 0.8;
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.card-trend {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.card-trend.up {
+  color: #28a745;
+}
+
+.overview-card.total .card-trend.up,
+.overview-card.completed .card-trend.up,
+.overview-card.efficiency .card-trend.up {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.trend-icon {
+  font-size: 20rpx;
+}
+
+.trend-text {
+  font-size: 20rpx;
+  font-weight: 500;
+}
+
+/* 进度条 */
+.card-progress {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8rpx;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: white;
+  border-radius: 4rpx;
+  transition: width 0.5s ease;
+}
+
+.progress-text {
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+/* 效率等级 */
+.efficiency-level {
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+}
+
+.efficiency-level.high {
+  background: rgba(40, 167, 69, 0.2);
+  color: #155724;
+}
+
+.efficiency-level.medium {
+  background: rgba(255, 193, 7, 0.2);
+  color: #856404;
+}
+
+.efficiency-level.low {
+  background: rgba(220, 53, 69, 0.2);
+  color: #721c24;
+}
+
+.overview-card .efficiency-level {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* 成绩分布图表 */
+.grade-chart {
+  background: #f8f9fa;
+  border-radius: 16rpx;
+  padding: 30rpx;
+}
+
+.chart-container {
+  margin-bottom: 30rpx;
+}
+
+.chart-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 20rpx;
+  height: 300rpx;
+  padding: 20rpx 0;
+}
+
+.chart-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  min-height: 100rpx;
+}
+
+.bar-fill {
+  width: 60rpx;
+  min-height: 20rpx;
+  border-radius: 8rpx 8rpx 0 0;
+  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.bar-fill.excellent {
+  background: linear-gradient(180deg, #28a745 0%, #20c997 100%);
+}
+
+.bar-fill.good {
+  background: linear-gradient(180deg, #17a2b8 0%, #20c997 100%);
+}
+
+.bar-fill.review {
+  background: linear-gradient(180deg, #ffc107 0%, #fd7e14 100%);
+}
+
+.bar-label {
+  font-size: 22rpx;
+  color: #666;
+  margin-top: 12rpx;
+  text-align: center;
+}
+
+.bar-count {
+  position: absolute;
+  top: -30rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #333;
+  background: white;
+  padding: 4rpx 8rpx;
+  border-radius: 8rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 图例 */
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 30rpx;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.legend-color {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 8rpx;
+}
+
+.legend-color.excellent {
+  background: #28a745;
+}
+
+.legend-color.good {
+  background: #17a2b8;
+}
+
+.legend-color.review {
+  background: #ffc107;
+}
+
+.legend-text {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 成绩列表视图 */
+.grade-list {
+  background: #f8f9fa;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.grade-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #e9ecef;
+  background: white;
+  margin-bottom: 1rpx;
+}
+
+.grade-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.grade-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.grade-icon {
+  font-size: 36rpx;
+  margin-right: 20rpx;
+}
+
+.grade-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.grade-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.grade-desc {
+  font-size: 22rpx;
+  color: #666;
+}
+
+.grade-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12rpx;
+}
+
+.grade-count {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.grade-progress {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  width: 120rpx;
+}
+
+.progress-track {
+  flex: 1;
+  height: 6rpx;
+  background: #e9ecef;
+  border-radius: 3rpx;
+  overflow: hidden;
+}
+
+.progress-fill.excellent {
+  background: #28a745;
+}
+
+.progress-fill.good {
+  background: #17a2b8;
+}
+
+.progress-fill.review {
+  background: #ffc107;
+}
+
+.progress-percent {
+  font-size: 20rpx;
+  color: #666;
+  min-width: 40rpx;
+}
+
+/* 效率分析 */
+.efficiency-metrics {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.metric-card {
+  flex: 1;
+  text-align: center;
+  padding: 24rpx 16rpx;
+  background: white;
+  border-radius: 16rpx;
+  border: 1rpx solid #e9ecef;
+}
+
+.metric-label {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+}
+
+.metric-value {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #667eea;
+  margin-bottom: 4rpx;
+}
+
+.metric-unit {
+  font-size: 20rpx;
+  color: #adb5bd;
+}
+
+/* 时间分布 */
+.time-distribution {
+  background: white;
+  border-radius: 16rpx;
+  border: 1rpx solid #e9ecef;
+  padding: 30rpx;
+}
+
+.distribution-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+.time-slots {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 120rpx;
+  gap: 8rpx;
+}
+
+.time-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.slot-bar {
+  flex: 1;
+  width: 100%;
+  max-width: 24rpx;
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 12rpx;
+}
+
+.slot-fill {
+  width: 100%;
+  min-height: 8rpx;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4rpx 4rpx 0 0;
+  transition: height 0.4s ease;
+}
+
+.slot-time {
+  font-size: 18rpx;
+  color: #adb5bd;
+}
+
+/* 洞察卡片 */
+.insights-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.insight-card {
+  padding: 30rpx;
+  border-radius: 16rpx;
+  border: 1rpx solid #e9ecef;
+  background: white;
+}
+
+.insight-card.excellent {
+  border-color: #28a745;
+  background: linear-gradient(135deg, #d4edda 0%, #ffffff 100%);
+}
+
+.insight-card.review {
+  border-color: #ffc107;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
+}
+
+.insight-card.progress {
+  border-color: #17a2b8;
+  background: linear-gradient(135deg, #d1ecf1 0%, #ffffff 100%);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.card-icon {
+  font-size: 28rpx;
+}
+
+.card-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.card-content {
+  margin-bottom: 16rpx;
+}
+
+.highlight-number {
+  display: block;
+  font-size: 42rpx;
+  font-weight: 700;
+  color: #667eea;
+  margin-bottom: 8rpx;
+}
+
+.highlight-desc {
+  font-size: 24rpx;
+  color: #666;
+  display: block;
+}
+
+.card-trend, .card-action {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.card-trend.up {
+  color: #28a745;
+}
+
+.card-trend.down {
+  color: #dc3545;
+}
+
+.trend-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.trend-indicator.up {
+  color: #28a745;
+}
+
+.trend-indicator.down {
+  color: #dc3545;
+}
+
+.card-action {
+  color: #667eea;
+  font-size: 24rpx;
+}
+
+/* 建议列表 */
+.suggestion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx;
+  background: white;
+  border-radius: 16rpx;
+  border: 1rpx solid #e9ecef;
+}
+
+.suggestion-item.high {
+  border-color: #dc3545;
+  background: linear-gradient(135deg, #f8d7da 0%, #ffffff 100%);
+}
+
+.suggestion-item.medium {
+  border-color: #ffc107;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
+}
+
+.suggestion-item.low {
+  border-color: #17a2b8;
+  background: linear-gradient(135deg, #d1ecf1 0%, #ffffff 100%);
+}
+
+.suggestion-icon {
+  font-size: 32rpx;
+  width: 48rpx;
+  text-align: center;
+}
+
+.suggestion-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.suggestion-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.suggestion-desc {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.4;
+}
+
+.suggestion-action {
+  padding: 12rpx 20rpx;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.suggestion-action:active {
+  background: #5a6fd8;
+  transform: scale(0.95);
+}
+
+.suggestion-action::after {
+  border: none;
+}
+
+/* 底部操作栏 */
+.analytics-footer {
+  display: flex;
+  gap: 20rpx;
+  padding: 30rpx;
+  border-top: 1rpx solid #f0f0f0;
+  background: #fafbfc;
+}
+
+.footer-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.footer-btn.secondary {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1rpx solid #dee2e6;
+}
+
+.footer-btn.secondary:active {
+  background: #e9ecef;
+}
+
+.footer-btn.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.3);
+}
+
+.footer-btn.primary:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 2rpx 8rpx rgba(102, 126, 234, 0.4);
+}
+
+.footer-btn::after {
+  border: none;
+}
+
+.btn-icon {
+  font-size: 24rpx;
+}
+
+.btn-text {
+  font-size: 28rpx;
+}
+
+/* 响应式适配 */
+@media screen and (max-width: 375px) {
+  .analytics-panel {
+    max-height: 90vh;
+  }
+  
+  .overview-cards {
+    flex-direction: column;
+  }
+  
+  .efficiency-metrics {
+    flex-direction: column;
+  }
+  
+  .chart-bars {
+    height: 240rpx;
+  }
+}

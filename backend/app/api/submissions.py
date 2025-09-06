@@ -305,3 +305,75 @@ async def get_pending_submissions(
         submission_list.append(sub_info.dict())
     
     return ResponseBase(data=submission_list)
+
+# 增强版批改API，集成微信通知
+from fastapi import BackgroundTasks
+from app.utils.wechat_notify import send_grade_notification
+
+@router.post("/grade-enhanced", response_model=ResponseBase)
+async def grade_submission_enhanced(
+    grade_data: SubmissionGrade,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_teacher),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Enhanced submission grading with WeChat notification
+    """
+    # Get submission
+    result = await db.execute(
+        select(Submission).where(Submission.id == grade_data.submission_id)
+    )
+    submission = result.scalar_one_or_none()
+    
+    if not submission:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="提交记录不存在"
+        )
+    
+    # Get task and student info
+    task_result = await db.execute(select(Task).where(Task.id == submission.task_id))
+    task = task_result.scalar_one_or_none()
+    
+    student_result = await db.execute(select(User).where(User.id == submission.student_id))
+    student = student_result.scalar_one_or_none()
+    
+    if not task or not student:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="相关任务或学生信息不存在"
+        )
+    
+    # Update submission
+    submission.score = grade_data.score
+    submission.grade = Grade(grade_data.grade)
+    submission.comment = grade_data.feedback
+    submission.status = SubmissionStatus.GRADED
+    submission.graded_by = current_user.id
+    submission.graded_at = datetime.utcnow()
+    
+    await db.commit()
+    await db.refresh(submission)
+    
+    # 异步发送微信通知
+    if student.openid:
+        background_tasks.add_task(
+            send_grade_notification,
+            openid=student.openid,
+            task_title=task.title,
+            grade=grade_data.grade,
+            score=grade_data.score
+        )
+    
+    return ResponseBase(
+        data={
+            "submission_id": submission.id,
+            "score": submission.score,
+            "grade": submission.grade.value,
+            "graded_at": submission.graded_at.isoformat(),
+            "notification_sent": bool(student.openid)
+        },
+        msg="批改完成"
+    )
+

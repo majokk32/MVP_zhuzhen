@@ -10,6 +10,7 @@ from datetime import datetime
 
 from app.database import get_db
 from app.models import Task, TaskStatus, User, Submission, SubmissionStatus
+from app.utils.task_status import calculate_display_status, get_task_priority
 from app.schemas import (
     ResponseBase, TaskCreate, TaskUpdate, TaskInfo, 
     TaskListResponse
@@ -100,7 +101,22 @@ async def list_tasks(
         else:
             task_info.submission_status = "未提交"
         
-        task_list.append(task_info.dict())
+        # 使用新的状态计算工具
+        display_status = calculate_display_status(task, submission)
+        
+        # 将状态信息添加到任务信息中
+        task_data = task_info.dict()
+        task_data.update({
+            "display_right_status": display_status["right_status"],
+            "display_left_status": display_status["left_status"],
+            "display_card_style": display_status["card_style"],
+            "sort_priority": get_task_priority(task, submission)
+        })
+        
+        task_list.append(task_data)
+    
+    # 根据优先级和创建时间排序
+    task_list.sort(key=lambda x: (x["sort_priority"], -x.get("created_at", 0) if isinstance(x.get("created_at"), (int, float)) else 0))
     
     return ResponseBase(
         data={
@@ -296,3 +312,66 @@ async def generate_share_link(
         data=share_data,
         msg="分享链接生成成功"
     )
+# 在现有tasks.py末尾添加增强版任务概况API
+@router.get("/summary", response_model=ResponseBase) 
+async def get_task_summary(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get task summary for current user
+    获取用户任务概况统计
+    """
+    from sqlalchemy import func
+    
+    # Get all tasks
+    tasks_result = await db.execute(select(Task))
+    all_tasks = tasks_result.scalars().all()
+    
+    # Get user submissions
+    submissions_result = await db.execute(
+        select(Submission).where(Submission.student_id == current_user.id)
+    )
+    submissions = submissions_result.scalars().all()
+    
+    # Create submission lookup
+    submission_by_task = {s.task_id: s for s in submissions}
+    
+    # Calculate statistics
+    stats = {
+        "total_tasks": len(all_tasks),
+        "submitted": 0,
+        "graded": 0,
+        "pending_submission": 0,
+        "pending_grading": 0,
+        "average_score": 0,
+        "grade_distribution": {"待复盘": 0, "优秀": 0, "极佳": 0}
+    }
+    
+    graded_scores = []
+    
+    for task in all_tasks:
+        submission = submission_by_task.get(task.id)
+        
+        if not submission:
+            stats["pending_submission"] += 1
+        elif submission.status == SubmissionStatus.SUBMITTED:
+            stats["submitted"] += 1
+            stats["pending_grading"] += 1
+        else:  # GRADED
+            stats["graded"] += 1
+            if submission.score:
+                graded_scores.append(submission.score)
+            if submission.grade:
+                stats["grade_distribution"][submission.grade.value] = \
+                    stats["grade_distribution"].get(submission.grade.value, 0) + 1
+    
+    # Calculate average score
+    if graded_scores:
+        stats["average_score"] = round(sum(graded_scores) / len(graded_scores), 1)
+    
+    return ResponseBase(
+        data=stats,
+        msg="获取任务统计成功"
+    )
+

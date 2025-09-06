@@ -1,0 +1,445 @@
+/* 个人学习档案页样式 */
+.container {
+  min-height: 100vh;
+  background-color: #f5f6fa;
+}
+
+/* 学生信息头 */
+.student-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40rpx 30rpx;
+  display: flex;
+  align-items: center;
+  color: white;
+}
+
+.avatar-wrapper {
+  margin-right: 30rpx;
+}
+
+.student-avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.avatar-placeholder {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 60rpx;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.avatar-icon {
+  font-size: 48rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.student-info {
+  flex: 1;
+}
+
+.student-name {
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+}
+
+.student-stats {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  font-size: 28rpx;
+  font-weight: bold;
+  margin-bottom: 6rpx;
+}
+
+.stat-label {
+  font-size: 22rpx;
+  opacity: 0.8;
+}
+
+.stat-divider {
+  width: 2rpx;
+  height: 40rpx;
+  background: rgba(255, 255, 255, 0.3);
+  margin: 0 30rpx;
+}
+
+.permission-info {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.permission-type {
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: bold;
+}
+
+.permission-type.paid {
+  background: #ff6b6b;
+}
+
+.permission-type.trial {
+  background: #ffa726;
+}
+
+.permission-expire {
+  font-size: 22rpx;
+  opacity: 0.8;
+}
+
+/* 档案区域 */
+.archive-section {
+  margin-top: 20rpx;
+  flex: 1;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx;
+  background: white;
+  border-bottom: 1rpx solid #e5e5e5;
+}
+
+.title-text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.archive-count {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* 作业卡片列表 */
+.archive-list {
+  background: white;
+}
+
+.task-card {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.task-card:active {
+  background-color: #f8f9ff;
+}
+
+.task-card:last-child {
+  border-bottom: none;
+}
+
+/* 任务头部 */
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20rpx;
+}
+
+.task-info {
+  flex: 1;
+}
+
+.task-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+  line-height: 1.4;
+}
+
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.course-type {
+  padding: 6rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  font-weight: bold;
+  color: white;
+}
+
+.course-type.essay {
+  background: #667eea;
+}
+
+.course-type.interview {
+  background: #f093fb;
+}
+
+.task-date {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.task-status {
+  margin-left: 20rpx;
+}
+
+.status-badge {
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: bold;
+}
+
+.status-badge.graded {
+  background: #4ecdc4;
+  color: white;
+}
+
+.status-badge.submitted {
+  background: #ffa726;
+  color: white;
+}
+
+.status-badge.pending {
+  background: #f0f0f0;
+  color: #999;
+}
+
+/* 评价结果 */
+.task-result {
+  background: #f8f9ff;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  margin-bottom: 20rpx;
+}
+
+.score-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.score-label {
+  font-size: 26rpx;
+  color: #666;
+  margin-right: 12rpx;
+}
+
+.score-value {
+  font-size: 26rpx;
+  font-weight: bold;
+  padding: 6rpx 12rpx;
+  border-radius: 12rpx;
+  color: white;
+}
+
+.score-value.优秀 {
+  background: #4ecdc4;
+}
+
+.score-value.良好 {
+  background: #ffa726;
+}
+
+.score-value.及格 {
+  background: #42a5f5;
+}
+
+.score-value.不及格 {
+  background: #ff6b6b;
+}
+
+.comment-preview {
+  background: white;
+  padding: 15rpx;
+  border-radius: 12rpx;
+}
+
+.comment-text {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* 提交内容预览 */
+.submission-preview {
+  margin-bottom: 15rpx;
+}
+
+.preview-images {
+  display: flex;
+  gap: 12rpx;
+  position: relative;
+}
+
+.preview-image {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 12rpx;
+  border: 1rpx solid #e5e5e5;
+}
+
+.image-count {
+  position: absolute;
+  right: 12rpx;
+  bottom: 12rpx;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 20rpx;
+  padding: 4rpx 8rpx;
+  border-radius: 8rpx;
+}
+
+/* 操作箭头 */
+.task-arrow {
+  position: absolute;
+  right: 30rpx;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.arrow-icon {
+  font-size: 32rpx;
+  color: #ccc;
+  font-weight: bold;
+}
+
+/* 加载状态 */
+.loading-state, .loading-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60rpx 0;
+  background: white;
+}
+
+.loading-spinner {
+  width: 40rpx;
+  height: 40rpx;
+  border: 3rpx solid #f3f3f3;
+  border-top: 3rpx solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20rpx;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 没有更多 */
+.no-more {
+  text-align: center;
+  padding: 40rpx 0;
+  background: white;
+}
+
+.no-more-text {
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 40rpx;
+  text-align: center;
+  background: white;
+  min-height: 60vh;
+}
+
+.empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 40rpx;
+  opacity: 0.6;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.empty-hint {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 40rpx;
+  max-width: 400rpx;
+}
+
+.empty-action {
+  background: #667eea;
+  color: white;
+  border-radius: 25rpx;
+  padding: 20rpx 40rpx;
+  font-size: 26rpx;
+}
+
+/* 浮动操作按钮 */
+.fab-actions {
+  position: fixed;
+  bottom: 40rpx;
+  right: 40rpx;
+  z-index: 1000;
+}
+
+.fab-btn {
+  background: white;
+  box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.15);
+  border-radius: 25rpx;
+  padding: 20rpx 30rpx;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.fab-btn:active {
+  transform: scale(0.95);
+}
+
+.fab-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+}
+
+.fab-text {
+  font-size: 24rpx;
+  color: #333;
+  font-weight: 500;
+}

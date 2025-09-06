@@ -1,7 +1,10 @@
 <!-- 任务详情页 -->
 <view class="container">
+  <!-- 加载状态 -->
+  <skeleton show="{{loading}}" type="task-detail" />
+  
   <!-- 顶部任务信息卡片 -->
-  <view class="task-info-card">
+  <view class="task-info-card" wx:if="{{!loading}}">
     <view class="task-header">
       <view class="task-title">{{task.title}}</view>
       <view class="task-meta">
@@ -33,6 +36,12 @@
       <text class="icon">💡</text>
       <text>每个任务最多可提交3次，当前已提交 {{submissionCount}}/3 次</text>
     </view>
+
+    <!-- 待复盘重置提示 -->
+    <view class="review-reset-tip" wx:if="{{hasReviewReset && !isTeacher}}">
+      <text class="icon">🔄</text>
+      <text>因上次作业被评为"待复盘"，您已重新获得3次提交机会</text>
+    </view>
   </view>
 
   <!-- 根据不同状态显示不同内容 -->
@@ -50,7 +59,15 @@
         <view class="upload-grid">
           <!-- 已上传的图片 -->
           <view wx:for="{{uploadedImages}}" wx:key="index" class="upload-item">
-            <image src="{{item}}" mode="aspectFill" bindtap="previewImage" data-url="{{item}}"/>
+            <image 
+              src="{{item}}" 
+              mode="aspectFill" 
+              bindtap="previewImage" 
+              data-url="{{item}}"
+              lazy-load="true"
+              show-menu-by-longpress="false"
+              binderror="onImageError"
+            />
             <view class="delete-btn" bindtap="deleteImage" data-index="{{index}}">
               <text>×</text>
             </view>
@@ -149,6 +166,9 @@
                 class="preview-image"
                 bindtap="previewSubmittedImage"
                 data-url="{{item}}"
+                lazy-load="true"
+                show-menu-by-longpress="false"
+                binderror="onImageError"
               />
             </view>
           </scroll-view>
@@ -223,6 +243,9 @@
               class="content-image"
               bindtap="previewSubmittedImage"
               data-url="{{item}}"
+              lazy-load="true"
+              show-menu-by-longpress="false"
+              binderror="onImageError"
             />
           </view>
         </view>
@@ -237,6 +260,9 @@
       <view class="action-buttons">
         <button wx:if="{{submissionCount < 3 && !task.is_ended}}" class="resubmit-btn outline" bindtap="resubmit">
           重新提交（{{submissionCount}}/3）
+        </button>
+        <button class="history-btn outline" bindtap="showMyGradingHistory">
+          查看批改历史
         </button>
         <button class="share-btn" open-type="share">
           分享成绩
@@ -282,6 +308,27 @@
     </view>
   </view>
 </view>
+
+<!-- 上传进度组件 -->
+<upload-progress 
+  show="{{showUploadProgress}}" 
+  showSimple="{{showSimpleProgress}}"
+  bind:close="onUploadProgressClose"
+  bind:progressUpdate="onUploadProgressUpdate"
+  bind:uploadSuccess="onUploadSuccess"
+  bind:uploadError="onUploadError"
+  bind:uploadCanceled="onUploadCanceled"
+/>
+
+<!-- 学生批改历史组件 -->
+<grading-history 
+  show="{{showMyGradingHistory}}"
+  studentName="{{userInfo.nickname}}"
+  taskId="{{taskId}}"
+  studentId="{{userInfo.id}}"
+  allowExport="{{false}}"
+  bind:close="onMyGradingHistoryClose"
+/>
 
 <!-- 底部安全区域 -->
 <view class="safe-bottom"></view>

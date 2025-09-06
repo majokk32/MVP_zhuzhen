@@ -1,42 +1,81 @@
+# 增强版Docker Compose，支持完整的生产环境部署
+
 version: '3.8'
 
 services:
-  api:
-    build: .
-    container_name: zhuzhen-api
+  # 应用服务
+  zhuzhen-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.enhanced
+    container_name: zhuzhen-backend
     ports:
       - "8000:8000"
     volumes:
-      - ./app:/app/app
       - ./data:/app/data
+      - ./logs:/app/logs  
       - ./uploads:/app/uploads
       - ./.env:/app/.env
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:///./data/app.db
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://zhuzhen:password123@postgres:5432/zhuzhen_db
+    depends_on:
+      - postgres
+      - redis
     restart: unless-stopped
-    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
     networks:
       - zhuzhen-network
 
-  # Optional: PostgreSQL for production
-  # postgres:
-  #   image: postgres:15-alpine
-  #   container_name: zhuzhen-db
-  #   environment:
-  #     POSTGRES_USER: zhuzhen
-  #     POSTGRES_PASSWORD: your-secure-password
-  #     POSTGRES_DB: zhuzhen
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432"
-  #   restart: unless-stopped
-  #   networks:
-  #     - zhuzhen-network
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: zhuzhen-postgres
+    environment:
+      POSTGRES_USER: zhuzhen
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: zhuzhen_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - zhuzhen-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: zhuzhen-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - zhuzhen-network
+
+  # Nginx反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: zhuzhen-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./uploads:/var/www/uploads
+    depends_on:
+      - zhuzhen-api
+    restart: unless-stopped
+    networks:
+      - zhuzhen-network
+
+volumes:
+  postgres_data:
+  redis_data:
 
 networks:
   zhuzhen-network:
     driver: bridge
-
-volumes:
-  postgres_data:

@@ -1,0 +1,187 @@
+<!-- 混合输入评语组件 -->
+<view class="mixed-input-container">
+  
+  <!-- 输入模式切换 -->
+  <view class="input-mode-tabs">
+    <view 
+      class="mode-tab {{inputMode === 'text' ? 'active' : ''}}"
+      bindtap="switchMode"
+      data-mode="text"
+    >
+      <text class="tab-icon">✏️</text>
+      <text class="tab-label">文字输入</text>
+    </view>
+    <view 
+      class="mode-tab {{inputMode === 'voice' ? 'active' : ''}}"
+      bindtap="switchMode"
+      data-mode="voice"
+    >
+      <text class="tab-icon">🎤</text>
+      <text class="tab-label">语音输入</text>
+    </view>
+  </view>
+
+  <!-- 文字输入区域 -->
+  <view wx:if="{{inputMode === 'text'}}" class="text-input-area">
+    <textarea 
+      class="feedback-textarea"
+      placeholder="{{placeholder || '请输入批改评语，给学生一些建议和鼓励...'}}"
+      maxlength="{{maxLength || 500}}"
+      bindinput="onTextInput"
+      value="{{textValue}}"
+      auto-height="{{autoHeight}}"
+      show-confirm-bar="{{false}}"
+      adjust-position="{{true}}"
+    />
+    <view class="input-footer">
+      <view class="text-counter">{{textValue.length}}/{{maxLength || 500}}</view>
+      <view class="quick-actions" wx:if="{{showQuickActions}}">
+        <button class="quick-btn" size="mini" bindtap="clearText">清空</button>
+        <button class="quick-btn" size="mini" bindtap="pasteText">粘贴</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 语音输入区域 -->
+  <view wx:if="{{inputMode === 'voice'}}" class="voice-input-area">
+    
+    <!-- 语音录制状态提示 -->
+    <view class="voice-status-tip">
+      <text class="tip-icon">💡</text>
+      <text class="tip-text">语音将自动转写为文字，点击录音按钮开始录制</text>
+    </view>
+
+    <!-- 录音控制区域 -->
+    <view class="voice-control-panel">
+      
+      <!-- 录音按钮 -->
+      <view class="voice-button-container">
+        <view 
+          class="voice-button {{voiceState}}"
+          bindtouchstart="startRecord"
+          bindtouchend="stopRecord"
+          bindtouchcancel="cancelRecord"
+        >
+          <!-- 静态状态 -->
+          <view wx:if="{{voiceState === 'idle'}}" class="voice-icon-container">
+            <text class="voice-icon">🎤</text>
+            <text class="voice-label">按住录音</text>
+          </view>
+          
+          <!-- 录音中状态 -->
+          <view wx:elif="{{voiceState === 'recording'}}" class="voice-recording">
+            <view class="recording-animation">
+              <view class="wave-circle wave-1"></view>
+              <view class="wave-circle wave-2"></view>
+              <view class="wave-circle wave-3"></view>
+            </view>
+            <text class="voice-icon recording">🔴</text>
+            <text class="voice-label">录音中... {{recordingTime}}s</text>
+            <text class="voice-hint">松开结束</text>
+          </view>
+          
+          <!-- 处理中状态 -->
+          <view wx:elif="{{voiceState === 'processing'}}" class="voice-processing">
+            <view class="processing-spinner"></view>
+            <text class="voice-label">转写中...</text>
+            <text class="voice-hint">请稍候</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 录音时间和音量显示 -->
+      <view wx:if="{{voiceState === 'recording'}}" class="voice-indicators">
+        <view class="time-indicator">
+          <text class="indicator-label">时长:</text>
+          <text class="indicator-value">{{recordingTimeText}}</text>
+        </view>
+        <view class="volume-indicator">
+          <text class="indicator-label">音量:</text>
+          <view class="volume-bars">
+            <view 
+              wx:for="{{volumeBars}}" 
+              wx:key="index"
+              class="volume-bar {{item.active ? 'active' : ''}}"
+              style="height: {{item.height}}rpx"
+            ></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 转写结果展示区域 -->
+    <view wx:if="{{transcriptionResult}}" class="transcription-result">
+      <view class="result-header">
+        <text class="result-title">转写结果</text>
+        <view class="result-actions">
+          <button class="result-btn" size="mini" bindtap="editTranscription">编辑</button>
+          <button class="result-btn" size="mini" bindtap="retryTranscription">重试</button>
+          <button class="result-btn primary" size="mini" bindtap="useTranscription">使用</button>
+        </view>
+      </view>
+      <view class="result-content">
+        <textarea 
+          wx:if="{{editingTranscription}}"
+          class="transcription-editor"
+          value="{{transcriptionResult}}"
+          bindinput="onTranscriptionEdit"
+          auto-height
+        />
+        <text wx:else class="transcription-text">{{transcriptionResult}}</text>
+      </view>
+    </view>
+
+    <!-- 历史录音记录 -->
+    <view wx:if="{{voiceHistory.length > 0}}" class="voice-history">
+      <view class="history-header">
+        <text class="history-title">录音历史</text>
+        <button class="clear-history-btn" size="mini" bindtap="clearVoiceHistory">清空</button>
+      </view>
+      <scroll-view class="history-list" scroll-y max-height="200rpx">
+        <view 
+          wx:for="{{voiceHistory}}" 
+          wx:key="id"
+          class="history-item"
+          bindtap="selectHistoryItem"
+          data-index="{{index}}"
+        >
+          <view class="history-info">
+            <text class="history-time">{{item.timeText}}</text>
+            <text class="history-duration">{{item.durationText}}</text>
+          </view>
+          <view class="history-content">
+            <text class="history-text">{{item.transcription}}</text>
+          </view>
+          <view class="history-actions">
+            <button class="history-btn" size="mini" bindtap="useHistoryItem" data-index="{{index}}">使用</button>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 底部工具栏 -->
+  <view class="input-toolbar">
+    <view class="toolbar-left">
+      <button wx:if="{{showClearBtn && (textValue || transcriptionResult)}}" 
+        class="toolbar-btn" 
+        size="mini" 
+        bindtap="clearAll"
+      >
+        清空所有
+      </button>
+    </view>
+    
+    <view class="toolbar-right">
+      <text class="word-count">字数: {{finalText.length}}</text>
+      <button 
+        class="confirm-btn {{finalText ? '' : 'disabled'}}" 
+        disabled="{{!finalText}}"
+        bindtap="confirmInput"
+      >
+        确认输入
+      </button>
+    </view>
+  </view>
+
+</view>

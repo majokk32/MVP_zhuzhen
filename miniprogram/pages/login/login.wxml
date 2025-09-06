@@ -1,32 +1,48 @@
 <!--pages/login/login.wxml-->
 <view class="container">
-  <view class="login-header">
-    <!-- <image class="logo" src="/assets/images/logo.png" mode="aspectFit"></image> -->
-    <view class="logo-text">🎓</view>
-    <view class="title">公考督学助手</view>
-    <view class="subtitle">专业的申论作业批改平台</view>
+  <!-- 应用Logo/名称 -->
+  <view class="app-header">
+    <view class="logo-container">
+      <view class="logo-icon">🎓</view>
+      <view class="app-name">公考督学助手</view>
+    </view>
+  </view>
+
+  <!-- 授权说明 -->
+  <view class="auth-description">
+    <text>为了给您提供完整的学习档案和督学服务，我们需要获取您的公开信息（头像、昵称）。</text>
+  </view>
+
+  <!-- 授权按钮区域 -->
+  <view class="auth-buttons">
+    <!-- 微信授权登录按钮 -->
+    <button 
+      class="auth-btn primary"
+      bindtap="handleQuickLogin"
+      disabled="{{loading}}"
+    >
+      <view class="btn-content">
+        <text wx:if="{{!loading}}">微信授权登录</text>
+        <text wx:else>登录中...</text>
+      </view>
+    </button>
+
+    <!-- 手机号授权登录按钮 -->
+    <button 
+      class="auth-btn secondary"
+      open-type="getPhoneNumber"
+      bindgetphonenumber="handlePhoneLogin"
+      disabled="{{loading}}"
+      wx:if="{{showPhoneLogin}}"
+    >
+      <view class="btn-content">
+        <text wx:if="{{!loading}}">📱 手机号快速登录</text>
+        <text wx:else>登录中...</text>
+      </view>
+    </button>
   </view>
 
   <view class="login-content">
-    <!-- 快速登录（推荐） -->
-    <view class="quick-login-section">
-      <button 
-        class="btn-primary" 
-        bindtap="handleQuickLogin"
-        disabled="{{loading}}"
-      >
-        <text wx:if="{{!loading}}">微信一键登录</text>
-        <text wx:else>登录中...</text>
-      </button>
-      <view class="tips">推荐使用，快速安全</view>
-    </view>
-
-    <!-- 分割线 -->
-    <view class="divider-wrapper">
-      <view class="divider-line"></view>
-      <view class="divider-text">或</view>
-      <view class="divider-line"></view>
-    </view>
 
     <!-- 完善资料登录（可选） -->
     <view class="profile-section" wx:if="{{canUseNicknameInput}}">
@@ -83,18 +99,18 @@
     </view>
   </view>
 
-  <!-- 底部说明 -->
-  <view class="login-footer">
-    <view class="agreement">
-      <text>登录即表示同意</text>
-      <text class="link">《用户协议》</text>
-      <text>和</text>
-      <text class="link">《隐私政策》</text>
-    </view>
-    
-    <!-- 开发环境跳过按钮 -->
-    <view class="skip-btn" wx:if="{{__wxConfig.envVersion === 'develop'}}" bindtap="handleSkip">
+  <!-- 服务条款 -->
+  <view class="service-terms">
+    <text>登录即代表您已阅读并同意</text>
+    <text class="link">《用户服务协议》</text>
+    <text>和</text>
+    <text class="link">《隐私政策》</text>
+  </view>
+
+  <!-- 开发环境跳过按钮 -->
+  <view class="dev-controls" wx:if="{{__wxConfig.envVersion === 'develop'}}">
+    <button class="skip-btn" bindtap="handleSkip">
       跳过登录(仅开发)
-    </view>
+    </button>
   </view>
 </view>

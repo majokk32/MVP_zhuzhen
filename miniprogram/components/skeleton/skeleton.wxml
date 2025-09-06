@@ -1,0 +1,175 @@
+<!-- 骨架屏组件 -->
+<view class="skeleton-container" wx:if="{{show}}">
+  
+  <!-- 任务卡片骨架屏 -->
+  <block wx:if="{{type === 'task-list'}}">
+    <view class="skeleton-task-card" wx:for="{{count || 3}}" wx:key="index">
+      <view class="skeleton-card-header">
+        <view class="skeleton-title skeleton-animated"></view>
+        <view class="skeleton-status skeleton-animated"></view>
+      </view>
+      <view class="skeleton-card-meta">
+        <view class="skeleton-meta-item skeleton-animated"></view>
+        <view class="skeleton-meta-item skeleton-animated"></view>
+      </view>
+      <view class="skeleton-card-content">
+        <view class="skeleton-line skeleton-animated"></view>
+        <view class="skeleton-line skeleton-animated" style="width: 75%"></view>
+      </view>
+      <view class="skeleton-card-actions">
+        <view class="skeleton-button skeleton-animated"></view>
+        <view class="skeleton-button skeleton-animated"></view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 学生列表骨架屏 -->
+  <block wx:if="{{type === 'student-list'}}">
+    <view class="skeleton-student-card" wx:for="{{count || 4}}" wx:key="index">
+      <view class="skeleton-student-info">
+        <view class="skeleton-avatar skeleton-animated"></view>
+        <view class="skeleton-student-details">
+          <view class="skeleton-name skeleton-animated"></view>
+          <view class="skeleton-meta skeleton-animated"></view>
+        </view>
+      </view>
+      <view class="skeleton-student-stats">
+        <view class="skeleton-stat skeleton-animated"></view>
+        <view class="skeleton-stat skeleton-animated"></view>
+        <view class="skeleton-stat skeleton-animated"></view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 批改任务骨架屏 -->
+  <block wx:if="{{type === 'grading-list'}}">
+    <view class="skeleton-grading-card" wx:for="{{count || 3}}" wx:key="index">
+      <view class="skeleton-grading-header">
+        <view class="skeleton-task-title skeleton-animated"></view>
+        <view class="skeleton-task-count skeleton-animated"></view>
+      </view>
+      <view class="skeleton-progress">
+        <view class="skeleton-progress-bar skeleton-animated"></view>
+        <view class="skeleton-progress-text skeleton-animated"></view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 统计数据骨架屏 -->
+  <block wx:if="{{type === 'stats'}}">
+    <view class="skeleton-stats-container">
+      <view class="skeleton-stat-item" wx:for="{{count || 4}}" wx:key="index">
+        <view class="skeleton-stat-number skeleton-animated"></view>
+        <view class="skeleton-stat-label skeleton-animated"></view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 简单列表骨架屏 -->
+  <block wx:if="{{type === 'simple-list'}}">
+    <view class="skeleton-simple-item" wx:for="{{count || 5}}" wx:key="index">
+      <view class="skeleton-item-content">
+        <view class="skeleton-line skeleton-animated"></view>
+        <view class="skeleton-line skeleton-animated" style="width: 60%"></view>
+      </view>
+      <view class="skeleton-arrow skeleton-animated"></view>
+    </view>
+  </block>
+
+  <!-- 批改详情骨架屏 -->
+  <block wx:if="{{type === 'grading-detail'}}">
+    <view class="skeleton-grading-detail">
+      <!-- 学生信息骨架 -->
+      <view class="skeleton-student-bar">
+        <view class="skeleton-avatar skeleton-animated"></view>
+        <view class="skeleton-student-info">
+          <view class="skeleton-name skeleton-animated"></view>
+          <view class="skeleton-submit-info skeleton-animated"></view>
+        </view>
+        <view class="skeleton-nav-buttons">
+          <view class="skeleton-nav-btn skeleton-animated"></view>
+          <view class="skeleton-nav-btn skeleton-animated"></view>
+        </view>
+      </view>
+      
+      <!-- 作业内容骨架 -->
+      <view class="skeleton-content-section">
+        <view class="skeleton-section-title skeleton-animated"></view>
+        <view class="skeleton-image-grid">
+          <view class="skeleton-content-image skeleton-animated" wx:for="{{3}}" wx:key="index"></view>
+        </view>
+        <view class="skeleton-text-content">
+          <view class="skeleton-line skeleton-animated"></view>
+          <view class="skeleton-line skeleton-animated" style="width: 80%"></view>
+        </view>
+      </view>
+      
+      <!-- 批改区域骨架 -->
+      <view class="skeleton-grading-section">
+        <view class="skeleton-section-title skeleton-animated"></view>
+        <view class="skeleton-grade-options">
+          <view class="skeleton-grade-option skeleton-animated" wx:for="{{3}}" wx:key="index"></view>
+        </view>
+        <view class="skeleton-textarea skeleton-animated"></view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 任务详情骨架屏 -->
+  <block wx:if="{{type === 'task-detail'}}">
+    <view class="skeleton-task-detail">
+      <view class="skeleton-task-header">
+        <view class="skeleton-task-title skeleton-animated"></view>
+        <view class="skeleton-task-meta">
+          <view class="skeleton-task-type skeleton-animated"></view>
+          <view class="skeleton-task-date skeleton-animated"></view>
+        </view>
+      </view>
+      
+      <view class="skeleton-requirements">
+        <view class="skeleton-section-title skeleton-animated"></view>
+        <view class="skeleton-content">
+          <view class="skeleton-line skeleton-animated" wx:for="{{4}}" wx:key="index" style="{{index === 3 ? 'width: 60%' : ''}}"></view>
+        </view>
+      </view>
+      
+      <view class="skeleton-submission-area">
+        <view class="skeleton-section-title skeleton-animated"></view>
+        <view class="skeleton-upload-grid">
+          <view class="skeleton-upload-item skeleton-animated" wx:for="{{3}}" wx:key="index"></view>
+        </view>
+        <view class="skeleton-textarea skeleton-animated"></view>
+        <view class="skeleton-submit-btn skeleton-animated"></view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 个人中心骨架屏 -->
+  <block wx:if="{{type === 'profile'}}">
+    <view class="skeleton-profile">
+      <view class="skeleton-user-section">
+        <view class="skeleton-avatar skeleton-animated"></view>
+        <view class="skeleton-user-info">
+          <view class="skeleton-nickname skeleton-animated"></view>
+          <view class="skeleton-edit-btn skeleton-animated"></view>
+        </view>
+      </view>
+      
+      <view class="skeleton-menu-list">
+        <view class="skeleton-menu-item" wx:for="{{count || 4}}" wx:key="index">
+          <view class="skeleton-menu-content">
+            <view class="skeleton-menu-title skeleton-animated"></view>
+            <view class="skeleton-menu-desc skeleton-animated"></view>
+          </view>
+          <view class="skeleton-arrow skeleton-animated"></view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 自定义内容 -->
+  <view wx:if="{{type === 'custom'}}">
+    <slot></slot>
+  </view>
+
+</view>

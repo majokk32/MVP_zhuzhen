@@ -1,2 +1,173 @@
-<!--pages/admin/grading/grading.wxml-->
-<text>pages/admin/grading/grading.wxml</text>
+<!-- 批改任务台页面 -->
+<view class="container">
+  <!-- 页面头部统计 -->
+  <view class="stats-header">
+    <view class="stats-title">批改工作台</view>
+    <view class="stats-summary">
+      <view class="summary-item">
+        <view class="summary-number">{{totalPending}}</view>
+        <view class="summary-label">待批改</view>
+      </view>
+      <view class="summary-divider"></view>
+      <view class="summary-item">
+        <view class="summary-number">{{todayReviewed}}</view>
+        <view class="summary-label">今日已批改</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar">
+    <scroll-view class="filter-scroll" scroll-x>
+      <view class="filter-list">
+        <view 
+          class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}"
+          data-filter="all"
+          bindtap="onFilterChange"
+        >
+          全部任务
+        </view>
+        <view 
+          class="filter-tab {{currentFilter === 'urgent' ? 'active' : ''}}"
+          data-filter="urgent"
+          bindtap="onFilterChange"
+        >
+          紧急任务
+          <view wx:if="{{urgentCount > 0}}" class="filter-badge">{{urgentCount}}</view>
+        </view>
+        <view 
+          class="filter-tab {{currentFilter === 'ongoing' ? 'active' : ''}}"
+          data-filter="ongoing"
+          bindtap="onFilterChange"
+        >
+          进行中
+        </view>
+        <view 
+          class="filter-tab {{currentFilter === 'completed' ? 'active' : ''}}"
+          data-filter="completed"
+          bindtap="onFilterChange"
+        >
+          已完成
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 任务列表 -->
+  <scroll-view 
+    class="grading-list"
+    scroll-y
+    enable-back-to-top
+    refresher-enabled
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+    bindscrolltolower="onLoadMore"
+  >
+    <!-- 批改任务卡片 -->
+    <view wx:for="{{taskList}}" wx:key="id" class="grading-task-card" bindtap="onTaskClick" data-task="{{item}}">
+      <!-- 任务基本信息 -->
+      <view class="task-header">
+        <view class="task-title-area">
+          <view class="task-title">{{item.title}}</view>
+          <view class="task-status status-{{item.status}}">{{item.statusText}}</view>
+        </view>
+        <view class="task-date">{{item.course_date}}</view>
+      </view>
+
+      <!-- 批改进度指示器 -->
+      <view class="progress-indicator">
+        <view class="progress-stats">
+          <view class="stat-group submitted">
+            <view class="stat-number">{{item.stats.submitted || 0}}</view>
+            <view class="stat-label">已提交</view>
+          </view>
+          <view class="stat-divider">|</view>
+          <view class="stat-group pending">
+            <view class="stat-number">{{item.stats.pending || 0}}</view>
+            <view class="stat-label">待批改</view>
+          </view>
+          <view class="stat-divider">|</view>
+          <view class="stat-group reviewed">
+            <view class="stat-number">{{item.stats.reviewed || 0}}</view>
+            <view class="stat-label">已批改</view>
+          </view>
+        </view>
+        
+        <!-- 进度条 -->
+        <view class="progress-bar">
+          <view class="progress-track">
+            <view 
+              class="progress-fill" 
+              style="width: {{item.progressPercent}}%"
+            ></view>
+          </view>
+          <view class="progress-text">{{item.progressPercent}}%</view>
+        </view>
+      </view>
+
+      <!-- 紧急标识 -->
+      <view wx:if="{{item.isUrgent}}" class="urgent-badge">
+        <text class="urgent-icon">⚡</text>
+        <text class="urgent-text">紧急</text>
+      </view>
+
+      <!-- 快速操作 -->
+      <view class="quick-actions" catchtap="onActionTap">
+        <view wx:if="{{item.stats.pending > 0}}" class="quick-btn primary" data-action="start" data-task="{{item}}" bindtap="onQuickAction">
+          <text class="btn-icon">🖊️</text>
+          <text class="btn-text">开始批改</text>
+        </view>
+        <view class="quick-btn" data-action="view" data-task="{{item}}" bindtap="onQuickAction">
+          <text class="btn-icon">📊</text>
+          <text class="btn-text">查看统计</text>
+        </view>
+        <view class="quick-btn" data-action="export" data-task="{{item}}" bindtap="onQuickAction">
+          <text class="btn-icon">📤</text>
+          <text class="btn-text">导出</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view wx:if="{{loadingMore}}" class="loading-more">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view wx:if="{{!hasMore && taskList.length > 0}}" class="no-more">
+      <text class="no-more-text">- 没有更多了 -</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:if="{{isEmpty && !loading}}" class="empty-state">
+      <image class="empty-image" src="/assets/images/empty-grading.png" mode="aspectFit" lazy-load="true" binderror="onImageError"></image>
+      <text class="empty-text">{{getEmptyText()}}</text>
+      <text class="empty-hint">{{getEmptyHint()}}</text>
+      <button class="empty-btn" bindtap="goToTaskManage" wx:if="{{currentFilter === 'all'}}">
+        去创建任务
+      </button>
+    </view>
+
+    <!-- 加载中 -->
+    <view wx:if="{{loading && taskList.length === 0}}" class="loading-state">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+  </scroll-view>
+
+  <!-- 批量操作浮动按钮 -->
+  <view wx:if="{{taskList.length > 0}}" class="batch-actions">
+    <view class="batch-btn" bindtap="batchExport">
+      <text class="batch-icon">📥</text>
+      <text class="batch-text">批量导出</text>
+    </view>
+    <view class="batch-btn" bindtap="batchNotify">
+      <text class="batch-icon">📢</text>
+      <text class="batch-text">批量通知</text>
+    </view>
+  </view>
+</view>
+
+<!-- 底部安全区域 -->
+<view class="safe-bottom"></view>

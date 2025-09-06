@@ -11,55 +11,41 @@
     <text class="pin-text">置顶</text>
   </view>
 
-  <!-- 卡片主体 -->
+  <!-- 试用用户权限提示 -->
+  <view wx:if="{{showPermissionBadge}}" class="permission-badge trial">
+    <text class="permission-icon">🔒</text>
+    <text class="permission-text">试用无权限</text>
+  </view>
+
+  <!-- 卡片主体：四要素展示 -->
   <view class="card-body">
-    <!-- 上部分 -->
+    <!-- 上部分：标题和评价 -->
     <view class="card-top">
       <!-- 左上角：标题 -->
       <view class="card-title">
         <text class="title-text">{{task.title}}</text>
-        <text class="course-text">{{task.course}}</text>
       </view>
       
-      <!-- 右上角：评价/状态 -->
-      <view class="card-status">
-        <view class="status-badge status-{{task.topRightType}}">
-          {{task.topRightText}}
-        </view>
-        <!-- 如果有分数，显示分数 -->
-        <view wx:if="{{task.submission_score !== null && task.submission_score !== undefined}}" class="score-text">
-          {{task.submission_score}}/{{task.total_score}}分
+      <!-- 右上角：评价状态 -->
+      <view class="card-evaluation">
+        <view class="status-badge status-{{task.topRightType || 'default'}}">
+          {{rightStatus}}
         </view>
       </view>
     </view>
 
-    <!-- 中间：题目描述（截取） -->
-    <view class="card-middle">
-      <text class="desc-text">{{task.desc}}</text>
-    </view>
-
-    <!-- 下部分 -->
+    <!-- 下部分：状态和日期 -->
     <view class="card-bottom">
-      <!-- 左下角：状态标签 -->
-      <view class="status-label">
-        <view class="label label-{{task.statusType}}">
-          {{task.statusLabel}}
-        </view>
-        <!-- 任务类型标签 -->
-        <view wx:if="{{task.task_type === 'live'}}" class="label label-live">
-          <text class="label-icon">🎥</text>
-          <text>直播课</text>
-        </view>
-        <view wx:elif="{{task.task_type === 'extra'}}" class="label label-extra">
-          <text class="label-icon">📚</text>
-          <text>课后加餐</text>
+      <!-- 左下角：任务状态 -->
+      <view class="task-status">
+        <view class="status-label status-{{cardStyle}}">
+          {{leftStatus}}
         </view>
       </view>
       
-      <!-- 右下角：日期 -->
+      <!-- 右下角：课程日期 -->
       <view class="card-date">
-        <text class="date-icon">📅</text>
-        <text class="date-text">{{task.deadlineText || task.created_at}}</text>
+        <text class="date-text">{{task.course_date || task.created_at}}</text>
       </view>
     </view>
   </view>

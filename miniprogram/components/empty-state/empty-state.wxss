@@ -1,0 +1,78 @@
+/* 空状态组件样式 */
+.empty-state-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400rpx;
+  padding: 60rpx 40rpx;
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 500rpx;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 40rpx;
+  opacity: 0.6;
+  line-height: 1;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16rpx;
+  line-height: 1.4;
+}
+
+.empty-description {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 40rpx;
+}
+
+.empty-actions {
+  width: 100%;
+}
+
+.empty-action-btn {
+  min-width: 200rpx;
+  padding: 24rpx 32rpx;
+  border-radius: 25rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.empty-action-btn:active {
+  transform: scale(0.95);
+}
+
+/* 按钮类型样式 */
+.empty-action-btn.primary {
+  background: #667eea;
+  color: white;
+}
+
+.empty-action-btn.secondary {
+  background: #ffa726;
+  color: white;
+}
+
+.empty-action-btn.outline {
+  background: transparent;
+  color: #667eea;
+  border: 2rpx solid #667eea;
+}
+
+.empty-action-btn.text {
+  background: transparent;
+  color: #667eea;
+  border: none;
+}

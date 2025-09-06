@@ -1,5 +1,9 @@
 {
   "navigationBarTitleText": "任务详情",
   "enablePullDownRefresh": false,
-  "usingComponents": {}
+  "usingComponents": {
+    "skeleton": "/components/skeleton/skeleton",
+    "upload-progress": "/components/upload-progress/upload-progress",
+    "grading-history": "/components/grading-history/grading-history"
+  }
 }

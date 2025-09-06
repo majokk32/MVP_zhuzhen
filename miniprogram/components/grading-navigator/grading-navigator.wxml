@@ -1,0 +1,211 @@
+<!-- 沉浸式批改导航组件 -->
+<view class="grading-navigator-container">
+  
+  <!-- 顶部进度指示器 -->
+  <view class="progress-header">
+    <view class="progress-track">
+      <view class="progress-fill" style="width: {{progressPercent}}%"></view>
+      <view class="progress-indicator" style="left: {{progressPercent}}%">
+        <view class="indicator-dot"></view>
+        <view class="indicator-label">{{currentIndex + 1}}/{{totalCount}}</view>
+      </view>
+    </view>
+    
+    <!-- 批改统计信息 -->
+    <view class="grading-stats">
+      <view class="stat-item completed">
+        <text class="stat-icon">✅</text>
+        <text class="stat-number">{{completedCount}}</text>
+        <text class="stat-label">已批改</text>
+      </view>
+      <view class="stat-item pending">
+        <text class="stat-icon">⏳</text>
+        <text class="stat-number">{{pendingCount}}</text>
+        <text class="stat-label">待批改</text>
+      </view>
+      <view class="stat-item efficiency" wx:if="{{showEfficiency}}">
+        <text class="stat-icon">⚡</text>
+        <text class="stat-number">{{avgGradingTime}}</text>
+        <text class="stat-label">平均用时</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 学生信息卡片（增强版） -->
+  <view class="student-info-card">
+    <view class="student-main">
+      <image 
+        class="student-avatar" 
+        src="{{currentStudent.avatar}}" 
+        mode="aspectFill" 
+        wx:if="{{currentStudent.avatar}}" 
+        lazy-load="true"
+        binderror="onImageError"
+      />
+      <view class="avatar-placeholder" wx:else>
+        <text>👤</text>
+      </view>
+      
+      <view class="student-details">
+        <view class="student-name">{{currentStudent.nickname || '学生'}}</view>
+        <view class="submission-meta">
+          <text class="attempt-info">第{{currentStudent.attemptNumber}}次提交</text>
+          <text class="time-info">{{currentStudent.timeAgo}}</text>
+          <view class="submission-status {{currentStudent.status}}">
+            {{currentStudent.statusText}}
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 快捷操作工具栏 -->
+    <view class="quick-actions">
+      <button class="action-icon-btn" bindtap="showHistory" data-action="history">
+        <text class="action-icon">📋</text>
+      </button>
+      <button class="action-icon-btn" bindtap="markFlag" data-action="flag">
+        <text class="action-icon {{currentStudent.flagged ? 'flagged' : ''}}">🚩</text>
+      </button>
+      <button class="action-icon-btn" bindtap="addNote" data-action="note">
+        <text class="action-icon">📝</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 导航控制区 -->
+  <view class="navigation-controls">
+    
+    <!-- 左侧导航 -->
+    <view class="nav-section left">
+      <button 
+        class="nav-btn primary {{currentIndex === 0 ? 'disabled' : ''}}" 
+        disabled="{{currentIndex === 0}}"
+        bindtap="previousSubmission"
+        bindlongpress="jumpToFirst"
+      >
+        <text class="btn-icon">←</text>
+        <text class="btn-text">上一份</text>
+      </button>
+    </view>
+
+    <!-- 中间快捷跳转 -->
+    <view class="nav-section center">
+      <view class="quick-jump">
+        <button class="jump-btn" bindtap="showSubmissionList">
+          <text class="current-position">{{currentIndex + 1}}</text>
+          <text class="total-count">/{{totalCount}}</text>
+          <text class="jump-icon">📋</text>
+        </button>
+      </view>
+      
+      <!-- 手势提示 -->
+      <view class="gesture-hint" wx:if="{{showGestureHint}}">
+        <text class="hint-text">左右滑动快速切换</text>
+      </view>
+    </view>
+
+    <!-- 右侧导航 -->
+    <view class="nav-section right">
+      <button 
+        class="nav-btn primary {{currentIndex === totalCount - 1 ? 'disabled' : ''}}" 
+        disabled="{{currentIndex === totalCount - 1}}"
+        bindtap="nextSubmission"
+        bindlongpress="jumpToLast"
+      >
+        <text class="btn-text">下一份</text>
+        <text class="btn-icon">→</text>
+      </button>
+    </view>
+  </view>
+
+  <!-- 智能推荐导航 -->
+  <view class="smart-navigation" wx:if="{{showSmartNav}}">
+    <view class="smart-nav-header">
+      <text class="smart-title">智能推荐</text>
+      <text class="smart-subtitle">基于批改习惯为您推荐</text>
+    </view>
+    
+    <scroll-view class="smart-options" scroll-x>
+      <view class="smart-option-list">
+        <button 
+          wx:for="{{smartRecommendations}}" 
+          wx:key="id"
+          class="smart-option {{item.type}}"
+          bindtap="jumpToSubmission"
+          data-index="{{item.index}}"
+        >
+          <view class="option-icon">{{item.icon}}</view>
+          <view class="option-content">
+            <text class="option-title">{{item.title}}</text>
+            <text class="option-desc">{{item.description}}</text>
+          </view>
+        </button>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 批改进度提醒 -->
+  <view class="progress-reminder" wx:if="{{showProgressReminder}}">
+    <view class="reminder-content">
+      <text class="reminder-icon">🎯</text>
+      <text class="reminder-text">{{progressReminderText}}</text>
+    </view>
+    <button class="reminder-action" bindtap="handleProgressAction">
+      {{progressActionText}}
+    </button>
+  </view>
+
+  <!-- 快捷键提示 -->
+  <view class="keyboard-shortcuts" wx:if="{{showShortcuts}}">
+    <view class="shortcuts-header">快捷键</view>
+    <view class="shortcuts-list">
+      <view class="shortcut-item">
+        <text class="shortcut-key">← →</text>
+        <text class="shortcut-desc">切换作业</text>
+      </view>
+      <view class="shortcut-item">
+        <text class="shortcut-key">Space</text>
+        <text class="shortcut-desc">完成批改</text>
+      </view>
+      <view class="shortcut-item">
+        <text class="shortcut-key">H</text>
+        <text class="shortcut-desc">查看历史</text>
+      </view>
+    </view>
+  </view>
+
+</view>
+
+<!-- 作业列表弹窗 -->
+<view class="submission-list-modal" wx:if="{{showSubmissionModal}}" bindtap="hideSubmissionList">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">选择作业</text>
+      <button class="close-btn" bindtap="hideSubmissionList">✕</button>
+    </view>
+    
+    <scroll-view class="submission-items" scroll-y max-height="60vh">
+      <button 
+        wx:for="{{submissionList}}" 
+        wx:key="id"
+        class="submission-item {{index === currentIndex ? 'current' : ''}} {{item.status}}"
+        bindtap="selectSubmission"
+        data-index="{{index}}"
+      >
+        <view class="item-info">
+          <image class="item-avatar" src="{{item.user.avatar}}" mode="aspectFill" wx:if="{{item.user.avatar}}" />
+          <view class="item-avatar placeholder" wx:else>👤</view>
+          <view class="item-details">
+            <text class="item-name">{{item.user.nickname || '学生'}}</text>
+            <text class="item-time">{{item.timeAgo}}</text>
+          </view>
+        </view>
+        
+        <view class="item-status">
+          <view class="status-badge {{item.status}}">{{item.statusText}}</view>
+          <text class="item-index">{{index + 1}}</text>
+        </view>
+      </button>
+    </scroll-view>
+  </view>
+</view>

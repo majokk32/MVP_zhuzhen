@@ -1,41 +1,42 @@
-# Build stage
-FROM python:3.11-slim as builder
+# 增强版Dockerfile，支持完整的生产部署
 
-WORKDIR /app
-
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements and install dependencies
-COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
-
-# Runtime stage
 FROM python:3.11-slim
 
+# 设置工作目录
 WORKDIR /app
 
-# Copy installed packages from builder
-COPY --from=builder /root/.local /root/.local
+# 设置环境变量
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+ENV ENVIRONMENT=production
 
-# Copy application code
-COPY ./app ./app
-COPY .env .env
+# 安装系统依赖
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create necessary directories
-RUN mkdir -p /app/data /app/uploads
+# 复制依赖文件
+COPY requirements.txt .
 
-# Make sure scripts are in PATH
-ENV PATH=/root/.local/bin:$PATH
+# 安装Python依赖
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose port
+# 复制应用代码
+COPY . .
+
+# 创建必要的目录
+RUN mkdir -p /app/data /app/logs /app/uploads
+
+# 设置权限
+RUN chmod +x deploy_config.py
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# 暴露端口
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-  CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
-
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 启动命令
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

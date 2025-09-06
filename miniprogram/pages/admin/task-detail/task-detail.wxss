@@ -1,0 +1,532 @@
+/* 任务详情管理页样式 */
+.container {
+  min-height: 100vh;
+  background-color: #f5f6fa;
+  padding-bottom: 120rpx;
+}
+
+/* 加载状态 */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 0;
+}
+
+.loading-spinner {
+  width: 40rpx;
+  height: 40rpx;
+  border: 3rpx solid #f3f3f3;
+  border-top: 3rpx solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20rpx;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 任务信息卡片 */
+.task-info-card {
+  background: white;
+  margin: 20rpx;
+  padding: 30rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 2rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 25rpx;
+}
+
+.task-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  flex: 1;
+  line-height: 1.4;
+  margin-right: 20rpx;
+}
+
+.task-status {
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.task-status.published {
+  background: #4ecdc4;
+  color: white;
+}
+
+.task-status.draft {
+  background: #ffa726;
+  color: white;
+}
+
+.task-status.ended {
+  background: #999;
+  color: white;
+}
+
+.task-meta {
+  margin-bottom: 25rpx;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+
+.meta-item:last-child {
+  margin-bottom: 0;
+}
+
+.meta-label {
+  font-size: 26rpx;
+  color: #666;
+  margin-right: 16rpx;
+  white-space: nowrap;
+}
+
+.meta-value {
+  font-size: 26rpx;
+  color: #333;
+}
+
+.meta-value.course-type {
+  padding: 6rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  font-weight: bold;
+  color: white;
+}
+
+.meta-value.essay {
+  background: #667eea;
+}
+
+.meta-value.interview {
+  background: #f093fb;
+}
+
+.meta-value.overdue {
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
+.task-description {
+  border-top: 1rpx solid #f0f0f0;
+  padding-top: 25rpx;
+}
+
+.desc-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15rpx;
+}
+
+.desc-content {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 统计概览 */
+.stats-overview {
+  background: white;
+  margin: 0 20rpx 20rpx;
+  padding: 30rpx;
+  border-radius: 20rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.stats-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.stats-number {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 8rpx;
+}
+
+.stats-label {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.stats-divider {
+  width: 2rpx;
+  height: 60rpx;
+  background: #e5e5e5;
+  margin: 0 30rpx;
+}
+
+/* 操作按钮区 */
+.action-buttons {
+  display: flex;
+  gap: 20rpx;
+  margin: 0 20rpx 20rpx;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 25rpx;
+  border-radius: 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 26rpx;
+  transition: all 0.3s ease;
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+}
+
+.action-btn.primary {
+  background: #667eea;
+  color: white;
+}
+
+.action-btn.secondary {
+  background: #ffa726;
+  color: white;
+}
+
+.action-btn.warning {
+  background: #ff6b6b;
+  color: white;
+}
+
+.btn-icon {
+  font-size: 32rpx;
+  margin-bottom: 8rpx;
+}
+
+.btn-text {
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+/* 学生提交列表区域 */
+.submissions-section {
+  background: white;
+  margin: 0 20rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.section-header {
+  padding: 30rpx 30rpx 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 20rpx;
+}
+
+.filter-tab {
+  padding: 12rpx 24rpx;
+  background: #f8f9fa;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.filter-tab.active {
+  background: #667eea;
+  color: white;
+}
+
+/* 提交列表 */
+.submissions-list {
+  max-height: 800rpx;
+  overflow-y: auto;
+}
+
+.submission-card {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.submission-card:active {
+  background-color: #f8f9ff;
+}
+
+.submission-card:last-child {
+  border-bottom: none;
+}
+
+.submission-basic {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.student-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.student-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+  margin-right: 20rpx;
+  border: 2rpx solid #f0f0f0;
+}
+
+.avatar-placeholder {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 40rpx;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+}
+
+.avatar-icon {
+  font-size: 32rpx;
+  color: #ccc;
+}
+
+.student-details {
+  flex: 1;
+}
+
+.student-name {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.submit-time {
+  font-size: 22rpx;
+  color: #666;
+}
+
+.submit-time.pending {
+  color: #ff6b6b;
+}
+
+.submission-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.status-badge {
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: bold;
+  margin-bottom: 8rpx;
+}
+
+.status-badge.graded {
+  background: #4ecdc4;
+  color: white;
+}
+
+.status-badge.submitted {
+  background: #ffa726;
+  color: white;
+}
+
+.status-badge.pending {
+  background: #f0f0f0;
+  color: #999;
+}
+
+.grade-info {
+  font-size: 22rpx;
+}
+
+.grade-value {
+  padding: 6rpx 12rpx;
+  border-radius: 12rpx;
+  font-weight: bold;
+  color: white;
+}
+
+.grade-value.优秀 {
+  background: #4ecdc4;
+}
+
+.grade-value.良好 {
+  background: #ffa726;
+}
+
+.grade-value.及格 {
+  background: #42a5f5;
+}
+
+.grade-value.不及格 {
+  background: #ff6b6b;
+}
+
+/* 提交内容预览 */
+.submission-preview {
+  margin-bottom: 15rpx;
+}
+
+.preview-images {
+  display: flex;
+  gap: 12rpx;
+  position: relative;
+}
+
+.preview-image {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid #e5e5e5;
+}
+
+.image-count {
+  position: absolute;
+  right: 8rpx;
+  bottom: 8rpx;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 18rpx;
+  padding: 2rpx 6rpx;
+  border-radius: 6rpx;
+}
+
+.submission-arrow {
+  position: absolute;
+  right: 30rpx;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.arrow-icon {
+  font-size: 32rpx;
+  color: #ccc;
+  font-weight: bold;
+}
+
+/* 加载更多和没有更多 */
+.loading-more, .no-more {
+  text-align: center;
+  padding: 30rpx 0;
+}
+
+.no-more-text {
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 40rpx;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 30rpx;
+  opacity: 0.6;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.empty-hint {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* 底部操作栏 */
+.bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 20rpx;
+  border-top: 1rpx solid #e5e5e5;
+  display: flex;
+  gap: 20rpx;
+  z-index: 100;
+}
+
+.bottom-btn {
+  flex: 1;
+  padding: 25rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+}
+
+.bottom-btn.primary {
+  background: #667eea;
+  color: white;
+}
+
+.bottom-btn.secondary {
+  background: #ffa726;
+  color: white;
+}
+
+.bottom-btn .btn-icon {
+  margin-right: 8rpx;
+  font-size: 24rpx;
+}
+
+.bottom-btn .btn-text {
+  font-weight: 500;
+}

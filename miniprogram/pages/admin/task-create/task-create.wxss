@@ -1,0 +1,304 @@
+/* 创建新任务页样式 */
+.container {
+  min-height: 100vh;
+  background-color: #f5f6fa;
+}
+
+.form-container {
+  padding: 30rpx;
+}
+
+/* 表单区块 */
+.form-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.label-text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.required-star {
+  color: #ff6b6b;
+  margin-left: 8rpx;
+  font-size: 28rpx;
+}
+
+/* 输入框样式 */
+.form-input {
+  width: 100%;
+  padding: 25rpx;
+  background: #f8f9fa;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  color: #333;
+  border: 2rpx solid transparent;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  background: white;
+  border-color: #667eea;
+}
+
+.form-input.error {
+  border-color: #ff6b6b;
+  background: #fff5f5;
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  padding: 25rpx;
+  background: #f8f9fa;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  color: #333;
+  border: 2rpx solid transparent;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  line-height: 1.6;
+}
+
+.form-textarea:focus {
+  background: white;
+  border-color: #667eea;
+}
+
+.form-textarea.error {
+  border-color: #ff6b6b;
+  background: #fff5f5;
+}
+
+/* 日期时间选择器 */
+.datetime-picker-wrapper {
+  display: flex;
+  gap: 20rpx;
+}
+
+.datetime-picker {
+  flex: 1;
+}
+
+.picker-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 25rpx;
+  background: #f8f9fa;
+  border-radius: 16rpx;
+  border: 2rpx solid transparent;
+  transition: all 0.3s ease;
+}
+
+.datetime-picker.error .picker-display {
+  border-color: #ff6b6b;
+  background: #fff5f5;
+}
+
+.picker-text {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.picker-text.placeholder {
+  color: #999;
+}
+
+.picker-icon {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.datetime-preview {
+  margin-top: 15rpx;
+  font-size: 26rpx;
+  color: #667eea;
+  padding: 10rpx 20rpx;
+  background: #f0f3ff;
+  border-radius: 12rpx;
+}
+
+/* 选择器样式 */
+.form-picker .picker-display {
+  background: #f8f9fa;
+  border-radius: 16rpx;
+  padding: 25rpx;
+}
+
+/* 错误提示 */
+.error-text {
+  color: #ff6b6b;
+  font-size: 24rpx;
+  margin-top: 10rpx;
+}
+
+/* 字数统计 */
+.input-counter {
+  text-align: right;
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 10rpx;
+}
+
+/* 表单提示 */
+.form-hint {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 10rpx;
+  line-height: 1.4;
+}
+
+/* 高级设置 */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-top: 1rpx solid #f0f0f0;
+  margin-top: 20rpx;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #666;
+}
+
+.toggle-icon {
+  font-size: 24rpx;
+  color: #999;
+  transition: all 0.3s ease;
+}
+
+.toggle-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.advanced-settings {
+  margin-top: 20rpx;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-label {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.setting-input {
+  width: 120rpx;
+  padding: 15rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  text-align: center;
+  font-size: 26rpx;
+  border: 1rpx solid transparent;
+}
+
+.setting-input:focus {
+  border-color: #667eea;
+  background: white;
+}
+
+.setting-unit {
+  font-size: 24rpx;
+  color: #666;
+  margin-left: 10rpx;
+}
+
+.setting-desc {
+  font-size: 26rpx;
+  color: #667eea;
+}
+
+/* 提交按钮区域 */
+.submit-area {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 30rpx;
+  box-shadow: 0 -2rpx 20rpx rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 20rpx;
+  padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+}
+
+.btn-secondary {
+  flex: 1;
+  background: #f8f9fa;
+  color: #666;
+  border-radius: 25rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  font-size: 30rpx;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:active {
+  background: #e9ecef;
+}
+
+.btn-secondary[disabled] {
+  background: #f1f1f1;
+  color: #ccc;
+}
+
+.btn-primary {
+  flex: 2;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 25rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  font-size: 30rpx;
+  font-weight: bold;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary[disabled] {
+  background: #ccc;
+  color: #999;
+  transform: none;
+}
+
+.btn-secondary::after,
+.btn-primary::after {
+  border: none;
+}
+
+/* 底部安全区域 */
+.safe-bottom {
+  height: calc(140rpx + env(safe-area-inset-bottom));
+  background-color: #f5f6fa;
+}

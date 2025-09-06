@@ -1,0 +1,148 @@
+<!-- 上传进度组件 -->
+<view class="upload-progress-container" wx:if="{{show}}">
+  
+  <!-- 整体上传状态栏 -->
+  <view class="overall-progress">
+    <view class="progress-header">
+      <text class="progress-title">上传进度</text>
+      <text class="progress-count">{{completedCount}}/{{totalCount}}</text>
+    </view>
+    
+    <!-- 总体进度条 -->
+    <view class="progress-bar-container">
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{overallProgress}}%"></view>
+      </view>
+      <text class="progress-text">{{overallProgress}}%</text>
+    </view>
+    
+    <!-- 上传统计信息 -->
+    <view class="upload-stats">
+      <text class="stat-item">速度: {{averageSpeed}}KB/s</text>
+      <text class="stat-item" wx:if="{{remainingTime > 0}}">剩余: {{remainingTimeText}}</text>
+    </view>
+  </view>
+
+  <!-- 单个文件上传状态列表 -->
+  <scroll-view class="upload-list" scroll-y max-height="400rpx">
+    <view 
+      wx:for="{{uploadItems}}" 
+      wx:key="id" 
+      class="upload-item {{item.status}}"
+    >
+      <!-- 文件信息 -->
+      <view class="file-info">
+        <view class="file-preview">
+          <image wx:if="{{item.type === 'image'}}" src="{{item.localPath}}" mode="aspectFill" class="preview-image" />
+          <view wx:else class="file-icon">📄</view>
+        </view>
+        
+        <view class="file-details">
+          <text class="file-name">{{item.name}}</text>
+          <text class="file-size">{{item.sizeText}}</text>
+        </view>
+      </view>
+      
+      <!-- 状态指示器 -->
+      <view class="status-indicator">
+        <!-- 等待状态 -->
+        <view wx:if="{{item.status === 'waiting'}}" class="status-waiting">
+          <text class="status-icon">⏳</text>
+          <text class="status-text">等待中</text>
+        </view>
+        
+        <!-- 上传中状态 -->
+        <view wx:elif="{{item.status === 'uploading'}}" class="status-uploading">
+          <view class="mini-progress-bar">
+            <view class="mini-progress-fill" style="width: {{item.progress}}%"></view>
+          </view>
+          <view class="upload-info">
+            <text class="progress-percent">{{item.progress}}%</text>
+            <text class="upload-speed" wx:if="{{item.speed > 0}}">{{item.speed}}KB/s</text>
+          </view>
+        </view>
+        
+        <!-- 成功状态 -->
+        <view wx:elif="{{item.status === 'success'}}" class="status-success">
+          <text class="status-icon success">✓</text>
+          <text class="status-text">已完成</text>
+          <text class="upload-time">{{item.uploadTimeText}}</text>
+        </view>
+        
+        <!-- 失败状态 -->
+        <view wx:elif="{{item.status === 'failed'}}" class="status-failed">
+          <text class="status-icon failed">✗</text>
+          <view class="error-info">
+            <text class="status-text">上传失败</text>
+            <text class="error-message">{{item.errorMessage}}</text>
+          </view>
+          <button 
+            class="retry-btn" 
+            size="mini" 
+            bindtap="retryUpload" 
+            data-id="{{item.id}}"
+            wx:if="{{item.retryable}}"
+          >
+            重试
+          </button>
+        </view>
+        
+        <!-- 取消按钮 -->
+        <view 
+          wx:if="{{item.status === 'waiting' || item.status === 'uploading'}}"
+          class="cancel-btn"
+          bindtap="cancelUpload"
+          data-id="{{item.id}}"
+        >
+          <text class="cancel-icon">✕</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+  
+  <!-- 操作按钮区 -->
+  <view class="action-buttons">
+    <button 
+      class="btn-secondary" 
+      size="mini"
+      bindtap="pauseAll"
+      wx:if="{{hasUploading}}"
+    >
+      暂停全部
+    </button>
+    
+    <button 
+      class="btn-secondary" 
+      size="mini"
+      bindtap="retryAll"
+      wx:if="{{hasFailures}}"
+    >
+      重试全部
+    </button>
+    
+    <button 
+      class="btn-secondary" 
+      size="mini"
+      bindtap="clearCompleted"
+      wx:if="{{hasCompleted}}"
+    >
+      清除已完成
+    </button>
+    
+    <button 
+      class="btn-primary" 
+      size="mini"
+      bindtap="close"
+    >
+      关闭
+    </button>
+  </view>
+</view>
+
+<!-- 简化版进度指示器 -->
+<view class="simple-progress" wx:if="{{showSimple && !show}}">
+  <view class="simple-progress-bar">
+    <view class="simple-progress-fill" style="width: {{overallProgress}}%"></view>
+  </view>
+  <text class="simple-progress-text">上传中 {{completedCount}}/{{totalCount}}</text>
+</view>

@@ -1,2 +1,197 @@
-<!--pages/admin/students/students.wxml-->
-<text>pages/admin/students/students.wxml</text>
+<!-- 学生总列表页 -->
+<view class="container">
+  <!-- 搜索栏 -->
+  <view class="search-section">
+    <view class="search-wrapper">
+      <input 
+        class="search-input" 
+        placeholder="搜索学生昵称或手机号..."
+        value="{{searchKeyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearchConfirm"
+      />
+      <text class="search-icon">🔍</text>
+    </view>
+  </view>
+
+  <!-- 统计概览 -->
+  <view class="stats-overview">
+    <view class="stats-item">
+      <view class="stats-number">{{totalStudents}}</view>
+      <view class="stats-label">学生总数</view>
+    </view>
+    <view class="stats-divider"></view>
+    <view class="stats-item">
+      <view class="stats-number">{{paidStudents}}</view>
+      <view class="stats-label">付费学员</view>
+    </view>
+    <view class="stats-divider"></view>
+    <view class="stats-item">
+      <view class="stats-number">{{trialStudents}}</view>
+      <view class="stats-label">试用学员</view>
+    </view>
+  </view>
+
+  <!-- 筛选标签 -->
+  <view class="filter-tabs">
+    <scroll-view class="filter-scroll" scroll-x>
+      <view class="filter-list">
+        <view 
+          class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}"
+          data-filter="all"
+          bindtap="onFilterChange"
+        >
+          全部学员
+        </view>
+        <view 
+          class="filter-tab {{currentFilter === 'paid' ? 'active' : ''}}"
+          data-filter="paid"
+          bindtap="onFilterChange"
+        >
+          付费学员
+        </view>
+        <view 
+          class="filter-tab {{currentFilter === 'trial' ? 'active' : ''}}"
+          data-filter="trial"
+          bindtap="onFilterChange"
+        >
+          试用学员
+        </view>
+        <view 
+          class="filter-tab {{currentFilter === 'active' ? 'active' : ''}}"
+          data-filter="active"
+          bindtap="onFilterChange"
+        >
+          活跃学员
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 学生列表 -->
+  <scroll-view 
+    class="student-list"
+    scroll-y
+    enable-back-to-top
+    refresher-enabled
+    refresher-triggered="{{refreshing}}"
+    bindrefresherrefresh="onRefresh"
+    bindscrolltolower="onLoadMore"
+  >
+    <!-- 学生信息卡片 -->
+    <view wx:for="{{studentList}}" wx:key="id" class="student-card" bindtap="onStudentClick" data-student="{{item}}">
+      <view class="student-basic-info">
+        <!-- 头像 -->
+        <view class="avatar-wrapper">
+          <image class="student-avatar" src="{{item.avatar}}" mode="aspectFill" wx:if="{{item.avatar}}"/>
+          <view class="avatar-placeholder" wx:else>
+            <text class="avatar-icon">👤</text>
+          </view>
+          <view class="permission-badge {{item.permission_type}}">
+            {{item.permission_type === 'paid' ? 'VIP' : '试用'}}
+          </view>
+        </view>
+
+        <!-- 基本信息 -->
+        <view class="student-details">
+          <view class="student-name">{{item.nickname || '未设置昵称'}}</view>
+          <view class="student-meta">
+            <view class="meta-item">
+              <text class="meta-label">注册时间：</text>
+              <text class="meta-value">{{item.created_at}}</text>
+            </view>
+            <view class="meta-item" wx:if="{{item.last_active}}">
+              <text class="meta-label">最近活跃：</text>
+              <text class="meta-value">{{item.last_active}}</text>
+            </view>
+            <view class="meta-item" wx:if="{{item.permission_expire}}">
+              <text class="meta-label">权限到期：</text>
+              <text class="meta-value {{item.isExpiringSoon ? 'warning' : ''}}">{{item.permission_expire}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 操作箭头 -->
+        <view class="action-arrow">
+          <text class="arrow-icon">›</text>
+        </view>
+      </view>
+
+      <!-- 学习统计 -->
+      <view class="student-stats">
+        <view class="stat-group">
+          <view class="stat-item">
+            <view class="stat-number">{{item.stats.total_submissions || 0}}</view>
+            <view class="stat-label">总提交</view>
+          </view>
+          <view class="stat-item">
+            <view class="stat-number">{{item.stats.completed_tasks || 0}}</view>
+            <view class="stat-label">已完成</view>
+          </view>
+          <view class="stat-item">
+            <view class="stat-number">{{item.stats.average_score || 0}}</view>
+            <view class="stat-label">平均分</view>
+          </view>
+        </view>
+        
+        <!-- 最近表现标签 -->
+        <view wx:if="{{item.recentPerformance}}" class="performance-tag {{item.recentPerformance.type}}">
+          {{item.recentPerformance.text}}
+        </view>
+      </view>
+
+      <!-- 快速操作 -->
+      <view class="quick-actions" catchtap="onActionTap">
+        <view class="quick-btn" data-action="archive" data-student="{{item}}" bindtap="onQuickAction">
+          <text class="btn-icon">📋</text>
+          <text class="btn-text">档案</text>
+        </view>
+        <view class="quick-btn" data-action="contact" data-student="{{item}}" bindtap="onQuickAction">
+          <text class="btn-icon">💬</text>
+          <text class="btn-text">联系</text>
+        </view>
+        <view class="quick-btn" data-action="permission" data-student="{{item}}" bindtap="onQuickAction">
+          <text class="btn-icon">🔑</text>
+          <text class="btn-text">权限</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view wx:if="{{loadingMore}}" class="loading-more">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view wx:if="{{!hasMore && studentList.length > 0}}" class="no-more">
+      <text class="no-more-text">- 没有更多了 -</text>
+    </view>
+
+    <!-- 空状态 -->
+    <empty-state
+      show="{{isEmpty && !loading}}"
+      icon="👥"
+      title="{{getEmptyText()}}"
+      description="{{getEmptyHint()}}"
+      show-action="{{currentFilter === 'all'}}"
+      action-text="刷新数据"
+      action-type="outline"
+      bind:actionClick="onRefresh"
+    ></empty-state>
+
+    <!-- 骨架屏 -->
+    <skeleton show="{{loading && studentList.length === 0}}" type="student-list" count="{{4}}"></skeleton>
+  </scroll-view>
+
+  <!-- 浮动操作按钮 -->
+  <view class="fab-actions">
+    <view class="fab-btn" bindtap="exportStudentList">
+      <text class="fab-icon">📤</text>
+      <text class="fab-text">导出</text>
+    </view>
+  </view>
+</view>
+
+<!-- 底部安全区域 -->
+<view class="safe-bottom"></view>
