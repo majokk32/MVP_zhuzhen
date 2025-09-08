@@ -4,6 +4,9 @@
   "usingComponents": {
     "task-card": "/components/task-card/task-card",
     "skeleton": "/components/skeleton/skeleton",
-    "empty-state": "/components/empty-state/empty-state"
+    "empty-state": "/components/empty-state/empty-state",
+    "virtual-list": "/components/virtual-list/virtual-list",
+    "progressive-image": "/components/progressive-image/progressive-image",
+    "upgrade-guide": "/components/upgrade-guide/upgrade-guide"
   }
 }

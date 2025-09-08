@@ -12,6 +12,8 @@ from app.config import settings
 from app.database import init_db
 from app.api import api_router
 from app.schemas import ResponseBase
+from app.services.scheduler import scheduler_service
+import asyncio
 
 # Create FastAPI app
 app = FastAPI(
@@ -96,6 +98,10 @@ app.include_router(api_router)
 async def startup_event():
     """Initialize database on startup"""
     await init_db()
+    
+    # 启动定时任务调度器（可选，根据需要开启）
+    # asyncio.create_task(scheduler_service.start())
+    
     print(f"✅ {settings.PROJECT_NAME} v{settings.VERSION} started successfully!")
     print(f"📚 API Documentation: http://localhost:8000/docs")
 
@@ -104,6 +110,8 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
+    # 停止定时任务调度器
+    await scheduler_service.stop()
     print(f"👋 {settings.PROJECT_NAME} shutting down...")
 
 

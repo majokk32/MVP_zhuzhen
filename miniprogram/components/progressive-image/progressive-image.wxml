@@ -1,0 +1,44 @@
+<!-- components/progressive-image/progressive-image.wxml -->
+<view class="progressive-image {{customClass}}" style="border-radius: {{borderRadius}};">
+  <!-- 主图片 -->
+  <image 
+    class="progressive-image__img" 
+    src="{{currentSrc}}" 
+    mode="{{mode}}"
+    lazy-load="{{lazyLoad}}"
+    style="border-radius: {{borderRadius}};"
+    bindload="onNativeLoad"
+    binderror="onNativeError"
+    bindtap="onImageTap"
+  />
+  
+  <!-- 加载状态遮罩 -->
+  <view wx:if="{{loading && showLoading}}" class="progressive-image__loading">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+    
+    <!-- 进度条 -->
+    <view wx:if="{{showProgress}}" class="loading-progress">
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{progress}}%;"></view>
+      </view>
+      <text class="progress-text">{{progress}}%</text>
+    </view>
+  </view>
+  
+  <!-- 错误状态 -->
+  <view wx:if="{{error}}" class="progressive-image__error" bindtap="retry">
+    <view class="error-icon">⚠️</view>
+    <text class="error-text">加载失败，点击重试</text>
+  </view>
+  
+  <!-- 缓存标识（开发模式显示） -->
+  <view wx:if="{{cached && false}}" class="progressive-image__cache-badge">
+    <text>缓存</text>
+  </view>
+  
+  <!-- 压缩信息（开发模式显示） -->
+  <view wx:if="{{compressInfo && false}}" class="progressive-image__compress-info">
+    <text>压缩率: {{compressInfo.compressionRatio}}%</text>
+  </view>
+</view>

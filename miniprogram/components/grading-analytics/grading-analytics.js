@@ -312,24 +312,174 @@ Component({
 
     // 导出报告
     exportReport() {
+      const { taskId } = this.properties;
+      
+      wx.showActionSheet({
+        itemList: ['导出PDF报告', '导出Excel报告'],
+        success: (res) => {
+          const formatType = res.tapIndex === 0 ? 'pdf' : 'excel';
+          this.performExport(formatType, taskId);
+        }
+      });
+    },
+
+    // 执行导出操作
+    async performExport(formatType, taskId) {
       wx.showLoading({
         title: '生成报告中...'
       });
 
-      // 模拟报告生成
-      setTimeout(() => {
-        wx.hideLoading();
-        wx.showToast({
-          title: '报告已生成',
-          icon: 'success'
+      try {
+        const app = getApp();
+        
+        // 构建导出URL
+        const baseUrl = '/api/v1/grading-analytics/export/efficiency-report';
+        const params = new URLSearchParams({
+          format_type: formatType,
+          days: 30 // 默认30天，可以根据需要调整
         });
 
-        // 触发导出事件
-        this.triggerEvent('exportReport', {
-          taskId: this.properties.taskId,
-          analytics: this.data.analytics
+        if (taskId) {
+          params.append('task_id', taskId);
+        }
+
+        const exportUrl = `${baseUrl}?${params.toString()}`;
+
+        // 调用导出API
+        const response = await app.request({
+          url: exportUrl,
+          method: 'GET',
+          responseType: 'arraybuffer', // 接收二进制数据
         });
-      }, 1500);
+
+        wx.hideLoading();
+
+        if (response) {
+          // 成功提示
+          wx.showToast({
+            title: `${formatType.toUpperCase()}报告已生成`,
+            icon: 'success'
+          });
+
+          // 触发导出事件，传递给父组件处理文件保存
+          this.triggerEvent('exportReport', {
+            taskId: taskId,
+            format: formatType,
+            data: response,
+            filename: this.generateExportFilename(formatType),
+            analytics: this.data.analytics
+          });
+
+          // 提示用户查看文件
+          setTimeout(() => {
+            wx.showModal({
+              title: '导出成功',
+              content: `${formatType.toUpperCase()}格式的批改分析报告已生成。由于小程序限制，请通过其他方式查看或分享文件。`,
+              showCancel: false,
+              confirmText: '知道了'
+            });
+          }, 1500);
+
+        } else {
+          throw new Error('导出响应为空');
+        }
+
+      } catch (error) {
+        wx.hideLoading();
+        
+        console.error('导出报告失败:', error);
+        
+        let errorMsg = '导出失败，请稍后重试';
+        if (error.message) {
+          errorMsg = error.message.includes('网络') ? '网络连接失败' : '导出过程中发生错误';
+        }
+
+        wx.showToast({
+          title: errorMsg,
+          icon: 'error',
+          duration: 2000
+        });
+      }
+    },
+
+    // 生成导出文件名
+    generateExportFilename(formatType) {
+      const now = new Date();
+      const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
+      const taskTitle = this.properties.taskTitle || '批改分析';
+      const extension = formatType === 'pdf' ? 'pdf' : 'xlsx';
+      
+      return `${taskTitle}_${timestamp}.${extension}`;
+    },
+
+    // 导出成绩分布报告
+    exportGradeDistribution() {
+      const { taskId } = this.properties;
+      
+      wx.showActionSheet({
+        itemList: ['导出成绩PDF', '导出成绩Excel'],
+        success: (res) => {
+          const formatType = res.tapIndex === 0 ? 'pdf' : 'excel';
+          this.performGradeExport(formatType, taskId);
+        }
+      });
+    },
+
+    // 执行成绩分布导出
+    async performGradeExport(formatType, taskId) {
+      wx.showLoading({
+        title: '生成成绩报告中...'
+      });
+
+      try {
+        const app = getApp();
+        
+        const baseUrl = '/api/v1/grading-analytics/export/grade-distribution';
+        const params = new URLSearchParams({
+          format_type: formatType,
+          days: 30
+        });
+
+        if (taskId) {
+          params.append('task_id', taskId);
+        }
+
+        const exportUrl = `${baseUrl}?${params.toString()}`;
+
+        const response = await app.request({
+          url: exportUrl,
+          method: 'GET',
+          responseType: 'arraybuffer',
+        });
+
+        wx.hideLoading();
+
+        if (response) {
+          wx.showToast({
+            title: `成绩${formatType.toUpperCase()}已生成`,
+            icon: 'success'
+          });
+
+          this.triggerEvent('exportGradeReport', {
+            taskId: taskId,
+            format: formatType,
+            data: response,
+            filename: `学生成绩分布_${new Date().toISOString().slice(0, 10)}.${formatType === 'pdf' ? 'pdf' : 'xlsx'}`
+          });
+
+        } else {
+          throw new Error('成绩导出响应为空');
+        }
+
+      } catch (error) {
+        wx.hideLoading();
+        console.error('导出成绩分布失败:', error);
+        
+        wx.showToast({
+          title: '成绩导出失败',
+          icon: 'error'
+        });
+      }
     },
 
     // 关闭面板

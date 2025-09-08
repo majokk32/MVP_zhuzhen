@@ -330,5 +330,13 @@
   bind:close="onMyGradingHistoryClose"
 />
 
+<!-- 升级引导组件 -->
+<upgrade-guide 
+  show="{{showUpgradeGuide}}"
+  guideType="{{upgradeGuideType}}"
+  featureName="任务详情"
+  bind:close="onUpgradeGuideClose"
+/>
+
 <!-- 底部安全区域 -->
 <view class="safe-bottom"></view>

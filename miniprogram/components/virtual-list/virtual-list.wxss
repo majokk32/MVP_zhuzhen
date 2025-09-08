@@ -1,0 +1,138 @@
+/* 虚拟滚动列表组件样式 */
+
+.virtual-list-container {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.virtual-container {
+  position: relative;
+  width: 100%;
+}
+
+.virtual-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  will-change: transform;
+}
+
+.virtual-item {
+  position: relative;
+  width: 100%;
+}
+
+/* 空状态 */
+.virtual-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200rpx;
+  padding: 40rpx;
+}
+
+/* 加载更多指示器 */
+.virtual-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  padding: 30rpx;
+  position: sticky;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10rpx);
+}
+
+.loading-spinner {
+  width: 32rpx;
+  height: 32rpx;
+  border: 3rpx solid #f0f0f0;
+  border-top-color: #1989fa;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 26rpx;
+  color: #666;
+}
+
+/* 性能调试信息 */
+.virtual-debug {
+  position: fixed;
+  top: 100rpx;
+  right: 20rpx;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10rpx;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  line-height: 1.5;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  pointer-events: none;
+}
+
+/* 滚动性能优化 */
+.virtual-list-container {
+  /* 启用硬件加速 */
+  transform: translateZ(0);
+  /* 优化滚动性能 */
+  -webkit-overflow-scrolling: touch;
+}
+
+.virtual-content {
+  /* 启用硬件加速 */
+  transform: translateZ(0);
+  /* 优化渲染性能 */
+  contain: layout style paint;
+}
+
+/* 针对长列表的性能优化 */
+.virtual-item {
+  /* 包含布局和绘制 */
+  contain: layout paint;
+  /* 避免不必要的重绘 */
+  will-change: auto;
+}
+
+/* 响应式适配 */
+@media screen and (max-width: 375px) {
+  .virtual-loading {
+    padding: 20rpx;
+  }
+  
+  .loading-spinner {
+    width: 28rpx;
+    height: 28rpx;
+  }
+  
+  .loading-text {
+    font-size: 24rpx;
+  }
+}
+
+/* 暗色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .virtual-loading {
+    background: rgba(28, 28, 30, 0.9);
+  }
+  
+  .loading-text {
+    color: #999;
+  }
+  
+  .virtual-debug {
+    background: rgba(44, 44, 46, 0.95);
+  }
+}

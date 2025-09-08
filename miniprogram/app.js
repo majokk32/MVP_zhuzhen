@@ -1,51 +1,271 @@
 // app.js
 // 小程序全局应用实例
+const performanceOptimizer = require('./utils/performance-optimizer');
+const errorHandler = require('./utils/error-handler');
+const { analyticsHelper, analytics } = require('./utils/analytics-helper');
+const performanceMonitor = require('./utils/performance-monitor');
+
 App({
+  // 优化的启动流程
   onLaunch(options) {
-    // 初始化云开发（如果使用）
-    // wx.cloud.init()
+    const launchStartTime = Date.now();
+    
+    // 记录启动时间
+    performanceOptimizer.performanceData.startTime = launchStartTime;
+    
+    // 追踪应用启动
+    analytics.trackAppLifecycle('app_launch', {
+      scene: options.scene,
+      path: options.path,
+      query: options.query,
+      referrerInfo: options.referrerInfo
+    });
+    
+    // 优化关键路径启动
+    this.optimizedStartup(options, launchStartTime);
+  },
+
+  // 优化的启动流程
+  async optimizedStartup(options, startTime) {
+    try {
+      // 阶段1: 关键系统初始化（同步，最快速度）
+      this.initCriticalSystems();
+      
+      // 阶段2: 关键路径任务（异步并行）
+      const criticalTasks = this.defineCriticalTasks();
+      await performanceOptimizer.optimizeCriticalPath(criticalTasks);
+      
+      // 阶段3: 次要任务（延迟执行）
+      setTimeout(() => {
+        this.initSecondaryFeatures(options);
+      }, 100);
+      
+      // 记录启动完成时间
+      const appLaunchTime = Date.now() - startTime;
+      performanceOptimizer.performanceData.appLaunchTime = appLaunchTime;
+      
+      // 记录应用启动性能指标
+      performanceMonitor.recordAppLaunchMetrics(startTime, options);
+      
+      console.log(`应用启动完成: ${appLaunchTime}ms`);
+      
+    } catch (error) {
+      console.error('优化启动流程失败:', error);
+      // 降级到传统启动方式
+      this.fallbackStartup(options);
+    }
+  },
+
+  // 关键系统初始化
+  initCriticalSystems() {
+    // 获取系统信息（同步，必需）
+    this.globalData.systemInfo = wx.getSystemInfoSync();
+    
+    // 设置全局错误处理（同步，必需）
+    this.setupGlobalErrorHandler();
+    
+    // 初始化性能监控
+    this.globalData.performanceOptimizer = performanceOptimizer;
+    this.globalData.performanceMonitor = performanceMonitor;
+    
+    // 初始化埋点系统
+    this.setupAnalytics();
+  },
+
+  // 定义关键路径任务
+  defineCriticalTasks() {
+    return [
+      {
+        id: 'auth_check',
+        type: 'auth',
+        priority: 'critical',
+        timeout: 2000
+      },
+      {
+        id: 'user_info',
+        type: 'userInfo', 
+        priority: 'critical',
+        timeout: 1500
+      }
+    ];
+  },
+
+  // 次要功能初始化
+  initSecondaryFeatures(options) {
+    // 处理深链接参数
+    this.handleLaunchOptions(options);
+    
+    // 设置预加载任务
+    this.setupPreloadTasks();
+    
+    // 初始化其他非关键功能
+    this.initNonCriticalFeatures();
+  },
+
+  // 设置预加载任务
+  setupPreloadTasks() {
+    // 预加载任务模块
+    performanceOptimizer.addPreloadTask({
+      type: 'module',
+      path: '../../modules/task/task',
+      priority: 'high'
+    });
+    
+    // 预加载常用图片资源
+    performanceOptimizer.addPreloadTask({
+      type: 'image',
+      url: '/assets/images/default-avatar.svg',
+      priority: 'medium'
+    });
+    
+    performanceOptimizer.addPreloadTask({
+      type: 'image', 
+      url: '/assets/images/avatar-placeholder.svg',
+      priority: 'low'
+    });
+  },
+
+  // 初始化非关键功能
+  initNonCriticalFeatures() {
+    // 这些功能延迟初始化，不影响首屏
+    setTimeout(() => {
+      // 初始化分享功能
+      this.initShareFeatures();
+      
+      // 初始化统计功能
+      this.initAnalytics();
+      
+    }, 500);
+  },
+
+  // 降级启动方式
+  fallbackStartup(options) {
+    console.warn('使用降级启动方式');
     
     // 设置全局错误处理
-    this.setupGlobalErrorHandler()
+    this.setupGlobalErrorHandler();
     
     // 获取系统信息
-    this.globalData.systemInfo = wx.getSystemInfoSync()
+    this.globalData.systemInfo = wx.getSystemInfoSync();
     
     // 处理深链接参数
-    this.handleLaunchOptions(options)
+    this.handleLaunchOptions(options);
     
     // 检查登录状态
-    this.checkSession()
+    this.checkSession();
   },
 
   // 设置全局错误处理
   setupGlobalErrorHandler() {
-    // 捕获未处理的异常
-    wx.onError((error) => {
-      console.error('小程序全局错误:', error);
+    try {
+      // 错误处理器已经在模块加载时自动初始化
+      // 这里只需要设置app级别的配置
+      this.globalData.errorHandler = errorHandler;
       
-      // 避免过于频繁的错误提示
-      if (!this.lastErrorTime || Date.now() - this.lastErrorTime > 5000) {
-        wx.showToast({
-          title: '程序运行异常，请重新尝试',
-          icon: 'none',
-          duration: 2000
-        });
-        this.lastErrorTime = Date.now();
-      }
-    });
+      // 监听内存不足警告
+      wx.onMemoryWarning((res) => {
+        console.warn('内存不足警告:', res.level);
+        wx.setStorageSync('memory_warning', res.level >= 10);
+        
+        if (res.level >= 10) {
+          errorHandler.handleUIError(
+            new Error(`内存警告等级: ${res.level}`),
+            'system',
+            { memoryLevel: res.level }
+          );
+        }
+      });
 
-    // 监听内存不足警告
-    wx.onMemoryWarning((res) => {
-      console.warn('内存不足警告:', res.level);
-      if (res.level >= 10) {
-        wx.showToast({
-          title: '内存不足，请清理后台应用',
-          icon: 'none',
-          duration: 3000
+      // 设置订阅事件处理
+      this.onSubscriptionEvent = (eventData) => {
+        console.log('订阅事件:', eventData);
+        // 这里可以添加全局的订阅事件处理逻辑
+      };
+
+      console.log('全局错误处理器已设置');
+    } catch (error) {
+      console.error('设置全局错误处理器失败:', error);
+    }
+  },
+
+  // 设置埋点系统
+  setupAnalytics() {
+    try {
+      // 设置全局引用
+      this.globalData.analytics = analytics;
+      this.globalData.analyticsHelper = analyticsHelper;
+      
+      // 启用自动追踪
+      analyticsHelper.enableAutoTracking({
+        pageViews: true,
+        userInteractions: true,
+        errors: true,
+        performance: true,
+        api: true
+      });
+      
+      // 集成错误处理器和埋点系统
+      const originalHandleError = errorHandler.handleUIError;
+      errorHandler.handleUIError = function(error, component, context) {
+        // 先执行原来的错误处理
+        const result = originalHandleError.call(this, error, component, context);
+        
+        // 然后发送错误埋点
+        analytics.trackError({
+          type: 'UI_ERROR',
+          message: error.message || '界面错误',
+          stack: error.stack,
+          pageRoute: analytics.getCurrentPageRoute(),
+          component: component,
+          severity: 'medium',
+          context
         });
-      }
-    });
+        
+        return result;
+      };
+
+      const originalHandleApiError = errorHandler.handleApiError;
+      errorHandler.handleApiError = function(error, context) {
+        // 先执行原来的错误处理
+        const result = originalHandleApiError.call(this, error, context);
+        
+        // 然后发送API错误埋点
+        analytics.trackError({
+          type: 'API_ERROR',
+          message: error.message || error.errMsg || 'API错误',
+          statusCode: error.statusCode,
+          url: context.url,
+          method: context.method,
+          pageRoute: analytics.getCurrentPageRoute(),
+          severity: error.statusCode >= 500 ? 'high' : 'medium',
+          context
+        });
+        
+        return result;
+      };
+
+      const originalHandlePaymentError = errorHandler.handlePaymentError;
+      errorHandler.handlePaymentError = function(error, context) {
+        // 先执行原来的错误处理
+        const result = originalHandlePaymentError.call(this, error, context);
+        
+        // 然后发送支付错误埋点
+        analytics.trackError({
+          type: 'PAYMENT_ERROR',
+          message: error.message || error.errMsg || '支付错误',
+          errorCode: error.errorCode,
+          pageRoute: analytics.getCurrentPageRoute(),
+          severity: 'high',
+          context
+        });
+        
+        return result;
+      };
+
+      console.log('埋点系统初始化完成');
+    } catch (error) {
+      console.error('埋点系统初始化失败:', error);
+    }
   },
 
   // 检查登录会话是否有效
@@ -99,6 +319,10 @@ App({
               resolve(loginResult)
             } catch (error) {
               console.error('登录失败', error)
+              
+              // 埋点：用户登录失败
+              analytics.trackLogin('wechat', false, error);
+              
               reject(error)
             }
           } else {
@@ -113,6 +337,10 @@ App({
   // 保存登录状态
   saveLoginState(loginData) {
     const { token, user } = loginData
+    
+    // 埋点：用户登录成功
+    analytics.trackLogin('wechat', true);
+    analytics.setUser(user.id, user.role, user);
     
     // 保存到本地存储
     wx.setStorageSync('token', token)
@@ -401,6 +629,7 @@ App({
   // 内部执行请求的方法
   _executeRequest(options, requestKey, retryCount = 0) {
     let loadingId = null;
+    const requestStartTime = Date.now(); // 记录请求开始时间
     
     // 智能显示加载提示
     if (options.showLoading !== false) {
@@ -430,6 +659,18 @@ App({
             this.loadingManager.hide(loadingId);
           }
           
+          // 记录API性能指标
+          const responseTime = Date.now() - requestStartTime;
+          const dataSize = JSON.stringify(res.data).length;
+          performanceMonitor.recordApiMetric(
+            options.url, 
+            options.method || 'GET', 
+            responseTime, 
+            res.statusCode, 
+            dataSize,
+            res.statusCode !== 200 ? res : null
+          );
+          
           // 请求成功时重置重试计数
           if (this.retryManager.retryRecord[requestKey]) {
             delete this.retryManager.retryRecord[requestKey];
@@ -443,28 +684,31 @@ App({
             } else {
               // 业务错误处理
               const error = res.data;
-              const errorType = this.errorManager.classifyError(error);
+              error.statusCode = res.statusCode;
               
-              if (options.showError !== false) {
-                this.errorManager.showErrorMessage(errorType, error, {
-                  showRetry: this.errorManager.isRetryableError(errorType) && retryCount < this.retryManager.maxRetries,
-                  onRetry: () => this._handleRetry(options, requestKey, retryCount)
-                });
-              }
+              // 使用新的错误处理器
+              const errorInfo = errorHandler.handleApiError(error, {
+                url: options.url,
+                method: options.method || 'GET',
+                data: options.data,
+                retryCount,
+                requestKey
+              });
               
               reject(error);
             }
           } else {
             // HTTP错误处理
-            const error = { statusCode: res.statusCode, message: `HTTP ${res.statusCode}` };
-            const errorType = this.errorManager.classifyError(error);
+            const error = { statusCode: res.statusCode, message: `HTTP ${res.statusCode}`, errMsg: `HTTP ${res.statusCode}` };
             
-            if (options.showError !== false) {
-              this.errorManager.showErrorMessage(errorType, error, {
-                showRetry: this.errorManager.isRetryableError(errorType) && retryCount < this.retryManager.maxRetries,
-                onRetry: () => this._handleRetry(options, requestKey, retryCount)
-              });
-            }
+            // 使用新的错误处理器
+            const errorInfo = errorHandler.handleApiError(error, {
+              url: options.url,
+              method: options.method || 'GET',
+              data: options.data,
+              retryCount,
+              requestKey
+            });
             
             reject(error);
           }
@@ -475,24 +719,38 @@ App({
             this.loadingManager.hide(loadingId);
           }
           
-          // 网络错误处理
-          const errorType = this.errorManager.classifyError(err);
+          // 记录API性能指标（失败的请求）
+          const responseTime = Date.now() - requestStartTime;
+          performanceMonitor.recordApiMetric(
+            options.url, 
+            options.method || 'GET', 
+            responseTime, 
+            err.statusCode || 0, 
+            0,
+            err
+          );
           
-          // 自动重试逻辑
-          if (this.errorManager.isRetryableError(errorType) && retryCount < this.retryManager.maxRetries) {
+          // 网络错误处理
+          err.message = err.errMsg || '网络请求失败';
+          
+          // 使用新的错误处理器
+          const errorInfo = errorHandler.handleApiError(err, {
+            url: options.url,
+            method: options.method || 'GET',
+            data: options.data,
+            retryCount,
+            requestKey,
+            retryCallback: () => this._handleRetry(options, requestKey, retryCount)
+          });
+          
+          // 自动重试逻辑（保留现有重试机制）
+          if (this.shouldRetryRequest(err, retryCount)) {
             this.retryManager.executeRetry(requestKey, () => {
               this._executeRequest(options, requestKey, retryCount + 1)
                 .then(resolve)
                 .catch(reject);
             });
           } else {
-            // 显示错误信息
-            if (options.showError !== false) {
-              this.errorManager.showErrorMessage(errorType, err, {
-                showRetry: false // 已达到最大重试次数或不可重试的错误
-              });
-            }
-            
             reject(err);
           }
         }
@@ -505,14 +763,78 @@ App({
     this.retryManager.executeRetry(requestKey, () => {
       return this._executeRequest(options, requestKey, retryCount + 1);
     });
-  }
+  },
+
+  // 判断是否应该重试请求
+  shouldRetryRequest(error, retryCount) {
+    // 检查是否达到最大重试次数
+    if (retryCount >= this.retryManager.maxRetries) {
+      return false;
+    }
+
+    // 检查错误类型是否可重试
+    const retryableErrors = [
+      'request:fail timeout',
+      'request:fail -1',
+      'request:fail -2',
+      'request:fail socket hang up'
+    ];
+
+    const errMsg = error.errMsg || '';
+    
+    // 网络相关错误可以重试
+    if (retryableErrors.some(msg => errMsg.includes(msg))) {
+      return true;
+    }
+
+    // HTTP 5xx 错误可以重试
+    if (error.statusCode >= 500) {
+      return true;
+    }
+
+    return false;
   },
 
   // 上传文件（增强版）
-  uploadFile(options) {
+  async uploadFile(options) {
     const uploadKey = options.uploadKey || `upload_${options.filePath}_${Date.now()}`;
     
-    return this._executeUpload(options, uploadKey, 0);
+    // 如果是图片且启用压缩，先进行压缩处理
+    let finalFilePath = options.filePath;
+    let compressInfo = null;
+    
+    if (this._isImage(options.filePath) && options.compress !== false) {
+      try {
+        const imageOptimizer = require('./utils/image-optimizer');
+        const compressResult = await imageOptimizer.compressImage(options.filePath, {
+          quality: options.quality || 0.8,
+          maxWidth: options.maxWidth || 1200,
+          maxHeight: options.maxHeight || 1200
+        });
+        
+        finalFilePath = compressResult.tempFilePath;
+        compressInfo = compressResult;
+        
+        console.log('图片压缩完成:', {
+          originalSize: compressResult.originalSize,
+          compressedSize: compressResult.compressedSize,
+          compressionRatio: compressResult.compressionRatio
+        });
+        
+      } catch (error) {
+        console.warn('图片压缩失败，使用原图:', error);
+        // 压缩失败时继续使用原图
+      }
+    }
+    
+    // 使用处理后的文件路径进行上传
+    const uploadOptions = {
+      ...options,
+      filePath: finalFilePath,
+      _compressInfo: compressInfo
+    };
+    
+    return this._executeUpload(uploadOptions, uploadKey, 0);
   },
   
   // 内部执行上传的方法
@@ -674,6 +996,16 @@ App({
     return Math.round(remainingBytes / speed);
   },
 
+  // 判断文件是否为图片
+  _isImage(filePath) {
+    if (!filePath) return false;
+    
+    const ext = filePath.split('.').pop()?.toLowerCase();
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
+    
+    return imageExtensions.includes(ext);
+  },
+
   // 处理启动参数（深链接）
   handleLaunchOptions(options) {
     console.log('Launch options:', options);
@@ -729,6 +1061,27 @@ App({
         }
       });
     }
+  },
+
+  // 初始化分享功能
+  initShareFeatures() {
+    // 分享功能延迟初始化，不影响首屏加载
+    console.log('初始化分享功能');
+    
+    // 可以在这里预设分享配置、统计等非关键功能
+    this.globalData.shareConfig = {
+      title: '公考督学助手',
+      path: '/pages/index/index'
+    };
+  },
+
+  // 初始化统计功能
+  initAnalytics() {
+    // 统计功能延迟初始化
+    console.log('初始化统计功能');
+    
+    // 可以在这里初始化第三方统计SDK、埋点系统等
+    this.globalData.analyticsEnabled = true;
   },
 
   // 全局数据

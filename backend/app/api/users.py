@@ -12,6 +12,7 @@ from app.models import User, UserRole
 from app.schemas import ResponseBase, UserLogin, UserInfo, UserUpdateProfile
 from app.auth import create_access_token, get_current_user
 from app.utils.wechat import get_wechat_session, WeChatError
+from app.services.async_subscription import init_trial_user_async, get_subscription_display_async
 
 router = APIRouter(prefix="/users")
 
@@ -45,6 +46,9 @@ async def login(
             db.add(user)
             await db.commit()
             await db.refresh(user)
+            
+            # Initialize trial subscription for new users
+            user = await init_trial_user_async(user, db)
         
         # Create access token (sub must be string)
         access_token = create_access_token(data={"sub": str(user.id)})
@@ -75,13 +79,20 @@ async def login(
 
 @router.get("/profile", response_model=ResponseBase)
 async def get_profile(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
-    Get current user profile
+    Get current user profile with subscription status
     """
     user_info = UserInfo.from_orm(current_user)
-    return ResponseBase(data=user_info.dict())
+    user_data = user_info.dict()
+    
+    # Add subscription information
+    subscription_display = await get_subscription_display_async(current_user, db)
+    user_data["subscription_status"] = subscription_display
+    
+    return ResponseBase(data=user_data)
 
 
 @router.put("/profile", response_model=ResponseBase)

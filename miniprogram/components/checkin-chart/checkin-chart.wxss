@@ -1,0 +1,139 @@
+/* GitHub风格14天打卡图组件样式 */
+.checkin-chart {
+  width: 100%;
+  padding: 16rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.1);
+}
+
+/* 周标签行 */
+.week-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+  padding: 0 4rpx;
+}
+
+.week-label {
+  font-size: 24rpx;
+  color: #666;
+  width: 32rpx;
+  text-align: center;
+}
+
+/* 打卡方格图 */
+.checkin-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  margin-bottom: 16rpx;
+}
+
+.grid-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6rpx;
+}
+
+/* 单个方格样式 */
+.grid-day {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 4rpx;
+  border: 1rpx solid #eee;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+/* 打卡强度级别 */
+.grid-day.level-0 {
+  background-color: #f0f0f0;
+  border-color: #e0e0e0;
+}
+
+.grid-day.level-1 {
+  background-color: #c6e48b;
+  border-color: #a6d46c;
+}
+
+.grid-day.level-2 {
+  background-color: #7bc96f;
+  border-color: #5fb85c;
+}
+
+.grid-day.level-3 {
+  background-color: #239a3b;
+  border-color: #1e7e34;
+}
+
+/* 今天的特殊标记 */
+.grid-day.today {
+  box-shadow: 0 0 0 2rpx #007aff;
+}
+
+/* 已打卡的额外效果 */
+.grid-day.checked {
+  transform: scale(1.1);
+}
+
+/* 点击效果 */
+.grid-day:active {
+  transform: scale(0.95);
+}
+
+/* 图例说明 */
+.legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  padding-top: 12rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.legend-text {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.legend-item {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 3rpx;
+  border: 1rpx solid #eee;
+}
+
+.legend-item.level-0 {
+  background-color: #f0f0f0;
+}
+
+.legend-item.level-1 {
+  background-color: #c6e48b;
+}
+
+.legend-item.level-2 {
+  background-color: #7bc96f;
+}
+
+.legend-item.level-3 {
+  background-color: #239a3b;
+}
+
+/* 响应式适配 */
+@media (max-width: 375px) {
+  .grid-day {
+    width: 28rpx;
+    height: 28rpx;
+  }
+  
+  .week-label {
+    font-size: 22rpx;
+    width: 28rpx;
+  }
+}
+
+/* 微信小程序特有的触摸反馈 */
+.grid-day {
+  -webkit-tap-highlight-color: transparent;
+}

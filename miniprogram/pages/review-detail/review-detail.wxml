@@ -1,0 +1,214 @@
+<!--复盘详情页面-->
+<view class="container">
+  <!-- 复盘标题和时间 -->
+  <view class="review-header">
+    <view class="review-title">
+      <text class="title-text">学习复盘报告</text>
+      <text class="period-text">{{reviewData.period_start}} 至 {{reviewData.period_end}}</text>
+    </view>
+    
+    <view class="review-status">
+      <text class="status-badge {{reviewData.status}}">
+        {{statusMap[reviewData.status] || '未知'}}
+      </text>
+    </view>
+  </view>
+
+  <!-- 成绩统计 -->
+  <view class="section-card" wx:if="{{reviewData.score_summary}}">
+    <view class="section-header">
+      <text class="section-title">📊 成绩统计</text>
+    </view>
+    
+    <view class="score-overview">
+      <view class="score-item">
+        <text class="score-number">{{reviewData.score_summary.total_submissions || 0}}</text>
+        <text class="score-label">提交次数</text>
+      </view>
+      
+      <view class="score-item">
+        <text class="score-number">{{reviewData.score_summary.average_score || 0}}</text>
+        <text class="score-label">平均分</text>
+      </view>
+      
+      <view class="score-item">
+        <text class="score-number">{{reviewData.score_summary.total_points || 0}}</text>
+        <text class="score-label">获得积分</text>
+      </view>
+      
+      <view class="score-item">
+        <text class="score-number">{{reviewData.score_summary.excellent_rate || 0}}%</text>
+        <text class="score-label">极佳率</text>
+      </view>
+    </view>
+    
+    <view class="grade-distribution" wx:if="{{reviewData.score_summary.grade_distribution}}">
+      <text class="subsection-title">评价分布</text>
+      <view class="grade-bars">
+        <view 
+          class="grade-bar" 
+          wx:for="{{gradeList}}" 
+          wx:key="grade"
+        >
+          <text class="grade-name">{{item.grade}}</text>
+          <view class="grade-bar-bg">
+            <view 
+              class="grade-bar-fill {{item.class}}"
+              style="width: {{item.percentage}}%"
+            ></view>
+          </view>
+          <text class="grade-count">{{item.count}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 错题回顾 -->
+  <view class="section-card" wx:if="{{reviewData.mistake_analysis}}">
+    <view class="section-header">
+      <text class="section-title">❌ 错题回顾</text>
+    </view>
+    
+    <view class="mistake-summary">
+      <view class="mistake-stat">
+        <text class="stat-label">待复盘题目</text>
+        <text class="stat-value">{{reviewData.mistake_analysis.pending_review_count || 0}}道</text>
+      </view>
+      
+      <view class="mistake-stat">
+        <text class="stat-label">低分作业</text>
+        <text class="stat-value">{{reviewData.mistake_analysis.low_score_count || 0}}份</text>
+      </view>
+    </view>
+    
+    <view class="mistake-tasks" wx:if="{{reviewData.mistake_analysis.pending_tasks.length > 0}}">
+      <text class="subsection-title">需要复盘的任务</text>
+      <view class="task-list">
+        <view 
+          class="task-item"
+          wx:for="{{reviewData.mistake_analysis.pending_tasks}}"
+          wx:key="submission_id"
+          bindtap="goToTask"
+          data-id="{{item.submission_id}}"
+        >
+          <view class="task-info">
+            <text class="task-title">{{item.task_title}}</text>
+            <text class="task-date">提交时间：{{item.submit_date}}</text>
+          </view>
+          <text class="task-arrow">></text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="improvement-suggestions" wx:if="{{reviewData.mistake_analysis.improvement_suggestions.length > 0}}">
+      <text class="subsection-title">改进建议</text>
+      <view class="suggestions-list">
+        <text 
+          class="suggestion-item"
+          wx:for="{{reviewData.mistake_analysis.improvement_suggestions}}"
+          wx:key="*this"
+        >
+          • {{item}}
+        </text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 学习进度 -->
+  <view class="section-card" wx:if="{{reviewData.progress_data}}">
+    <view class="section-header">
+      <text class="section-title">📈 学习进度</text>
+    </view>
+    
+    <view class="progress-overview">
+      <view class="progress-item">
+        <text class="progress-number">{{reviewData.progress_data.active_days || 0}}</text>
+        <text class="progress-label">活跃天数</text>
+      </view>
+      
+      <view class="progress-item">
+        <text class="progress-number">{{reviewData.progress_data.activity_rate || 0}}%</text>
+        <text class="progress-label">活跃率</text>
+      </view>
+      
+      <view class="progress-item">
+        <text class="progress-number">{{reviewData.progress_data.current_streak || 0}}</text>
+        <text class="progress-label">连续天数</text>
+      </view>
+      
+      <view class="progress-item">
+        <text class="progress-number">{{reviewData.progress_data.best_streak || 0}}</text>
+        <text class="progress-label">最佳记录</text>
+      </view>
+    </view>
+    
+    <view class="activity-breakdown" wx:if="{{activityList.length > 0}}">
+      <text class="subsection-title">活动分布</text>
+      <view class="activity-list">
+        <view 
+          class="activity-item"
+          wx:for="{{activityList}}"
+          wx:key="type"
+        >
+          <text class="activity-icon">{{item.icon}}</text>
+          <text class="activity-name">{{item.name}}</text>
+          <text class="activity-count">{{item.count}}次</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- AI学习建议 -->
+  <view class="section-card" wx:if="{{reviewData.ai_suggestions}}">
+    <view class="section-header">
+      <text class="section-title">🤖 学习建议</text>
+    </view>
+    
+    <view class="ai-suggestions">
+      <text class="suggestions-text">{{reviewData.ai_suggestions}}</text>
+    </view>
+  </view>
+
+  <!-- 个人笔记 -->
+  <view class="section-card">
+    <view class="section-header">
+      <text class="section-title">📝 复盘笔记</text>
+    </view>
+    
+    <textarea 
+      class="notes-input"
+      placeholder="记录你的学习心得和反思..."
+      value="{{userNotes}}"
+      bindinput="onNotesInput"
+      maxlength="2000"
+      auto-height
+    ></textarea>
+    
+    <view class="notes-count">
+      <text>{{userNotes.length}}/2000</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="actions" wx:if="{{reviewData.status === 'pending'}}">
+    <button class="action-btn secondary" bindtap="skipReview">
+      跳过复盘
+    </button>
+    <button class="action-btn primary" bindtap="completeReview">
+      完成复盘
+    </button>
+  </view>
+  
+  <!-- 已完成状态 -->
+  <view class="completed-info" wx:if="{{reviewData.status === 'completed'}}">
+    <view class="completed-badge">
+      <text>✅ 复盘已完成</text>
+    </view>
+    <view class="completion-info">
+      <text>完成时间：{{reviewData.completed_at}}</text>
+      <text wx:if="{{reviewData.completion_duration}}">
+        耗时：{{reviewData.completion_duration}}分钟
+      </text>
+    </view>
+  </view>
+</view>

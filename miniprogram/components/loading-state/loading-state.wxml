@@ -1,0 +1,53 @@
+<!-- components/loading-state/loading-state.wxml -->
+<view class="loading-state-container {{customClass}}">
+  
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <!-- 旋转加载器 -->
+    <view wx:if="{{loadingType === 'spinner'}}" class="loading-content">
+      <view class="spinner"></view>
+      <text class="loading-text">{{loadingText}}</text>
+    </view>
+    
+    <!-- 点状加载器 -->
+    <view wx:elif="{{loadingType === 'dots'}}" class="loading-content">
+      <view class="dots-container">
+        <text class="loading-text">{{loadingText}}{{dotsAnimation}}</text>
+      </view>
+    </view>
+    
+    <!-- 脉冲加载器 -->
+    <view wx:elif="{{loadingType === 'pulse'}}" class="loading-content">
+      <view class="pulse-dots">
+        <view class="pulse-dot"></view>
+        <view class="pulse-dot"></view>
+        <view class="pulse-dot"></view>
+      </view>
+      <text class="loading-text">{{loadingText}}</text>
+    </view>
+  </view>
+  
+  <!-- 错误状态 -->
+  <view class="error-state" wx:elif="{{hasError}}">
+    <view class="error-icon">{{errorIcon}}</view>
+    <text class="error-text">{{errorText}}</text>
+    <button 
+      wx:if="{{showRetry}}"
+      class="retry-button" 
+      bindtap="onRetry"
+    >
+      {{retryText}}
+    </button>
+  </view>
+  
+  <!-- 空状态 -->
+  <view class="empty-state" wx:elif="{{isEmpty}}">
+    <view class="empty-icon">{{emptyIcon}}</view>
+    <text class="empty-text">{{emptyText}}</text>
+    <slot name="empty-action"></slot>
+  </view>
+  
+  <!-- 内容插槽 -->
+  <slot wx:else></slot>
+  
+</view>

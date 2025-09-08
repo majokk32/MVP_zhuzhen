@@ -1,0 +1,59 @@
+<!-- 虚拟滚动列表组件模板 -->
+<scroll-view 
+  class="virtual-list-container"
+  style="height: {{height}}rpx;"
+  scroll-y
+  scroll-top="{{scrollTop}}"
+  enable-back-to-top
+  refresher-enabled="{{refresherEnabled}}"
+  refresher-triggered="{{refreshing}}"
+  bindscroll="onScroll"
+  bindscrolltolower="onScrollToLower"
+  bindrefresherrefresh="onRefresherRefresh"
+  enhanced="{{true}}"
+  show-scrollbar="{{false}}"
+>
+  <!-- 虚拟容器：用于撑起总高度 -->
+  <view 
+    class="virtual-container"
+    style="height: {{totalHeight}}rpx; position: relative;"
+  >
+    <!-- 可见内容区域：绝对定位到正确位置 -->
+    <view 
+      class="virtual-content"
+      style="transform: translateY({{offsetY}}rpx); position: absolute; top: 0; left: 0; right: 0;"
+    >
+      <!-- 渲染可见items -->
+      <block wx:for="{{visibleItems}}" wx:key="virtualKey">
+        <!-- 使用slot来渲染自定义内容 -->
+        <view class="virtual-item" data-index="{{item.virtualIndex}}">
+          <slot 
+            name="item" 
+            item="{{item}}" 
+            index="{{item.virtualIndex}}"
+            virtual-key="{{item.virtualKey}}"
+          ></slot>
+        </view>
+      </block>
+      
+      <!-- 空状态 -->
+      <view wx:if="{{visibleItems.length === 0 && !refreshing}}" class="virtual-empty">
+        <slot name="empty"></slot>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载更多指示器 -->
+  <view class="virtual-loading" wx:if="{{refreshing}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+</scroll-view>
+
+<!-- 性能调试信息（仅开发环境显示） -->
+<view wx:if="{{false}}" class="virtual-debug">
+  <text>总数: {{items.length}}</text>
+  <text>可见: {{visibleItems.length}}</text>
+  <text>范围: {{startIndex}}-{{endIndex}}</text>
+  <text>偏移: {{offsetY}}rpx</text>
+</view>

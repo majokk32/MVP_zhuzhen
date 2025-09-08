@@ -1,0 +1,60 @@
+<!-- components/upgrade-guide/upgrade-guide.wxml -->
+<view class="upgrade-guide-mask {{show ? 'show' : ''}}" bindtap="onMaskClick">
+  <view class="upgrade-guide-container" bindtap="preventBubble">
+    <!-- 头部图标和标题 -->
+    <view class="upgrade-header">
+      <view class="upgrade-icon" style="color: {{getCurrentGuideInfo().iconColor}}">
+        {{getCurrentGuideInfo().icon}}
+      </view>
+      <view class="upgrade-title">{{getCurrentGuideInfo().title}}</view>
+    </view>
+    
+    <!-- 内容描述 -->
+    <view class="upgrade-content">
+      <view class="content-text">{{getCurrentGuideInfo().content}}</view>
+      <view wx:if="{{featureName !== '此功能'}}" class="blocked-feature">
+        您尝试访问的功能：<text class="feature-name">{{featureName}}</text>
+      </view>
+    </view>
+    
+    <!-- 会员权益列表 -->
+    <view class="benefits-section">
+      <view class="benefits-title">升级后您将获得：</view>
+      <view class="benefits-list">
+        <view 
+          wx:for="{{getCurrentGuideInfo().benefits}}" 
+          wx:key="index" 
+          class="benefit-item"
+        >
+          <view class="benefit-icon">✓</view>
+          <view class="benefit-text">{{item}}</view>
+        </view>
+      </view>
+      
+      <!-- 查看更多权益链接 -->
+      <view class="view-more-benefits" bindtap="onViewMoreBenefits">
+        查看完整会员权益 &gt;
+      </view>
+    </view>
+    
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button class="upgrade-button primary" bindtap="onUpgradeNow">
+        立即升级
+      </button>
+      <button class="upgrade-button secondary" bindtap="onContactSupport">
+        联系客服
+      </button>
+      <button class="upgrade-button ghost" bindtap="onLater">
+        稍后再说
+      </button>
+    </view>
+    
+    <!-- 底部提示 -->
+    <view class="bottom-tips">
+      <view class="tip-item">💎 专业老师1对1指导</view>
+      <view class="tip-item">📊 个人学习数据分析</view>
+      <view class="tip-item">🎯 针对性提升建议</view>
+    </view>
+  </view>
+</view>

@@ -1,7 +1,26 @@
 // pages/index/index.js
-const auth = require('../../modules/auth/auth')
-const taskModule = require('../../modules/task/task')
 const app = getApp()
+
+// 使用性能优化器进行懒加载
+let auth = null;
+let taskModule = null;
+
+// 懒加载辅助函数
+async function loadAuth() {
+  if (!auth) {
+    const performanceOptimizer = app.globalData.performanceOptimizer;
+    auth = await performanceOptimizer.lazyLoadModule('../../modules/auth/auth', true);
+  }
+  return auth;
+}
+
+async function loadTaskModule() {
+  if (!taskModule) {
+    const performanceOptimizer = app.globalData.performanceOptimizer;
+    taskModule = await performanceOptimizer.lazyLoadModule('../../modules/task/task', false);
+  }
+  return taskModule;
+}
 
 Page({
   data: {
@@ -27,44 +46,113 @@ Page({
     currentFilter: 'all', // all, ongoing, ended
     
     // 空状态
-    isEmpty: false
+    isEmpty: false,
+    
+    // 虚拟列表
+    listHeight: 600, // 默认高度，会在页面加载时动态计算
+    
+    // 升级引导相关
+    showUpgradeGuide: false,
+    upgradeGuideType: 'permission_denied'
   },
 
-  onLoad(options) {
-    // 检查登录状态
-    if (!auth.checkLogin()) {
-      return
+  async onLoad(options) {
+    const pageStartTime = Date.now();
+    console.log('主页开始加载');
+
+    try {
+      // 阶段1: 立即显示骨架屏，避免白屏
+      this.setData({ loading: true });
+      
+      // 阶段2: 关键路径 - 并行加载认证和用户信息
+      const [authModule] = await Promise.all([
+        loadAuth(),
+        this.calculateListHeight() // 同步计算，立即完成
+      ]);
+      
+      // 检查登录状态
+      if (!authModule.checkLogin()) {
+        console.log('用户未登录，跳转登录页');
+        return;
+      }
+      
+      // 获取用户信息（已缓存，速度很快）
+      const token = authModule.getToken();
+      const userInfo = authModule.getUserInfo();
+      
+      if (token && userInfo) {
+        // 同步全局状态
+        app.globalData.token = token;
+        app.globalData.userInfo = userInfo;
+        app.globalData.isLogin = true;
+        
+        // 立即更新UI显示用户信息
+        this.setData({
+          userInfo,
+          isTeacher: authModule.isTeacher()
+        });
+        
+        console.log('用户信息加载完成:', Date.now() - pageStartTime + 'ms');
+      }
+      
+      // 阶段3: 异步加载任务列表（不阻塞首屏渲染）
+      setTimeout(async () => {
+        try {
+          await this.loadTaskList();
+          console.log('任务列表加载完成');
+        } catch (error) {
+          console.error('任务列表加载失败:', error);
+          this.setData({ loading: false });
+        }
+      }, 50); // 很短的延迟，让首屏先渲染
+      
+      // 阶段4: 处理分享链接（低优先级）
+      if (options.share && options.id) {
+        setTimeout(() => {
+          wx.navigateTo({
+            url: `/pages/task-detail/task-detail?id=${options.id}`
+          });
+        }, 300); // 等UI稳定后再跳转
+      }
+      
+      const totalLoadTime = Date.now() - pageStartTime;
+      console.log(`主页首屏加载完成: ${totalLoadTime}ms`);
+      
+    } catch (error) {
+      console.error('主页加载失败:', error);
+      // 降级处理
+      this.fallbackLoad(options);
     }
+  },
+
+  // 降级加载方式
+  async fallbackLoad(options) {
+    console.warn('使用降级加载方式');
     
-    // 强制同步token到app全局状态
-    const app = getApp()
-    const token = auth.getToken()
-    const userInfo = auth.getUserInfo()
-    
-    if (token && userInfo) {
-      app.globalData.token = token
-      app.globalData.userInfo = userInfo
-      app.globalData.isLogin = true
-      console.log('主页强制同步token:', token.substring(0, 20) + '...')
-    }
-    
-    // 设置用户信息
-    this.setData({
-      userInfo,
-      isTeacher: auth.isTeacher()
-    })
-    
-    // 加载任务列表
-    this.loadTaskList()
-    
-    // 处理分享进入的情况
-    if (options.share && options.id) {
-      // 延迟跳转到任务详情
-      setTimeout(() => {
-        wx.navigateTo({
-          url: `/pages/task-detail/task-detail?id=${options.id}`
-        })
-      }, 500)
+    try {
+      const authModule = require('../../modules/auth/auth');
+      const taskModuleSync = require('../../modules/task/task');
+      
+      auth = authModule;
+      taskModule = taskModuleSync;
+      
+      if (!auth.checkLogin()) return;
+      
+      const userInfo = auth.getUserInfo();
+      this.setData({
+        userInfo,
+        isTeacher: auth.isTeacher()
+      });
+      
+      this.calculateListHeight();
+      await this.loadTaskList();
+      
+    } catch (error) {
+      console.error('降级加载也失败:', error);
+      wx.showToast({
+        title: '加载失败，请重试',
+        icon: 'none'
+      });
     }
   },
 
@@ -88,24 +176,27 @@ Page({
 
   // 加载任务列表
   async loadTaskList(loadMore = false) {
-    if (this.data.loading || this.data.loadingMore) return
+    if (this.data.loading || this.data.loadingMore) return;
     
     this.setData({
       [loadMore ? 'loadingMore' : 'loading']: true
-    })
+    });
     
     try {
+      // 懒加载任务模块
+      const taskModuleInstance = await loadTaskModule();
+      
       const params = {
         page: loadMore ? this.data.page + 1 : 1,
         page_size: this.data.pageSize
-      }
+      };
       
       // 添加筛选条件
       if (this.data.currentFilter !== 'all') {
-        params.status = this.data.currentFilter
+        params.status = this.data.currentFilter;
       }
       
-      const result = await taskModule.getTaskList(params)
+      const result = await taskModuleInstance.getTaskList(params);
       
       // 处理置顶逻辑（课后加餐任务置顶）
       let tasks = result.tasks || []
@@ -175,10 +266,41 @@ Page({
   },
 
   // 任务卡片点击
-  onTaskClick(e) {
+  async onTaskClick(e) {
     const { task } = e.detail
     console.log('点击任务', task)
-    // 组件内部已处理跳转
+    
+    // 权限检查
+    const authModule = await loadAuth()
+    
+    // 教师用户直接跳转
+    if (authModule.isTeacher()) {
+      wx.navigateTo({
+        url: `/pages/task-detail/task-detail?id=${task.id}`
+      })
+      return
+    }
+    
+    // 试用用户权限检查
+    if (!authModule.checkTaskAccess({ showModal: false })) {
+      let guideType = 'permission_denied'
+      if (authModule.isPermissionExpired()) {
+        guideType = 'trial_expired'
+      } else if (authModule.isTrialUser()) {
+        guideType = 'permission_denied'
+      }
+      
+      this.setData({
+        showUpgradeGuide: true,
+        upgradeGuideType: guideType
+      })
+      return
+    }
+    
+    // 有权限则正常跳转
+    wx.navigateTo({
+      url: `/pages/task-detail/task-detail?id=${task.id}`
+    })
   },
 
   // 切换任务状态（教师功能）
@@ -192,7 +314,8 @@ Page({
         if (res.confirm) {
           try {
             wx.showLoading({ title: '处理中...' })
-            await taskModule.toggleTaskStatus(task.id)
+            const taskModuleInstance = await loadTaskModule()
+            await taskModuleInstance.toggleTaskStatus(task.id)
             wx.hideLoading()
             wx.showToast({
               title: '切换成功',
@@ -218,7 +341,8 @@ Page({
     
     try {
       wx.showLoading({ title: '生成分享...' })
-      const shareData = await taskModule.generateShareLink(task.id)
+      const taskModuleInstance = await loadTaskModule()
+      const shareData = await taskModuleInstance.generateShareLink(task.id)
       wx.hideLoading()
       
       // 设置分享信息
@@ -254,12 +378,51 @@ Page({
   },
 
   // 跳转到创建任务（教师功能）
-  onCreateTask() {
-    if (!auth.checkTeacherRole()) return
-    
-    wx.navigateTo({
-      url: '/pages/admin/task-manage/task-manage?action=create'
+  async onCreateTask() {
+    try {
+      const authModule = await loadAuth()
+      if (!authModule.checkTeacherRole()) return
+      
+      wx.navigateTo({
+        url: '/pages/admin/task-manage/task-manage?action=create'
+      })
+    } catch (error) {
+      console.error('检查教师权限失败:', error)
+    }
+  },
+
+  // 计算虚拟列表高度
+  calculateListHeight() {
+    wx.getSystemInfo({
+      success: (res) => {
+        // 获取窗口高度
+        const windowHeight = res.windowHeight
+        
+        // 计算其他元素占用的高度
+        // 顶部用户信息栏约 120rpx = 120/750 * windowWidth
+        // 任务筛选器约 88rpx = 88/750 * windowWidth  
+        // 底部安全区约 20rpx = 20/750 * windowWidth
+        const rpxRatio = res.windowWidth / 750
+        const headerHeight = 120 * rpxRatio
+        const filterHeight = 88 * rpxRatio
+        const safeBottomHeight = 20 * rpxRatio
+        
+        // 计算列表可用高度
+        const listHeight = windowHeight - headerHeight - filterHeight - safeBottomHeight - 20 // 20px预留空间
+        
+        this.setData({
+          listHeight: Math.max(listHeight, 400) // 最小高度400px
+        })
+      }
     })
+  },
+
+  // 虚拟列表滚动事件
+  onVirtualScroll(e) {
+    // 透传滚动事件，可以在这里添加滚动监听逻辑
+    // console.log('虚拟列表滚动', e.detail)
+    
+    // 可以在这里添加滚动位置记忆、无限滚动等功能
   },
 
   // 分享设置
@@ -292,5 +455,12 @@ Page({
   onImageError(e) {
     console.warn('图片加载失败:', e.detail.errMsg);
     // 可以在这里添加默认图片或重试逻辑
+  },
+
+  // 升级引导相关方法
+  
+  // 关闭升级引导
+  onUpgradeGuideClose() {
+    this.setData({ showUpgradeGuide: false });
   }
 })

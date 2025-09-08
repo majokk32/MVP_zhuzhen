@@ -1,5 +1,9 @@
 {
   "navigationBarTitleText": "个人中心",
   "enablePullDownRefresh": false,
-  "usingComponents": {}
+  "usingComponents": {
+    "checkin-chart": "/components/checkin-chart/checkin-chart",
+    "notification-settings": "/components/notification-settings/notification-settings",
+    "skeleton": "/components/skeleton/skeleton"
+  }
 }

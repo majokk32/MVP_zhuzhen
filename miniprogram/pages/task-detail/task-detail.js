@@ -51,7 +51,11 @@ Page({
     showMyGradingHistory: false,
     
     // 用户信息（用于历史组件）
-    userInfo: {}
+    userInfo: {},
+    
+    // 升级引导相关
+    showUpgradeGuide: false,
+    upgradeGuideType: 'permission_denied'
   },
 
   onLoad(options) {
@@ -88,17 +92,6 @@ Page({
       return;
     }
 
-    // 检查任务访问权限
-    if (!authModule.checkTaskAccess({
-      onUpgrade: this.handleUpgradeContact
-    })) {
-      // 权限不足，返回上一页
-      setTimeout(() => {
-        wx.navigateBack();
-      }, 1000);
-      return;
-    }
-    
     this.setData({
       isTeacher: userInfo.role === 'teacher',
       userInfo: {
@@ -106,6 +99,23 @@ Page({
         nickname: userInfo.nickname || userInfo.name || '用户'
       }
     });
+
+    // 检查任务访问权限
+    if (!authModule.checkTaskAccess({ showModal: false })) {
+      // 显示升级引导而不是直接返回
+      let guideType = 'permission_denied';
+      if (authModule.isPermissionExpired()) {
+        guideType = 'trial_expired';
+      } else if (authModule.isTrialUser()) {
+        guideType = 'permission_denied';
+      }
+      
+      this.setData({
+        showUpgradeGuide: true,
+        upgradeGuideType: guideType
+      });
+      return;
+    }
   },
 
   // 处理升级联系客服
@@ -652,5 +662,39 @@ Page({
   // 关闭我的批改历史
   onMyGradingHistoryClose() {
     this.setData({ showMyGradingHistory: false });
+  },
+
+  // 升级引导相关方法
+  
+  // 关闭升级引导
+  onUpgradeGuideClose() {
+    this.setData({ showUpgradeGuide: false });
+    // 关闭升级引导后返回上一页
+    setTimeout(() => {
+      wx.navigateBack();
+    }, 300);
+  },
+
+  // 处理功能访问时的权限检查
+  checkPermissionForAction(actionName = '此功能') {
+    if (authModule.isTeacher()) {
+      return true;
+    }
+
+    if (!authModule.checkTaskAccess({ showModal: false })) {
+      let guideType = 'permission_denied';
+      if (authModule.isPermissionExpired()) {
+        guideType = 'trial_expired';
+      } else if (authModule.isTrialUser()) {
+        guideType = 'permission_denied';
+      }
+      
+      this.setData({
+        showUpgradeGuide: true,
+        upgradeGuideType: guideType
+      });
+      return false;
+    }
+    return true;
   }
 });

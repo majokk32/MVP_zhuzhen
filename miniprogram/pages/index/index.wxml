@@ -3,7 +3,20 @@
   <!-- 顶部用户信息栏（简化版） -->
   <view class="header" wx:if="{{userInfo}}">
     <view class="user-greeting">
-      <image class="user-avatar" src="{{userInfo.avatar || '/assets/images/default-avatar.png'}}" mode="aspectFill" lazy-load="true" binderror="onImageError"></image>
+      <progressive-image 
+        class="user-avatar" 
+        src="{{userInfo.avatar || '/assets/images/default-avatar.png'}}" 
+        mode="aspectFill" 
+        lazy-load="{{true}}"
+        enable-compress="{{true}}"
+        quality="{{0.85}}"
+        max-width="{{120}}"
+        max-height="{{120}}"
+        border-radius="50%"
+        placeholder="/assets/images/avatar-placeholder.png"
+        error-src="/assets/images/default-avatar.png"
+        bind:error="onImageError"
+      />
       <view class="greeting-text">
         <text class="greeting">你好，{{userInfo.nickname || '同学'}}</text>
         <view class="role-tag" wx:if="{{isTeacher}}">教师</view>
@@ -41,21 +54,26 @@
   </view>
 
   <!-- 任务列表 -->
-  <scroll-view 
-    class="task-list"
-    scroll-y
-    enable-back-to-top
-    refresher-enabled
-    refresher-triggered="{{refreshing}}"
-    bindrefresherrefresh="onRefresh"
-    bindscrolltolower="onLoadMore"
-  >
+  <view class="task-list-container">
     <!-- 骨架屏 -->
     <skeleton show="{{loading}}" type="task-list" count="{{3}}"></skeleton>
     
-    <!-- 任务卡片 -->
-    <block wx:for="{{taskList}}" wx:key="id" wx:if="{{!loading}}">
+    <!-- 虚拟列表 -->
+    <virtual-list 
+      wx:if="{{!loading}}"
+      items="{{taskList}}"
+      height="{{listHeight}}"
+      estimated-item-height="{{200}}"
+      overscan="{{3}}"
+      refresher-enabled="{{true}}"
+      refreshing="{{refreshing}}"
+      bind:scroll="onVirtualScroll"
+      bind:scrolltolower="onLoadMore"
+      bind:refresherrefresh="onRefresh"
+    >
+      <!-- 任务卡片插槽 -->
       <task-card 
+        slot="item"
         task="{{item}}"
         index="{{index}}"
         bind:click="onTaskClick"
@@ -63,7 +81,19 @@
         bind:share="onShareTask"
         bind:viewStats="onViewStats"
       />
-    </block>
+      
+      <!-- 空状态插槽 -->
+      <empty-state
+        slot="empty"
+        icon="📝"
+        title="暂无任务"
+        description="{{currentFilter === 'ongoing' ? '没有进行中的任务' : currentFilter === 'ended' ? '没有已结束的任务' : '老师还没有发布任务'}}"
+        show-action="{{isTeacher}}"
+        action-text="立即创建任务"
+        action-type="primary"
+        bind:actionClick="onCreateTask"
+      />
+    </virtual-list>
 
     <!-- 加载更多 -->
     <view wx:if="{{loadingMore}}" class="loading-more">
@@ -75,25 +105,21 @@
       <text class="no-more-text">- 没有更多了 -</text>
     </view>
 
-    <!-- 空状态 -->
-    <empty-state
-      show="{{isEmpty && !loading}}"
-      icon="📝"
-      title="暂无任务"
-      description="{{currentFilter === 'ongoing' ? '没有进行中的任务' : currentFilter === 'ended' ? '没有已结束的任务' : '老师还没有发布任务'}}"
-      show-action="{{isTeacher}}"
-      action-text="立即创建任务"
-      action-type="primary"
-      bind:actionClick="onCreateTask"
-    ></empty-state>
-
     <!-- 加载中 -->
     <view wx:if="{{loading && taskList.length === 0}}" class="loading-state">
       <view class="loading-spinner"></view>
       <text class="loading-text">加载中...</text>
     </view>
-  </scroll-view>
+  </view>
 
   <!-- 底部安全区 -->
   <view class="safe-bottom"></view>
 </view>
+
+<!-- 升级引导组件 -->
+<upgrade-guide 
+  show="{{showUpgradeGuide}}"
+  guideType="{{upgradeGuideType}}"
+  featureName="任务详情查看"
+  bind:close="onUpgradeGuideClose"
+/>

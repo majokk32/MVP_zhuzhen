@@ -1,6 +1,8 @@
 // 个人中心页
 const app = getApp();
 const authModule = require('../../modules/auth/auth');
+const notificationModule = require('../../modules/notification/notification');
+const paymentModule = require('../../modules/payment/payment');
 
 Page({
   data: {
@@ -8,6 +10,11 @@ Page({
     isTeacher: false,
     roleText: '',
     joinTime: '',
+    
+    // 加载状态
+    loading: true,
+    statsLoading: true,
+    learningDataLoading: true,
     
     // 统计数据
     stats: {
@@ -21,12 +28,31 @@ Page({
       pendingGrading: 0
     },
     
+    // V1.0 学习数据
+    learningData: {
+      current_streak: 0,
+      best_streak: 0,
+      total_score: 0,
+      monthly_score: 0,
+      total_submissions: 0,
+      week_checkins: 0
+    },
+    checkinChartData: [],
+    userRank: null,
+    
     // 通知状态
-    notificationStatus: '已开启'
+    notificationStatus: '已开启',
+    
+    // 权限状态
+    permissionStatus: '试用用户',
+    
+    // 通知设置面板状态
+    showNotificationSettings: false
   },
 
   onLoad() {
     this.loadUserInfo();
+    this.initSubscriptionStatus();
   },
 
   onShow() {
@@ -39,17 +65,23 @@ Page({
     // 每次显示页面时刷新数据
     this.loadUserInfo();
     this.loadStats();
+    this.loadLearningData();
+    this.refreshSubscriptionStatus();
+    
+    // 检查订阅事件
+    this.checkSubscriptionEvents();
   },
 
   // 加载用户信息
   async loadUserInfo() {
-    const userInfo = await authModule.getUserInfo();
-    if (!userInfo) {
-      wx.redirectTo({
-        url: '/pages/login/login'
-      });
-      return;
-    }
+    try {
+      const userInfo = await authModule.getUserInfo();
+      if (!userInfo) {
+        wx.redirectTo({
+          url: '/pages/login/login'
+        });
+        return;
+      }
     
     // 计算加入时间
     let joinTime = '';
@@ -74,17 +106,28 @@ Page({
       }
     }
     
-    this.setData({
-      userInfo,
-      isTeacher: userInfo.role === 'teacher',
-      roleText: userInfo.role === 'teacher' ? '教师' : '学生',
-      joinTime
-    });
+      this.setData({
+        userInfo,
+        isTeacher: userInfo.role === 'teacher',
+        roleText: userInfo.role === 'teacher' ? '教师' : '学生',
+        joinTime,
+        // 更新权限状态显示
+        permissionStatus: userInfo.subscription_status || '试用用户',
+        loading: false
+      });
+    } catch (error) {
+      console.error('加载用户信息失败:', error);
+      this.setData({ loading: false });
+      wx.showToast({
+        title: '加载用户信息失败',
+        icon: 'none'
+      });
+    }
   },
 
   // 加载统计数据
   async loadStats() {
-    wx.showLoading({ title: '加载中...' });
+    this.setData({ statsLoading: true });
     
     try {
       const res = await app.request({
@@ -114,12 +157,141 @@ Page({
           achievements: 0, // 暂未实现
           studentCount: 0, // 教师端功能
           pendingGrading: stats.pending_grading || 0
-        }
+        },
+        statsLoading: false
       });
     } catch (error) {
       console.error('加载统计数据失败:', error);
+      this.setData({ statsLoading: false });
+      wx.showToast({
+        title: '加载统计失败',
+        icon: 'none'
+      });
+    }
+  },
+
+  // V1.0 加载学习数据
+  async loadLearningData() {
+    this.setData({ learningDataLoading: true });
+    
+    try {
+      // 加载学习数据概览
+      const overviewRes = await app.request({
+        url: '/learning/overview',
+        method: 'GET'
+      });
+      
+      if (overviewRes) {
+        this.setData({
+          learningData: overviewRes
+        });
+      }
+
+      // 加载14天打卡图数据
+      const chartRes = await app.request({
+        url: '/learning/checkin-chart',
+        method: 'GET'
+      });
+      
+      if (chartRes && Array.isArray(chartRes)) {
+        this.setData({
+          checkinChartData: chartRes
+        });
+      }
+
+      // 加载月度排名
+      const today = new Date();
+      const leaderboardRes = await app.request({
+        url: '/learning/leaderboard/monthly',
+        method: 'GET',
+        data: {
+          year: today.getFullYear(),
+          month: today.getMonth() + 1,
+          limit: 50
+        }
+      });
+      
+      if (leaderboardRes && leaderboardRes.current_user_rank) {
+        this.setData({
+          userRank: leaderboardRes.current_user_rank
+        });
+      }
+
+    } catch (error) {
+      console.error('加载学习数据失败:', error);
+      // 学习数据加载失败不影响页面正常显示
+      wx.showToast({
+        title: '学习数据加载失败',
+        icon: 'none'
+      });
     } finally {
-      wx.hideLoading();
+      this.setData({ learningDataLoading: false });
+    }
+  },
+
+  // 跳转到排行榜
+  async goToLeaderboard() {
+    // 使用支付模块检查功能访问权限
+    const hasAccess = await this.checkFeatureAccess('leaderboard');
+    
+    if (hasAccess) {
+      wx.navigateTo({
+        url: '/pages/leaderboard/leaderboard'
+      });
+    }
+  },
+
+  // 显示升级信息
+  showUpgradeInfo() {
+    wx.showModal({
+      title: '升级为付费用户',
+      content: '付费用户享有：\n• 无限制访问排行榜\n• 学习数据导出\n• 高级分析报告\n• 优先客服支持\n• 专属学习计划',
+      confirmText: '立即升级',
+      cancelText: '稍后再说',
+      success: (res) => {
+        if (res.confirm) {
+          this.goToSubscription();
+        }
+      }
+    });
+  },
+
+  // 跳转到订阅页面
+  goToSubscription(planId = 'quarterly') {
+    wx.navigateTo({
+      url: `/pages/subscription/subscription?planId=${planId}`
+    });
+  },
+
+  // 检查功能访问权限
+  async checkFeatureAccess(featureId) {
+    try {
+      // 先检查当前订阅状态
+      await paymentModule.checkSubscriptionStatus();
+      
+      // 检查功能权限
+      const accessResult = paymentModule.checkFeatureAccess(featureId);
+      
+      if (!accessResult.hasAccess) {
+        // 显示升级提示
+        wx.showModal({
+          title: '功能需要升级',
+          content: `${accessResult.reason}，升级后即可使用该功能`,
+          confirmText: '立即升级',
+          cancelText: '稍后再说',
+          success: (res) => {
+            if (res.confirm) {
+              this.goToSubscription();
+            }
+          }
+        });
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('检查功能访问权限失败:', error);
+      return false;
     }
   },
 
@@ -150,6 +322,110 @@ Page({
     wx.showToast({
       title: '功能开发中',
       icon: 'none'
+    });
+  },
+
+  // 订阅管理
+  goToSubscriptionManagement() {
+    this.goToSubscription();
+  },
+
+  // 初始化订阅状态
+  async initSubscriptionStatus() {
+    try {
+      await paymentModule.checkSubscriptionStatus();
+    } catch (error) {
+      console.error('初始化订阅状态失败:', error);
+    }
+  },
+
+  // 刷新订阅状态
+  async refreshSubscriptionStatus() {
+    try {
+      const subscription = await paymentModule.checkSubscriptionStatus();
+      
+      if (subscription) {
+        const remainingTime = paymentModule.getSubscriptionRemainingTime();
+        
+        // 更新权限状态显示
+        let statusText = '付费用户';
+        if (remainingTime.expired) {
+          statusText = '订阅已过期';
+        } else if (remainingTime.days <= 7) {
+          statusText = `付费用户(${remainingTime.days}天后过期)`;
+        }
+        
+        this.setData({
+          permissionStatus: statusText
+        });
+      }
+    } catch (error) {
+      console.error('刷新订阅状态失败:', error);
+    }
+  },
+
+  // 检查订阅事件
+  checkSubscriptionEvents() {
+    try {
+      const eventData = wx.getStorageSync('subscription_event');
+      if (eventData) {
+        const eventTime = new Date(eventData.timestamp);
+        const now = new Date();
+        const timeDiff = now - eventTime;
+        
+        // 只处理5分钟内的事件
+        if (timeDiff < 5 * 60 * 1000) {
+          this.handleSubscriptionEvent(eventData);
+        }
+        
+        // 清除已处理的事件
+        wx.removeStorageSync('subscription_event');
+      }
+    } catch (error) {
+      console.error('检查订阅事件失败:', error);
+    }
+  },
+
+  // 处理订阅事件
+  handleSubscriptionEvent(eventData) {
+    switch (eventData.type) {
+      case 'subscription_success':
+        wx.showToast({
+          title: '订阅成功！',
+          icon: 'success',
+          duration: 3000
+        });
+        this.refreshSubscriptionStatus();
+        break;
+      case 'subscription_reactivated':
+        wx.showToast({
+          title: '订阅已重新激活',
+          icon: 'success',
+          duration: 3000
+        });
+        this.refreshSubscriptionStatus();
+        break;
+      case 'auto_renewal_cancelled':
+        wx.showToast({
+          title: '已取消自动续费',
+          icon: 'success',
+          duration: 2000
+        });
+        break;
+    }
+  },
+
+  // 打开通知设置
+  openNotificationSettings() {
+    this.setData({
+      showNotificationSettings: true
+    });
+  },
+
+  // 关闭通知设置
+  closeNotificationSettings() {
+    this.setData({
+      showNotificationSettings: false
     });
   },
 
@@ -228,6 +504,52 @@ Page({
         }
       }
     });
+  },
+
+  // 处理退出登录（WXML中的handleLogout方法）
+  handleLogout() {
+    this.logout();
+  },
+
+  // 编辑昵称
+  editNickname() {
+    wx.navigateTo({
+      url: '/pages/edit-profile/edit-profile'
+    });
+  },
+
+  // 设置
+  // 跳转到复盘页面
+  goToReview() {
+    wx.navigateTo({
+      url: '/pages/review/review'
+    });
+  },
+
+  // 跳转到课后加餐
+  goToMaterials() {
+    wx.navigateTo({
+      url: '/pages/materials/materials'
+    });
+  },
+
+  goToSettings() {
+    wx.showToast({
+      title: '功能开发中',
+      icon: 'none'
+    });
+  },
+
+  // 获取权限状态的CSS类名
+  getPermissionStatusClass(status) {
+    if (status.includes('付费用户')) {
+      return 'premium';
+    } else if (status.includes('试用已过期')) {
+      return 'expired';
+    } else if (status.includes('试用用户')) {
+      return 'trial';
+    }
+    return '';
   },
 
   // 分享

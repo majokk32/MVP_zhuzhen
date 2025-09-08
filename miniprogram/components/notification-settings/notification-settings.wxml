@@ -1,0 +1,310 @@
+<!-- components/notification-settings/notification-settings.wxml -->
+<view class="notification-settings" wx:if="{{show}}">
+  <!-- 遮罩层 -->
+  <view class="mask" bindtap="onClose"></view>
+  
+  <!-- 设置面板 -->
+  <view class="settings-panel">
+    <!-- 标题栏 -->
+    <view class="panel-header">
+      <text class="panel-title">通知设置</text>
+      <view class="header-actions">
+        <text class="action-btn test-btn" bindtap="onTestNotification">测试</text>
+        <text class="action-btn reset-btn" bindtap="onReset">重置</text>
+        <text class="close-btn" bindtap="onClose">✕</text>
+      </view>
+    </view>
+    
+    <!-- 加载状态 -->
+    <view wx:if="{{loading}}" class="loading-container">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载设置中...</text>
+    </view>
+    
+    <!-- 设置内容 -->
+    <view wx:else class="settings-content">
+      <!-- 标签栏 -->
+      <view class="tab-bar">
+        <view 
+          class="tab-item {{activeTab === 'categories' ? 'active' : ''}}"
+          data-tab="categories"
+          bindtap="onTabChange"
+        >
+          通知类型
+        </view>
+        <view 
+          class="tab-item {{activeTab === 'timing' ? 'active' : ''}}"
+          data-tab="timing"
+          bindtap="onTabChange"
+        >
+          时间设置
+        </view>
+        <view 
+          class="tab-item {{activeTab === 'stats' ? 'active' : ''}}"
+          data-tab="stats"
+          bindtap="onTabChange"
+        >
+          统计数据
+        </view>
+      </view>
+      
+      <!-- 通知类型设置 -->
+      <scroll-view wx:if="{{activeTab === 'categories'}}" class="tab-content" scroll-y>
+        <!-- 批量订阅 -->
+        <view class="section">
+          <view class="section-header">
+            <text class="section-title">快速设置</text>
+          </view>
+          <view class="batch-actions">
+            <button class="batch-btn primary" bindtap="onBatchSubscribe">
+              一键订阅所有通知
+            </button>
+          </view>
+        </view>
+        
+        <!-- 分类设置 -->
+        <view class="section">
+          <view class="section-header">
+            <text class="section-title">通知类型管理</text>
+            <text class="section-desc">选择您希望接收的通知类型</text>
+          </view>
+          
+          <view class="category-list">
+            <block wx:for="{{settings.templates}}" wx:key="key">
+              <view class="category-item">
+                <view class="category-info">
+                  <text class="category-name">{{item.title}}</text>
+                  <text class="category-desc">{{item.description}}</text>
+                  
+                  <!-- 订阅状态 -->
+                  <view class="subscription-status">
+                    <text class="status-text status-{{subscriptionStatus[item.key] || 'undefined'}}">
+                      {{getSubscriptionStatusText(subscriptionStatus[item.key])}}
+                    </text>
+                  </view>
+                </view>
+                
+                <view class="category-controls">
+                  <!-- 开关 -->
+                  <switch 
+                    class="category-switch"
+                    checked="{{categoryToggles[item.category]}}"
+                    data-category="{{item.category}}"
+                    bindchange="onCategoryToggle"
+                  />
+                  
+                  <!-- 订阅按钮 -->
+                  <button 
+                    wx:if="{{subscriptionStatus[item.key] !== 'accepted'}}"
+                    class="subscribe-btn"
+                    size="mini"
+                    data-template="{{item.key}}"
+                    bindtap="onRequestSubscription"
+                  >
+                    订阅
+                  </button>
+                </view>
+              </view>
+            </block>
+          </view>
+        </view>
+        
+        <!-- 推荐设置 -->
+        <view wx:if="{{recommendations.length > 0}}" class="section">
+          <view class="section-header">
+            <text class="section-title">智能推荐</text>
+            <text class="section-desc">基于您的使用习惯推荐的设置</text>
+          </view>
+          
+          <view class="recommendations">
+            <block wx:for="{{recommendations}}" wx:key="type">
+              <view class="recommendation-item">
+                <view class="recommendation-content">
+                  <text class="recommendation-reason">{{item.reason}}</text>
+                </view>
+                <button 
+                  class="recommendation-btn"
+                  size="mini"
+                  data-recommendation="{{item}}"
+                  bindtap="onApplyRecommendation"
+                >
+                  应用
+                </button>
+              </view>
+            </block>
+          </view>
+        </view>
+      </scroll-view>
+      
+      <!-- 时间设置 -->
+      <scroll-view wx:elif="{{activeTab === 'timing'}}" class="tab-content" scroll-y>
+        <view class="section">
+          <view class="section-header">
+            <text class="section-title">接收时间设置</text>
+            <text class="section-desc">设置您希望接收通知的时间段</text>
+          </view>
+          
+          <view class="time-settings">
+            <!-- 早上时段 -->
+            <view class="time-period">
+              <view class="period-header">
+                <text class="period-title">早上时段</text>
+              </view>
+              <view class="time-range">
+                <view class="time-input-group">
+                  <text class="time-label">开始时间</text>
+                  <picker
+                    mode="time"
+                    value="{{timePreferences.morningStart + ':00'}}"
+                    data-type="morningStart"
+                    bindchange="onTimePreferenceChange"
+                  >
+                    <view class="time-picker">
+                      {{timePreferences.morningStart}}:00
+                    </view>
+                  </picker>
+                </view>
+                <text class="time-separator">至</text>
+                <view class="time-input-group">
+                  <text class="time-label">结束时间</text>
+                  <picker
+                    mode="time"
+                    value="{{timePreferences.morningEnd + ':00'}}"
+                    data-type="morningEnd"
+                    bindchange="onTimePreferenceChange"
+                  >
+                    <view class="time-picker">
+                      {{timePreferences.morningEnd}}:00
+                    </view>
+                  </picker>
+                </view>
+              </view>
+            </view>
+            
+            <!-- 下午时段 -->
+            <view class="time-period">
+              <view class="period-header">
+                <text class="period-title">下午时段</text>
+              </view>
+              <view class="time-range">
+                <view class="time-input-group">
+                  <text class="time-label">开始时间</text>
+                  <picker
+                    mode="time"
+                    value="{{timePreferences.afternoonStart + ':00'}}"
+                    data-type="afternoonStart"
+                    bindchange="onTimePreferenceChange"
+                  >
+                    <view class="time-picker">
+                      {{timePreferences.afternoonStart}}:00
+                    </view>
+                  </picker>
+                </view>
+                <text class="time-separator">至</text>
+                <view class="time-input-group">
+                  <text class="time-label">结束时间</text>
+                  <picker
+                    mode="time"
+                    value="{{timePreferences.afternoonEnd + ':00'}}"
+                    data-type="afternoonEnd"
+                    bindchange="onTimePreferenceChange"
+                  >
+                    <view class="time-picker">
+                      {{timePreferences.afternoonEnd}}:00
+                    </view>
+                  </picker>
+                </view>
+              </view>
+            </view>
+            
+            <!-- 晚上时段 -->
+            <view class="time-period">
+              <view class="period-header">
+                <text class="period-title">晚上时段</text>
+              </view>
+              <view class="time-range">
+                <view class="time-input-group">
+                  <text class="time-label">开始时间</text>
+                  <picker
+                    mode="time"
+                    value="{{timePreferences.eveningStart + ':00'}}"
+                    data-type="eveningStart"
+                    bindchange="onTimePreferenceChange"
+                  >
+                    <view class="time-picker">
+                      {{timePreferences.eveningStart}}:00
+                    </view>
+                  </picker>
+                </view>
+                <text class="time-separator">至</text>
+                <view class="time-input-group">
+                  <text class="time-label">结束时间</text>
+                  <picker
+                    mode="time"
+                    value="{{timePreferences.eveningEnd + ':00'}}"
+                    data-type="eveningEnd"
+                    bindchange="onTimePreferenceChange"
+                  >
+                    <view class="time-picker">
+                      {{timePreferences.eveningEnd}}:00
+                    </view>
+                  </picker>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+      
+      <!-- 统计数据 -->
+      <scroll-view wx:elif="{{activeTab === 'stats'}}" class="tab-content" scroll-y>
+        <view class="section">
+          <view class="section-header">
+            <text class="section-title">通知统计</text>
+            <text class="section-desc">查看您的通知接收和互动数据</text>
+          </view>
+          
+          <view class="stats-grid">
+            <view class="stat-item">
+              <text class="stat-value">{{stats.openRate * 100}}%</text>
+              <text class="stat-label">打开率</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{stats.clickRate * 100}}%</text>
+              <text class="stat-label">点击率</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{settings.queueStatus.pending}}</text>
+              <text class="stat-label">待发送</text>
+            </view>
+          </view>
+          
+          <!-- 详细统计 -->
+          <view class="detailed-stats">
+            <view class="stat-row">
+              <text class="stat-desc">最后更新时间</text>
+              <text class="stat-time">
+                {{stats.lastUpdate ? new Date(stats.lastUpdate).toLocaleString() : '暂无数据'}}
+              </text>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 使用建议 -->
+        <view class="section">
+          <view class="section-header">
+            <text class="section-title">使用建议</text>
+          </view>
+          
+          <view class="suggestions">
+            <text class="suggestion-text">
+              • 适度关注通知，避免过度打扰
+              • 根据个人习惯调整接收时间
+              • 及时处理重要通知消息
+            </text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+  </view>
+</view>

@@ -22,6 +22,52 @@
     </view>
 
   </view>
+
+  <!-- V1.0 学习数据可视化区 -->
+  <view class="learning-data-section" wx:if="{{!loading}}">
+    <!-- 核心数据大卡片 -->
+    <view class="core-stats-card">
+      <view class="main-stat">
+        <text class="stat-number">{{learningData.current_streak || 0}}</text>
+        <text class="stat-label">连续学习天数 🔥</text>
+      </view>
+      <view class="side-stats">
+        <view class="side-stat">
+          <text class="side-number">{{learningData.total_score || 0}}</text>
+          <text class="side-label">总积分</text>
+        </view>
+        <view class="side-stat">
+          <text class="side-number">{{learningData.week_checkins || 0}}</text>
+          <text class="side-label">本周打卡</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 14天打卡图 -->
+    <view class="checkin-chart-section">
+      <view class="section-header">
+        <text class="section-title">学习活跃度</text>
+        <text class="section-desc">近14天打卡记录</text>
+      </view>
+      <checkin-chart checkin-data="{{checkinChartData}}" />
+    </view>
+
+    <!-- 数据指标卡片组 -->
+    <view class="data-cards-section">
+      <view class="data-card">
+        <text class="card-number">{{learningData.total_submissions || 0}}</text>
+        <text class="card-label">累计提交</text>
+      </view>
+      <view class="data-card">
+        <text class="card-number">{{learningData.best_streak || 0}}</text>
+        <text class="card-label">历史最佳</text>
+      </view>
+      <view class="data-card" bindtap="goToLeaderboard">
+        <text class="card-number">{{userRank || '--'}}</text>
+        <text class="card-label">月度排名</text>
+      </view>
+    </view>
+  </view>
   
   <!-- 内容列表区 -->
   <view class="content-list">
@@ -35,18 +81,45 @@
     </view>
     
     <!-- 权限状态和有效期 -->
-    <view class="list-item">
+    <view class="list-item permission-status">
       <view class="item-content">
         <text class="item-title">权限状态</text>
-        <text class="item-desc">{{permissionStatus}}</text>
+        <text class="item-desc {{getPermissionStatusClass(permissionStatus)}}">{{permissionStatus}}</text>
       </view>
+    </view>
+    
+    <!-- 学习复盘 -->
+    <view class="list-item" bindtap="goToReview">
+      <view class="item-content">
+        <text class="item-title">学习复盘</text>
+        <text class="item-desc">定期回顾，持续进步</text>
+      </view>
+      <text class="item-arrow">›</text>
+    </view>
+    
+    <!-- 课后加餐 -->
+    <view class="list-item" bindtap="goToMaterials">
+      <view class="item-content">
+        <text class="item-title">课后加餐</text>
+        <text class="item-desc">优质资料，巩固提升</text>
+      </view>
+      <text class="item-arrow">›</text>
+    </view>
+    
+    <!-- 通知设置 -->
+    <view class="list-item" bindtap="openNotificationSettings">
+      <view class="item-content">
+        <text class="item-title">通知设置</text>
+        <text class="item-desc">管理推送通知偏好</text>
+      </view>
+      <text class="item-arrow">›</text>
     </view>
     
     <!-- 设置选项（预留） -->
     <view class="list-item" bindtap="goToSettings">
       <view class="item-content">
-        <text class="item-title">设置</text>
-        <text class="item-desc">通知、隐私等</text>
+        <text class="item-title">其他设置</text>
+        <text class="item-desc">隐私、缓存等</text>
       </view>
       <text class="item-arrow">›</text>
     </view>
@@ -67,6 +140,12 @@
   </view>
 
 </view>
+
+<!-- 通知设置面板 -->
+<notification-settings 
+  show="{{showNotificationSettings}}" 
+  bind:close="closeNotificationSettings"
+/>
 
 <!-- 底部安全区域 -->
 <view class="safe-bottom"></view>
