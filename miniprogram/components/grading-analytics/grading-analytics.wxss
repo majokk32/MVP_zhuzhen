@@ -123,10 +123,21 @@
   flex: 1;
 }
 
+.title-actions {
+  display: flex;
+  gap: 12rpx;
+}
+
 .title-action {
   padding: 8rpx 16rpx;
   background: #f8f9fa;
   border-radius: 16rpx;
+  transition: all 0.2s ease;
+}
+
+.title-action:active {
+  background: #e9ecef;
+  transform: scale(0.95);
 }
 
 .action-text {

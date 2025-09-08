@@ -1,0 +1,233 @@
+<!-- pages/subscription/subscription.wxml -->
+<view class="subscription-page">
+  <!-- 头部状态 -->
+  <view class="subscription-header">
+    <view class="current-status">
+      <text class="status-title">当前订阅状态</text>
+      <view class="status-info">
+        <text class="status-text status-{{subscriptionStatus}}">
+          {{getSubscriptionStatusText()}}
+        </text>
+        <view wx:if="{{currentSubscription && !remainingTime.expired}}" class="subscription-details">
+          <text class="plan-name">{{currentSubscription.plan.name}}</text>
+          <text class="auto-renew-status" wx:if="{{autoRenewEnabled}}">自动续费已开启</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 自动续费管理 -->
+    <view wx:if="{{currentSubscription && subscriptionStatus === 'active'}}" class="auto-renew-section">
+      <view class="auto-renew-toggle">
+        <text class="toggle-label">自动续费</text>
+        <switch 
+          checked="{{autoRenewEnabled}}" 
+          bindchange="toggleAutoRenew"
+          color="#1989fa"
+        />
+      </view>
+      <button 
+        wx:if="{{autoRenewEnabled}}" 
+        class="cancel-auto-renew-btn" 
+        bindtap="cancelAutoRenewal"
+        size="mini"
+      >
+        取消自动续费
+      </button>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading-container">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 订阅计划列表 -->
+  <view wx:else class="subscription-plans">
+    <view class="plans-header">
+      <text class="plans-title">选择订阅计划</text>
+      <view class="feature-comparison-toggle" bindtap="toggleFeatureComparison">
+        <text class="toggle-text">功能对比</text>
+        <text class="toggle-icon">{{showFeatureComparison ? '▼' : '▶'}}</text>
+      </view>
+    </view>
+
+    <!-- 功能对比表 -->
+    <view wx:if="{{showFeatureComparison}}" class="feature-comparison">
+      <view class="comparison-header">
+        <text class="feature-label">功能</text>
+        <text class="plan-header">月度</text>
+        <text class="plan-header">季度</text>
+        <text class="plan-header">年度</text>
+      </view>
+      <view class="comparison-row" wx:for="{{['基础功能', '数据导出', '高级分析', '优先客服', '专属计划']}}" wx:key="*this">
+        <text class="feature-name">{{item}}</text>
+        <text class="feature-status">✓</text>
+        <text class="feature-status">✓</text>
+        <text class="feature-status">✓</text>
+      </view>
+    </view>
+
+    <!-- 计划卡片 -->
+    <view class="plans-list">
+      <view 
+        class="{{getPlanClassName(item.id)}}"
+        wx:for="{{subscriptionPlans}}" 
+        wx:key="id"
+        data-plan-id="{{item.id}}"
+        bindtap="selectPlan"
+      >
+        <!-- 推荐标签 -->
+        <view wx:if="{{item.id === 'quarterly'}}" class="recommended-badge">
+          <text class="badge-text">{{item.discount}}</text>
+        </view>
+        
+        <!-- 计划信息 -->
+        <view class="plan-header">
+          <text class="plan-name">{{item.name}}</text>
+          <view class="plan-pricing">
+            <text class="current-price">¥{{item.price}}</text>
+            <text class="original-price">¥{{item.originalPrice}}</text>
+          </view>
+          <text class="plan-duration">{{item.duration}}天有效期</text>
+        </view>
+
+        <!-- 功能列表 -->
+        <view class="plan-features">
+          <view class="feature-item" wx:for="{{item.features}}" wx:key="*this" wx:for-item="feature">
+            <text class="feature-icon">✓</text>
+            <text class="feature-text">{{feature}}</text>
+          </view>
+        </view>
+
+        <!-- 选择指示器 -->
+        <view class="selection-indicator">
+          <text class="indicator-icon">{{selectedPlanId === item.id ? '✓' : '○'}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 优惠券区域 -->
+  <view class="coupon-section">
+    <view class="coupon-toggle" bindtap="toggleCouponInput">
+      <text class="coupon-text">使用优惠券</text>
+      <text class="coupon-icon">{{showCouponInput ? '▼' : '▶'}}</text>
+    </view>
+    
+    <view wx:if="{{showCouponInput}}" class="coupon-input-area">
+      <input 
+        class="coupon-input"
+        type="text"
+        placeholder="请输入优惠券代码"
+        value="{{couponCode}}"
+        bindinput="onCouponInput"
+      />
+      <button 
+        class="apply-coupon-btn"
+        bindtap="applyCoupon"
+        size="mini"
+      >
+        应用
+      </button>
+    </view>
+
+    <!-- 优惠券生效提示 -->
+    <view wx:if="{{couponDiscount}}" class="coupon-success">
+      <text class="success-icon">✓</text>
+      <text class="success-text">优惠券已生效，减免¥{{couponDiscount.amount}}</text>
+    </view>
+  </view>
+
+  <!-- 支付按钮 -->
+  <view class="payment-section">
+    <view class="payment-summary">
+      <view class="selected-plan-info">
+        <text class="summary-title">{{subscriptionPlans.find(p => p.id === selectedPlanId)?.name}}</text>
+        <view class="price-breakdown">
+          <text class="final-price">
+            ¥{{calculateDiscountedPrice(subscriptionPlans.find(p => p.id === selectedPlanId)?.price || 0)}}
+          </text>
+          <text wx:if="{{couponDiscount}}" class="original-amount">
+            原价¥{{subscriptionPlans.find(p => p.id === selectedPlanId)?.price}}
+          </text>
+        </view>
+      </view>
+      
+      <view class="auto-renew-notice" wx:if="{{autoRenewEnabled}}">
+        <text class="notice-icon">ⓘ</text>
+        <text class="notice-text">开启自动续费，到期自动续订</text>
+      </view>
+    </view>
+
+    <!-- 支付按钮区域 -->
+    <view class="payment-buttons">
+      <button 
+        class="purchase-btn"
+        bindtap="purchaseSubscription"
+        loading="{{loadingPayment}}"
+        disabled="{{loadingPayment}}"
+      >
+        {{loadingPayment ? '支付中...' : '立即订阅'}}
+      </button>
+      
+      <button 
+        wx:if="{{subscriptionStatus === 'expired'}}"
+        class="reactivate-btn"
+        bindtap="reactivateSubscription"
+      >
+        重新激活
+      </button>
+    </view>
+  </view>
+
+  <!-- 支付历史 -->
+  <view class="payment-history-section">
+    <view class="history-header" bindtap="togglePaymentHistory">
+      <text class="history-title">支付历史</text>
+      <text class="history-toggle">{{showPaymentHistory ? '▼' : '▶'}}</text>
+    </view>
+    
+    <view wx:if="{{showPaymentHistory}}" class="payment-history-list">
+      <view 
+        wx:if="{{paymentHistory.length === 0}}" 
+        class="empty-history"
+      >
+        <text class="empty-text">暂无支付记录</text>
+      </view>
+      
+      <view 
+        class="payment-item"
+        wx:for="{{paymentHistory}}" 
+        wx:key="id"
+        data-payment-id="{{item.id}}"
+        bindtap="viewPaymentDetail"
+      >
+        <view class="payment-info">
+          <text class="payment-plan">{{item.plan.name}}</text>
+          <text class="payment-date">{{new Date(item.created_at).toLocaleDateString()}}</text>
+        </view>
+        <view class="payment-amount">
+          <text class="amount-text">¥{{item.amount/100}}</text>
+          <text class="status-badge status-{{item.status}}">{{item.status}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 帮助与支持 -->
+  <view class="support-section">
+    <view class="support-item" bindtap="contactSupport">
+      <text class="support-icon">📞</text>
+      <text class="support-text">联系客服</text>
+      <text class="support-detail">400-123-4567</text>
+    </view>
+    
+    <view class="terms-link">
+      <text class="terms-text">订阅即表示同意</text>
+      <text class="terms-link-text">《服务条款》</text>
+      <text class="terms-text">和</text>
+      <text class="terms-link-text">《隐私政策》</text>
+    </view>
+  </view>
+</view>

@@ -9,11 +9,12 @@ from typing import Optional, List
 from datetime import datetime
 
 from app.database import get_db
-from app.models import Task, TaskStatus, User, Submission, SubmissionStatus
+from app.models import Task, TaskStatus, User, Submission, SubmissionStatus, CheckinType
 from app.utils.task_status import calculate_display_status, get_task_priority
+from app.services.async_learning_data import trigger_checkin_async
 from app.schemas import (
     ResponseBase, TaskCreate, TaskUpdate, TaskInfo, 
-    TaskListResponse
+    TaskListResponse, TaskCreateWithTags, TaskUpdateWithTags, TaskInfoWithTags
 )
 from app.auth import get_current_user, get_current_teacher
 
@@ -166,6 +167,18 @@ async def get_task(
         task_info.submission_score = submission.score
     else:
         task_info.submission_status = "未提交"
+    
+    # V1.0 学习数据统计：记录任务查看打卡
+    try:
+        await trigger_checkin_async(
+            user_id=current_user.id,
+            checkin_type=CheckinType.TASK_VIEW,
+            db=db,
+            related_task_id=task_id
+        )
+    except Exception as e:
+        # 学习数据记录失败不应影响主业务流程
+        print(f"任务查看打卡记录失败: {e}")
     
     return ResponseBase(data=task_info.dict())
 

@@ -185,11 +185,11 @@ async def get_student_submissions(
             "id": sub.id,
             "task_id": sub.task_id,
             "task_title": task.title if task else "Unknown",
-            "submit_count": sub.submit_count,
+            "submission_count": sub.submission_count,
             "status": sub.status.value,
             "score": sub.score,
             "grade": sub.grade.value if sub.grade else None,
-            "comment": sub.comment,
+            "feedback": sub.feedback,
             "created_at": sub.created_at.isoformat(),
             "graded_at": sub.graded_at.isoformat() if sub.graded_at else None
         }
@@ -241,7 +241,7 @@ async def request_batch_download(
         student_result = await db.execute(select(User).where(User.id == sub.student_id))
         student = student_result.scalar_one_or_none()
         
-        images = json.loads(sub.images) if sub.images else []
+        images = sub.images if sub.images else []
         
         for idx, img_url in enumerate(images):
             download_list.append({

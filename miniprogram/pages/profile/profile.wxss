@@ -150,3 +150,162 @@
 .safe-bottom {
   height: env(safe-area-inset-bottom);
 }
+
+/* V1.0 学习数据可视化区域样式 */
+.learning-data-section {
+  margin: 24rpx;
+  margin-bottom: 32rpx;
+}
+
+/* 核心数据大卡片 */
+.core-stats-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 24rpx;
+  padding: 40rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  margin-bottom: 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
+}
+
+.main-stat {
+  text-align: center;
+}
+
+.stat-number {
+  display: block;
+  font-size: 72rpx;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 12rpx;
+}
+
+.stat-label {
+  font-size: 28rpx;
+  opacity: 0.9;
+}
+
+.side-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.side-stat {
+  text-align: center;
+}
+
+.side-number {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-bottom: 8rpx;
+}
+
+.side-label {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
+/* 打卡图区域 */
+.checkin-chart-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+}
+
+.section-header {
+  margin-bottom: 24rpx;
+}
+
+.section-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.section-desc {
+  font-size: 26rpx;
+  color: #666;
+}
+
+/* 数据指标卡片组 */
+.data-cards-section {
+  display: flex;
+  gap: 16rpx;
+}
+
+.data-card {
+  flex: 1;
+  background: white;
+  border-radius: 16rpx;
+  padding: 32rpx 20rpx;
+  text-align: center;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.data-card:active {
+  transform: scale(0.98);
+}
+
+.card-number {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.card-label {
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* V1.0 订阅状态视觉指示器 */
+.subscription-indicator {
+  display: inline-block;
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  margin-left: 16rpx;
+}
+
+.subscription-trial {
+  background: linear-gradient(135deg, #ffd54f 0%, #ff9800 100%);
+  color: white;
+}
+
+.subscription-premium {
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  color: white;
+}
+
+.subscription-expired {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  color: white;
+}
+
+/* 权限状态特殊显示 */
+.list-item.permission-status .item-desc {
+  font-weight: 500;
+}
+
+.list-item.permission-status .item-desc.trial {
+  color: #ff9800;
+}
+
+.list-item.permission-status .item-desc.premium {
+  color: #4caf50;
+}
+
+.list-item.permission-status .item-desc.expired {
+  color: #f44336;
+}

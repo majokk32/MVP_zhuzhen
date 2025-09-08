@@ -1,0 +1,357 @@
+/* 课后加餐资料页面样式 */
+page {
+  background-color: #f5f5f5;
+}
+
+.container {
+  padding: 0;
+  padding-bottom: 20rpx;
+}
+
+/* 搜索栏 */
+.search-bar {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  background: white;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.search-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f8f9ff;
+  border-radius: 50rpx;
+  padding: 0 40rpx;
+}
+
+.search-input {
+  flex: 1;
+  height: 70rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.search-icon {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.filter-btn {
+  margin-left: 20rpx;
+  padding: 20rpx 30rpx;
+  background: #667eea;
+  color: white;
+  border-radius: 35rpx;
+  font-size: 26rpx;
+}
+
+/* 分类标签 */
+.category-tabs {
+  background: white;
+  white-space: nowrap;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.category-tab-wrapper {
+  display: flex;
+  padding: 0 20rpx;
+}
+
+.category-tab {
+  flex-shrink: 0;
+  padding: 25rpx 30rpx;
+  font-size: 28rpx;
+  color: #666;
+  border-bottom: 4rpx solid transparent;
+}
+
+.category-tab.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+  font-weight: 500;
+}
+
+/* 资料列表 */
+.materials-list {
+  padding: 20rpx 30rpx;
+}
+
+.material-card {
+  background: white;
+  border-radius: 20rpx;
+  margin-bottom: 30rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.material-thumbnail {
+  position: relative;
+  height: 300rpx;
+}
+
+.thumbnail-img {
+  width: 100%;
+  height: 100%;
+}
+
+.type-badge {
+  position: absolute;
+  top: 20rpx;
+  left: 20rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  color: white;
+  font-weight: 500;
+}
+
+.type-badge.video {
+  background: #ff6b35;
+}
+
+.type-badge.audio {
+  background: #4ecdc4;
+}
+
+.type-badge.document {
+  background: #45b7d1;
+}
+
+.type-badge.image {
+  background: #96ceb4;
+}
+
+.type-badge.link {
+  background: #feca57;
+}
+
+.premium-badge {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  background: #ff9800;
+  color: white;
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+/* 资料信息 */
+.material-info {
+  padding: 30rpx;
+}
+
+.material-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15rpx;
+}
+
+.material-title {
+  flex: 1;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+  margin-right: 20rpx;
+}
+
+.material-actions {
+  display: flex;
+  gap: 15rpx;
+}
+
+.action-btn {
+  font-size: 32rpx;
+  padding: 8rpx;
+}
+
+.action-btn.collect.active {
+  color: #ff6b6b;
+}
+
+.action-btn.like.active {
+  color: #667eea;
+}
+
+.material-desc {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 20rpx;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.material-meta {
+  display: flex;
+  align-items: center;
+  gap: 25rpx;
+  margin-bottom: 15rpx;
+}
+
+.meta-item {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.material-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.tag {
+  font-size: 22rpx;
+  color: #667eea;
+  background: #f0f4ff;
+  padding: 6rpx 12rpx;
+  border-radius: 15rpx;
+}
+
+/* 加载更多 */
+.load-more {
+  text-align: center;
+  padding: 40rpx 0;
+}
+
+.load-more-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 120rpx 40rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 30rpx;
+  display: block;
+}
+
+.empty-text {
+  font-size: 32rpx;
+  color: #666;
+  margin-bottom: 15rpx;
+  display: block;
+}
+
+.empty-desc {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 筛选弹窗 */
+.filter-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  z-index: 1000;
+}
+
+.filter-content {
+  width: 100%;
+  background: white;
+  border-radius: 40rpx 40rpx 0 0;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 40rpx 50rpx 20rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.filter-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.filter-close {
+  font-size: 48rpx;
+  color: #999;
+}
+
+.filter-body {
+  padding: 40rpx 50rpx;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.filter-group {
+  margin-bottom: 50rpx;
+}
+
+.filter-label {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 25rpx;
+  display: block;
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.filter-option {
+  padding: 20rpx 30rpx;
+  background: #f5f5f5;
+  border-radius: 30rpx;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.filter-option.active {
+  background: #667eea;
+  color: white;
+}
+
+.filter-footer {
+  display: flex;
+  gap: 30rpx;
+  padding: 30rpx 50rpx;
+  border-top: 2rpx solid #f0f0f0;
+}
+
+.filter-btn {
+  flex: 1;
+  height: 80rpx;
+  border-radius: 40rpx;
+  font-size: 30rpx;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-btn.reset {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.filter-btn.apply {
+  background: #667eea;
+  color: white;
+}

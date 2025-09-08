@@ -1,0 +1,676 @@
+/* pages/subscription/subscription.wxss */
+
+.subscription-page {
+  background: #f5f6fa;
+  min-height: 100vh;
+  padding-bottom: 40rpx;
+}
+
+/* 头部状态区域 */
+.subscription-header {
+  background: white;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  border-radius: 0 0 20rpx 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.current-status {
+  margin-bottom: 20rpx;
+}
+
+.status-title {
+  display: block;
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 12rpx;
+}
+
+.status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.status-text {
+  font-size: 36rpx;
+  font-weight: 600;
+}
+
+.status-active {
+  color: #52c41a;
+}
+
+.status-expired {
+  color: #f5222d;
+}
+
+.status-inactive {
+  color: #999;
+}
+
+.subscription-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.plan-name {
+  font-size: 24rpx;
+  color: #1989fa;
+  background: rgba(25, 137, 250, 0.1);
+  padding: 6rpx 12rpx;
+  border-radius: 20rpx;
+  align-self: flex-start;
+}
+
+.auto-renew-status {
+  font-size: 22rpx;
+  color: #52c41a;
+}
+
+/* 自动续费区域 */
+.auto-renew-section {
+  border-top: 1rpx solid #f0f0f0;
+  padding-top: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auto-renew-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.toggle-label {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.cancel-auto-renew-btn {
+  background: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #f0f0f0;
+  border-top-color: #1989fa;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20rpx;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 订阅计划区域 */
+.subscription-plans {
+  margin-bottom: 20rpx;
+}
+
+.plans-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30rpx 20rpx;
+}
+
+.plans-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.feature-comparison-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 16rpx;
+  border: 1rpx solid #1989fa;
+  border-radius: 20rpx;
+  background: rgba(25, 137, 250, 0.1);
+}
+
+.toggle-text {
+  font-size: 24rpx;
+  color: #1989fa;
+}
+
+.toggle-icon {
+  font-size: 20rpx;
+  color: #1989fa;
+}
+
+/* 功能对比表 */
+.feature-comparison {
+  background: white;
+  margin: 0 30rpx 20rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.comparison-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  background: #1989fa;
+  color: white;
+  padding: 20rpx;
+  font-weight: 600;
+  font-size: 24rpx;
+}
+
+.feature-label {
+  text-align: left;
+}
+
+.plan-header {
+  text-align: center;
+}
+
+.comparison-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  padding: 16rpx 20rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  align-items: center;
+}
+
+.comparison-row:last-child {
+  border-bottom: none;
+}
+
+.feature-name {
+  font-size: 26rpx;
+  color: #333;
+}
+
+.feature-status {
+  text-align: center;
+  font-size: 24rpx;
+  color: #52c41a;
+}
+
+/* 计划列表 */
+.plans-list {
+  padding: 0 30rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.plan-card {
+  position: relative;
+  background: white;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  border: 2rpx solid transparent;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.plan-card.selected {
+  border-color: #1989fa;
+  transform: translateY(-4rpx);
+  box-shadow: 0 8rpx 20rpx rgba(25, 137, 250, 0.2);
+}
+
+.plan-card.recommended::before {
+  content: '';
+  position: absolute;
+  top: -2rpx;
+  left: -2rpx;
+  right: -2rpx;
+  bottom: -2rpx;
+  background: linear-gradient(135deg, #1989fa, #52c41a);
+  border-radius: 18rpx;
+  z-index: -1;
+}
+
+.recommended-badge {
+  position: absolute;
+  top: -12rpx;
+  right: 20rpx;
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: white;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  box-shadow: 0 4rpx 8rpx rgba(255, 107, 53, 0.3);
+}
+
+.plan-header {
+  margin-bottom: 20rpx;
+  text-align: center;
+}
+
+.plan-name {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.plan-pricing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+
+.current-price {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #1989fa;
+}
+
+.original-price {
+  font-size: 24rpx;
+  color: #999;
+  text-decoration: line-through;
+}
+
+.plan-duration {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.plan-features {
+  margin-bottom: 20rpx;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.feature-icon {
+  font-size: 20rpx;
+  color: #52c41a;
+  width: 24rpx;
+  text-align: center;
+}
+
+.feature-text {
+  font-size: 26rpx;
+  color: #333;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.selection-indicator {
+  text-align: center;
+}
+
+.indicator-icon {
+  font-size: 32rpx;
+  color: #1989fa;
+}
+
+/* 优惠券区域 */
+.coupon-section {
+  background: white;
+  margin: 0 30rpx 20rpx;
+  border-radius: 12rpx;
+  padding: 24rpx 30rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.coupon-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.coupon-text {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.coupon-icon {
+  font-size: 24rpx;
+  color: #1989fa;
+}
+
+.coupon-input-area {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 20rpx;
+  align-items: center;
+}
+
+.coupon-input {
+  flex: 1;
+  padding: 16rpx;
+  border: 1rpx solid #d9d9d9;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+}
+
+.apply-coupon-btn {
+  background: #1989fa;
+  color: white;
+  border: none;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  padding: 16rpx 24rpx;
+}
+
+.coupon-success {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 16rpx;
+  padding: 12rpx 16rpx;
+  background: #f6ffed;
+  border: 1rpx solid #b7eb8f;
+  border-radius: 8rpx;
+}
+
+.success-icon {
+  font-size: 24rpx;
+  color: #52c41a;
+}
+
+.success-text {
+  font-size: 24rpx;
+  color: #52c41a;
+}
+
+/* 支付区域 */
+.payment-section {
+  background: white;
+  margin: 0 30rpx 20rpx;
+  border-radius: 12rpx;
+  padding: 30rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.payment-summary {
+  margin-bottom: 24rpx;
+}
+
+.selected-plan-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.summary-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.price-breakdown {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4rpx;
+}
+
+.final-price {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1989fa;
+}
+
+.original-amount {
+  font-size: 22rpx;
+  color: #999;
+  text-decoration: line-through;
+}
+
+.auto-renew-notice {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 12rpx 16rpx;
+  background: #e6f7ff;
+  border: 1rpx solid #91d5ff;
+  border-radius: 8rpx;
+}
+
+.notice-icon {
+  font-size: 20rpx;
+  color: #1989fa;
+}
+
+.notice-text {
+  font-size: 24rpx;
+  color: #1989fa;
+}
+
+.payment-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.purchase-btn {
+  background: linear-gradient(135deg, #1989fa, #40a9ff);
+  color: white;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 12rpx rgba(25, 137, 250, 0.3);
+}
+
+.purchase-btn:disabled {
+  opacity: 0.6;
+}
+
+.reactivate-btn {
+  background: #52c41a;
+  color: white;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  padding: 20rpx;
+}
+
+/* 支付历史 */
+.payment-history-section {
+  background: white;
+  margin: 0 30rpx 20rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.history-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.history-toggle {
+  font-size: 24rpx;
+  color: #1989fa;
+}
+
+.payment-history-list {
+  max-height: 400rpx;
+  overflow-y: auto;
+}
+
+.empty-history {
+  padding: 60rpx;
+  text-align: center;
+}
+
+.empty-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.payment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.payment-item:last-child {
+  border-bottom: none;
+}
+
+.payment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.payment-plan {
+  font-size: 26rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.payment-date {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.payment-amount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6rpx;
+}
+
+.amount-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.status-badge {
+  font-size: 20rpx;
+  padding: 4rpx 8rpx;
+  border-radius: 12rpx;
+}
+
+.status-completed {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.status-failed {
+  background: #fff2f0;
+  color: #f5222d;
+}
+
+.status-pending {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+/* 帮助支持区域 */
+.support-section {
+  background: white;
+  margin: 0 30rpx;
+  border-radius: 12rpx;
+  padding: 24rpx 30rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.support-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.support-icon {
+  font-size: 24rpx;
+}
+
+.support-text {
+  font-size: 26rpx;
+  color: #333;
+}
+
+.support-detail {
+  font-size: 24rpx;
+  color: #1989fa;
+  margin-left: auto;
+}
+
+.terms-link {
+  text-align: center;
+  line-height: 1.6;
+}
+
+.terms-text {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.terms-link-text {
+  font-size: 22rpx;
+  color: #1989fa;
+  text-decoration: underline;
+}
+
+/* 响应式适配 */
+@media screen and (max-width: 375px) {
+  .plan-card {
+    padding: 20rpx;
+  }
+  
+  .current-price {
+    font-size: 40rpx;
+  }
+  
+  .plans-list {
+    padding: 0 20rpx;
+  }
+  
+  .payment-section,
+  .coupon-section,
+  .payment-history-section,
+  .support-section {
+    margin: 0 20rpx 16rpx;
+  }
+}

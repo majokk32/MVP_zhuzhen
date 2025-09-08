@@ -1,0 +1,137 @@
+<!-- components/share-panel/share-panel.wxml -->
+<view class="share-panel {{mode}}" wx:if="{{show}}">
+  <!-- 遮罩层 -->
+  <view class="mask" bindtap="onClose"></view>
+  
+  <!-- 分享面板内容 -->
+  <view class="panel-content">
+    <!-- 头部 -->
+    <view class="panel-header">
+      <text class="panel-title">分享给朋友</text>
+      <view class="header-actions">
+        <text class="preview-btn" bindtap="onPreviewShare">预览</text>
+        <text class="stats-btn" bindtap="onViewShareStats">统计</text>
+        <text class="close-btn" bindtap="onClose">✕</text>
+      </view>
+    </view>
+    
+    <!-- 加载状态 -->
+    <view wx:if="{{loading}}" class="loading-container">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">准备分享内容...</text>
+    </view>
+    
+    <!-- 分享内容预览 -->
+    <view wx:else class="share-preview">
+      <view class="preview-card">
+        <image 
+          class="preview-image" 
+          src="{{shareContent.imageUrl}}" 
+          mode="aspectFill"
+          lazy-load="{{true}}"
+        />
+        <view class="preview-content">
+          <view class="preview-title-section">
+            <text class="preview-title" wx:if="{{!showCustomTitle}}">
+              {{shareContent.title}}
+            </text>
+            <input 
+              wx:else
+              class="custom-title-input"
+              type="text"
+              value="{{customTitle}}"
+              placeholder="自定义分享标题"
+              bindinput="onCustomTitleInput"
+            />
+            <text class="edit-title-btn" bindtap="onEditCustomTitle">
+              {{showCustomTitle ? '✓' : '✏️'}}
+            </text>
+          </view>
+          <text class="preview-desc">来自公考督学助手</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 分享渠道 -->
+    <view wx:if="{{!loading}}" class="share-channels">
+      <view class="channels-header">
+        <text class="channels-title">选择分享方式</text>
+      </view>
+      
+      <view class="channels-grid">
+        <view 
+          class="channel-item {{!channel.available ? 'disabled' : ''}}"
+          wx:for="{{shareChannels}}" 
+          wx:key="id"
+          data-channel="{{item}}"
+          bindtap="onChannel{{item.type === 'message' ? 'ToWechat' : item.type === 'timeline' ? 'ToMoments' : item.type === 'copy' ? 'CopyLink' : 'GenerateQRCode'}}"
+        >
+          <view class="channel-icon" style="background-color: {{item.color}};">
+            <text class="icon-text">{{item.icon}}</text>
+          </view>
+          <text class="channel-name">{{item.name}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 智能推荐 -->
+    <view wx:if="{{shareRecommendations.length > 0}}" class="share-recommendations">
+      <view class="recommendations-header">
+        <text class="recommendations-title">智能推荐</text>
+        <text class="recommendations-desc">基于您的使用情况推荐</text>
+      </view>
+      
+      <scroll-view class="recommendations-scroll" scroll-x>
+        <view class="recommendations-list">
+          <view 
+            class="recommendation-item priority-{{item.priority}}"
+            wx:for="{{shareRecommendations}}"
+            wx:key="type"
+            data-recommendation="{{item}}"
+            bindtap="onUseRecommendation"
+          >
+            <view class="recommendation-badge">
+              <text class="badge-text">推荐</text>
+            </view>
+            <text class="recommendation-type">{{item.type}}</text>
+            <text class="recommendation-reason">{{item.reason}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+    
+    <!-- 分享统计简览 -->
+    <view wx:if="{{shareStats.totalShares > 0}}" class="share-stats-summary">
+      <view class="stats-row">
+        <view class="stat-item">
+          <text class="stat-number">{{shareStats.totalShares}}</text>
+          <text class="stat-label">总分享</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-number">{{shareStats.clickThroughRate}}</text>
+          <text class="stat-label">点击率</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 二维码弹窗 -->
+  <view class="qrcode-modal" wx:if="{{showQRCode}}">
+    <view class="qrcode-mask" bindtap="onCloseQRCode"></view>
+    <view class="qrcode-content">
+      <view class="qrcode-header">
+        <text class="qrcode-title">小程序码</text>
+        <text class="qrcode-close" bindtap="onCloseQRCode">✕</text>
+      </view>
+      
+      <view class="qrcode-body">
+        <image class="qrcode-image" src="{{qrCodeData}}" mode="aspectFit" />
+        <text class="qrcode-desc">扫描上方二维码进入小程序</text>
+        
+        <view class="qrcode-actions">
+          <button class="save-qrcode-btn" bindtap="onSaveQRCode">保存到相册</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

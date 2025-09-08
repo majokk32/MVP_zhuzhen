@@ -1,0 +1,173 @@
+<!-- components/enhanced-uploader/enhanced-uploader.wxml -->
+<view class="enhanced-uploader {{disabled ? 'disabled' : ''}}">
+  
+  <!-- 上传按钮区域 -->
+  <view class="upload-area" wx:if="{{fileList.length < maxCount}}">
+    <view class="upload-button" bindtap="chooseImages">
+      <view class="upload-icon">📷</view>
+      <text class="upload-text">{{buttonText}}</text>
+      <text class="upload-count">{{fileList.length}}/{{maxCount}}</text>
+    </view>
+    
+    <!-- 上传提示 -->
+    <view class="upload-tips" wx:if="{{showTips}}">
+      <text class="tip-text">支持{{acceptTypes.join('、')}}格式，单张图片不超过{{maxSize}}MB</text>
+      <text class="tip-compression" wx:if="{{enableCompress}}">✨ 自动压缩优化</text>
+    </view>
+  </view>
+
+  <!-- 文件列表 -->
+  <view class="file-list" wx:if="{{fileList.length > 0}}">
+    <view class="list-header">
+      <view class="list-info">
+        <text class="file-count">{{fileList.length}}张图片</text>
+        <text class="size-info" wx:if="{{compressionRatio > 0}}">
+          已压缩{{compressionRatio}}%，节省{{formatFileSize(totalSize - compressedSize)}}
+        </text>
+      </view>
+      
+      <view class="list-actions">
+        <button class="clear-btn" bindtap="clearAll" size="mini">
+          🗑️ 清空
+        </button>
+      </view>
+    </view>
+    
+    <!-- 图片网格 -->
+    <view class="image-grid" style="grid-template-columns: repeat({{columns}}, 1fr);">
+      <view 
+        class="image-item {{item.status}}" 
+        wx:for="{{fileList}}" 
+        wx:key="id"
+        data-index="{{index}}"
+      >
+        <!-- 图片预览 -->
+        <view class="image-preview" bindtap="previewImage" data-index="{{index}}">
+          <image 
+            class="preview-image" 
+            src="{{item.thumbnail}}" 
+            mode="aspectFill"
+            lazy-load="{{true}}"
+          />
+          
+          <!-- 状态遮罩 -->
+          <view class="status-overlay" wx:if="{{item.status !== 'ready'}}">
+            
+            <!-- 上传中 -->
+            <view class="uploading-overlay" wx:if="{{item.status === 'uploading'}}">
+              <view class="progress-circle">
+                <view class="progress-text">{{item.progress}}%</view>
+                <view class="progress-ring">
+                  <svg class="progress-svg" width="40" height="40">
+                    <circle 
+                      class="progress-bg" 
+                      cx="20" 
+                      cy="20" 
+                      r="18"
+                      fill="none" 
+                      stroke="#e6e6e6" 
+                      stroke-width="2"
+                    />
+                    <circle 
+                      class="progress-bar" 
+                      cx="20" 
+                      cy="20" 
+                      r="18"
+                      fill="none" 
+                      stroke="#1989fa" 
+                      stroke-width="2"
+                      stroke-dasharray="{{113.1 * item.progress / 100}} 113.1"
+                      stroke-dashoffset="0"
+                      transform="rotate(-90 20 20)"
+                    />
+                  </svg>
+                </view>
+              </view>
+            </view>
+            
+            <!-- 上传成功 -->
+            <view class="success-overlay" wx:if="{{item.status === 'success'}}">
+              <view class="success-icon">✅</view>
+            </view>
+            
+            <!-- 上传失败 -->
+            <view class="error-overlay" wx:if="{{item.status === 'failed'}}">
+              <view class="error-icon">❌</view>
+              <button class="retry-btn" bindtap="retryUpload" data-index="{{index}}">
+                重试
+              </button>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 文件信息 -->
+        <view class="file-info">
+          <text class="file-name">{{item.name}}</text>
+          <view class="file-meta">
+            <text class="file-size">{{formatFileSize(item.compressedSize)}}</text>
+            <text class="file-dimensions" wx:if="{{item.width && item.height}}">
+              {{item.width}}×{{item.height}}
+            </text>
+            <text class="compression-info" wx:if="{{item.compressionRatio > 0}}">
+              压缩{{item.compressionRatio}}%
+            </text>
+          </view>
+        </view>
+        
+        <!-- 操作按钮 -->
+        <view class="file-actions">
+          <button 
+            class="delete-btn" 
+            bindtap="deleteFile" 
+            data-index="{{index}}"
+            size="mini"
+          >
+            删除
+          </button>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 上传进度条（全局） -->
+  <view class="upload-progress" wx:if="{{uploading}}">
+    <view class="progress-bar">
+      <view class="progress-fill" style="width: {{uploadProgress}}%"></view>
+    </view>
+    <text class="progress-text">正在处理... {{uploadProgress}}%</text>
+  </view>
+  
+  <!-- 统计信息 -->
+  <view class="upload-stats" wx:if="{{fileList.length > 0 && !uploading}}">
+    <view class="stats-item">
+      <text class="stats-label">原始大小：</text>
+      <text class="stats-value">{{formatFileSize(totalSize)}}</text>
+    </view>
+    <view class="stats-item" wx:if="{{compressionRatio > 0}}">
+      <text class="stats-label">压缩后：</text>
+      <text class="stats-value">{{formatFileSize(compressedSize)}}</text>
+    </view>
+    <view class="stats-item" wx:if="{{compressionRatio > 0}}">
+      <text class="stats-label">压缩率：</text>
+      <text class="stats-value">{{compressionRatio}}%</text>
+    </view>
+  </view>
+  
+  <!-- 错误提示 -->
+  <view class="error-toast {{showError ? 'show' : ''}}" wx:if="{{errorMessage}}">
+    <view class="error-content">
+      <text class="error-icon">⚠️</text>
+      <text class="error-text">{{errorMessage}}</text>
+    </view>
+  </view>
+  
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{fileList.length === 0 && !uploading}}">
+    <view class="empty-icon">📸</view>
+    <text class="empty-text">还没有上传任何图片</text>
+    <button class="empty-action" bindtap="chooseImages">
+      选择图片
+    </button>
+  </view>
+  
+</view>

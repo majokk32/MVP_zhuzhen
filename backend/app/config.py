@@ -21,6 +21,16 @@ class Settings(BaseSettings):
     # WeChat Mini Program
     WX_APPID: str = ""
     WX_SECRET: str = ""
+    WECHAT_APPID: str = ""  # 兼容新的命名规范
+    WECHAT_SECRET: str = ""
+    
+    # WeChat Template Message IDs
+    WECHAT_GRADE_TEMPLATE_ID: str = ""  # 作业批改完成通知模板ID
+    WECHAT_DEADLINE_TEMPLATE_ID: str = ""  # 课前作业截止提醒模板ID
+    WECHAT_NEWTASK_TEMPLATE_ID: str = ""  # 新任务发布通知模板ID (V2.0)
+    
+    # Mini Program Domain
+    MINIPROGRAM_DOMAIN: str = ""  # 小程序域名，用于跳转链接
     
     # Aliyun OSS
     OSS_ACCESS_KEY: str = ""

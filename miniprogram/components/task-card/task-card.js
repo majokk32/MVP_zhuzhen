@@ -133,9 +133,8 @@ Component({
       
       // 触发分享事件
       this.triggerEvent('share', { task })
-    }
-  }
-})
+    },
+
     // 计算PRD状态显示
     calculateDisplayStatus() {
       const task = this.properties.task
@@ -197,3 +196,5 @@ Component({
         cardStyle
       })
     }
+  }
+})

@@ -1,0 +1,194 @@
+<!--课后加餐资料页面-->
+<view class="container">
+  <!-- 搜索和筛选栏 -->
+  <view class="search-bar">
+    <view class="search-input-wrapper">
+      <input 
+        class="search-input"
+        placeholder="搜索资料..."
+        value="{{keyword}}"
+        bindinput="onSearchInput"
+        bindconfirm="onSearch"
+      />
+      <text class="search-icon" bindtap="onSearch">🔍</text>
+    </view>
+    
+    <view class="filter-btn" bindtap="showFilter">
+      <text class="filter-icon">筛选</text>
+    </view>
+  </view>
+
+  <!-- 分类快捷筛选 -->
+  <scroll-view class="category-tabs" scroll-x="true" show-scrollbar="false">
+    <view class="category-tab-wrapper">
+      <view 
+        class="category-tab {{selectedCategory === '' ? 'active' : ''}}"
+        bindtap="selectCategory"
+        data-category=""
+      >
+        全部
+      </view>
+      <view 
+        class="category-tab {{selectedCategory === item ? 'active' : ''}}"
+        wx:for="{{categories}}"
+        wx:key="*this"
+        bindtap="selectCategory"
+        data-category="{{item}}"
+      >
+        {{item}}
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 资料列表 -->
+  <view class="materials-list">
+    <view 
+      class="material-card"
+      wx:for="{{materials}}"
+      wx:key="id"
+      bindtap="viewMaterial"
+      data-id="{{item.id}}"
+    >
+      <!-- 资料图片/缩略图 -->
+      <view class="material-thumbnail">
+        <image 
+          class="thumbnail-img"
+          src="{{item.thumbnail_url || getDefaultThumbnail(item.material_type)}}"
+          mode="aspectFill"
+        />
+        <view class="type-badge {{item.material_type}}">
+          {{typeMap[item.material_type] || '其他'}}
+        </view>
+        
+        <!-- 付费标识 -->
+        <view class="premium-badge" wx:if="{{item.required_subscription}}">
+          <text>付费</text>
+        </view>
+      </view>
+
+      <!-- 资料信息 -->
+      <view class="material-info">
+        <view class="material-header">
+          <text class="material-title">{{item.title}}</text>
+          <view class="material-actions">
+            <text 
+              class="action-btn collect {{item.is_collected ? 'active' : ''}}"
+              bindtap="toggleCollect"
+              data-id="{{item.id}}"
+              data-collected="{{item.is_collected}}"
+              catchtap="stopPropagation"
+            >
+              {{item.is_collected ? '💖' : '🤍'}}
+            </text>
+            
+            <text 
+              class="action-btn like {{item.is_liked ? 'active' : ''}}"
+              bindtap="toggleLike"
+              data-id="{{item.id}}"
+              data-liked="{{item.is_liked}}"
+              catchtap="stopPropagation"
+            >
+              {{item.is_liked ? '👍' : '👍🏻'}}
+            </text>
+          </view>
+        </view>
+
+        <text class="material-desc" wx:if="{{item.description}}">
+          {{item.description}}
+        </text>
+
+        <view class="material-meta">
+          <text class="meta-item">👁️ {{item.view_count}}</text>
+          <text class="meta-item">👍 {{item.like_count}}</text>
+          <text class="meta-item" wx:if="{{item.duration}}">
+            ⏱️ {{formatDuration(item.duration)}}
+          </text>
+          <text class="meta-item">{{formatDate(item.created_at)}}</text>
+        </view>
+
+        <view class="material-tags" wx:if="{{item.tags && item.tags.length > 0}}">
+          <text 
+            class="tag"
+            wx:for="{{item.tags}}"
+            wx:key="*this"
+            wx:for-item="tag"
+          >
+            #{{tag}}
+          </text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view class="load-more" wx:if="{{hasMore}}">
+      <text class="load-more-text" bindtap="loadMore">
+        {{loading ? '加载中...' : '点击加载更多'}}
+      </text>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{materials.length === 0 && !loading}}">
+      <text class="empty-icon">📚</text>
+      <text class="empty-text">暂无资料</text>
+      <text class="empty-desc">{{keyword ? '换个关键词试试' : '稍后再来看看吧'}}</text>
+    </view>
+  </view>
+</view>
+
+<!-- 筛选弹窗 -->
+<view class="filter-modal" wx:if="{{showFilterModal}}" bindtap="hideFilter">
+  <view class="filter-content" catchtap="stopPropagation">
+    <view class="filter-header">
+      <text class="filter-title">筛选条件</text>
+      <text class="filter-close" bindtap="hideFilter">×</text>
+    </view>
+
+    <view class="filter-body">
+      <view class="filter-group">
+        <text class="filter-label">资料类型</text>
+        <view class="filter-options">
+          <view 
+            class="filter-option {{selectedType === '' ? 'active' : ''}}"
+            bindtap="selectType"
+            data-type=""
+          >
+            全部
+          </view>
+          <view 
+            class="filter-option {{selectedType === item.value ? 'active' : ''}}"
+            wx:for="{{typeOptions}}"
+            wx:key="value"
+            bindtap="selectType"
+            data-type="{{item.value}}"
+          >
+            {{item.label}}
+          </view>
+        </view>
+      </view>
+
+      <view class="filter-group">
+        <text class="filter-label">排序方式</text>
+        <view class="filter-options">
+          <view 
+            class="filter-option {{sortBy === item.value ? 'active' : ''}}"
+            wx:for="{{sortOptions}}"
+            wx:key="value"
+            bindtap="selectSort"
+            data-sort="{{item.value}}"
+          >
+            {{item.label}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="filter-footer">
+      <button class="filter-btn reset" bindtap="resetFilter">
+        重置
+      </button>
+      <button class="filter-btn apply" bindtap="applyFilter">
+        应用筛选
+      </button>
+    </view>
+  </view>
+</view>

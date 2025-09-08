@@ -1,0 +1,369 @@
+/* 学习复盘页面样式 */
+page {
+  background-color: #f5f5f5;
+}
+
+.container {
+  padding: 20rpx;
+}
+
+/* 状态卡片 */
+.status-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20rpx;
+  padding: 40rpx;
+  margin-bottom: 30rpx;
+  color: white;
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.status-title {
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.status-frequency {
+  font-size: 28rpx;
+  opacity: 0.8;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 10rpx 20rpx;
+  border-radius: 30rpx;
+}
+
+.review-period {
+  margin-bottom: 30rpx;
+}
+
+.review-period text {
+  font-size: 28rpx;
+  opacity: 0.9;
+}
+
+.review-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.action-btn {
+  flex: 1;
+  height: 80rpx;
+  border-radius: 40rpx;
+  font-size: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.action-btn.primary {
+  background: rgba(255, 255, 255, 0.9);
+  color: #667eea;
+  font-weight: bold;
+}
+
+.action-btn.secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.no-review {
+  text-align: center;
+}
+
+.no-review text {
+  font-size: 32rpx;
+  opacity: 0.8;
+  display: block;
+  margin-bottom: 30rpx;
+}
+
+/* 通用区块样式 */
+.settings-section,
+.stats-section,
+.history-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.section-title text {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.edit-btn,
+.more-btn {
+  font-size: 28rpx !important;
+  color: #667eea !important;
+  font-weight: normal !important;
+}
+
+/* 设置列表 */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+}
+
+.setting-label {
+  font-size: 30rpx;
+  color: #333;
+}
+
+.setting-value {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 统计网格 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30rpx;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 30rpx 20rpx;
+  background: #f8f9ff;
+  border-radius: 15rpx;
+}
+
+.stat-number {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 10rpx;
+}
+
+.stat-label {
+  font-size: 26rpx;
+  color: #666;
+}
+
+/* 历史记录 */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  padding: 25rpx 20rpx;
+  background: #f8f9ff;
+  border-radius: 15rpx;
+}
+
+.history-date {
+  flex: 1;
+}
+
+.date-text {
+  display: block;
+  font-size: 30rpx;
+  color: #333;
+  font-weight: 500;
+  margin-bottom: 5rpx;
+}
+
+.period-text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.history-status {
+  margin: 0 20rpx;
+}
+
+.status-badge {
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-weight: 500;
+}
+
+.status-badge.completed {
+  background: #e8f5e8;
+  color: #4CAF50;
+}
+
+.status-badge.pending {
+  background: #fff3e0;
+  color: #ff9800;
+}
+
+.status-badge.skipped {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.history-arrow {
+  color: #ccc;
+  font-size: 28rpx;
+}
+
+.empty-history {
+  text-align: center;
+  color: #999;
+  font-size: 28rpx;
+  padding: 60rpx 0;
+}
+
+/* 设置弹窗 */
+.settings-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20rpx;
+  width: 90%;
+  max-width: 600rpx;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx 40rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.modal-close {
+  font-size: 48rpx;
+  color: #999;
+  font-weight: normal;
+}
+
+.modal-body {
+  padding: 40rpx;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.form-group {
+  margin-bottom: 40rpx;
+}
+
+.form-label {
+  display: block;
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 20rpx;
+  font-weight: 500;
+}
+
+.picker-view {
+  background: #f8f9ff;
+  padding: 20rpx 30rpx;
+  border-radius: 10rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.picker-arrow {
+  color: #999;
+}
+
+.form-input {
+  width: 100%;
+  padding: 20rpx 30rpx;
+  background: #f8f9ff;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  border: 2rpx solid transparent;
+}
+
+.form-input:focus {
+  border-color: #667eea;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 15rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 20rpx;
+  padding: 30rpx 40rpx;
+  border-top: 2rpx solid #f0f0f0;
+}
+
+.modal-btn {
+  flex: 1;
+  height: 80rpx;
+  border-radius: 40rpx;
+  font-size: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.modal-btn.secondary {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.modal-btn.primary {
+  background: #667eea;
+  color: white;
+}

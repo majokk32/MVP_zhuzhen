@@ -1,0 +1,244 @@
+<!--学习复盘主页面-->
+<view class="container">
+  <!-- 顶部状态卡片 -->
+  <view class="status-card">
+    <view class="status-header">
+      <text class="status-title">当前复盘</text>
+      <text class="status-frequency">{{reviewSettings.frequency || 'weekly'}}</text>
+    </view>
+    
+    <view class="status-content" wx:if="{{currentReview}}">
+      <view class="review-period">
+        <text>复盘周期：{{currentReview.period_start}} 至 {{currentReview.period_end}}</text>
+      </view>
+      <view class="review-actions">
+        <button 
+          class="action-btn primary" 
+          bindtap="startReview"
+          data-id="{{currentReview.id}}"
+        >
+          开始复盘
+        </button>
+        <button 
+          class="action-btn secondary" 
+          bindtap="skipReview"
+          data-id="{{currentReview.id}}"
+        >
+          跳过
+        </button>
+      </view>
+    </view>
+    
+    <view class="status-content" wx:else>
+      <view class="no-review">
+        <text>暂无待完成的复盘任务</text>
+        <button class="action-btn primary" bindtap="generateReview">
+          手动生成复盘
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 复盘设置 -->
+  <view class="settings-section">
+    <view class="section-title">
+      <text>复盘设置</text>
+      <text class="edit-btn" bindtap="editSettings">编辑</text>
+    </view>
+    
+    <view class="settings-list">
+      <view class="setting-item">
+        <text class="setting-label">复盘频率</text>
+        <text class="setting-value">{{frequencyMap[reviewSettings.frequency] || '每周'}}</text>
+      </view>
+      
+      <view class="setting-item" wx:if="{{reviewSettings.frequency === 'custom'}}">
+        <text class="setting-label">自定义周期</text>
+        <text class="setting-value">{{reviewSettings.custom_days}}天</text>
+      </view>
+      
+      <view class="setting-item">
+        <text class="setting-label">偏好时间</text>
+        <text class="setting-value">{{reviewSettings.preferred_time}}:00</text>
+      </view>
+      
+      <view class="setting-item">
+        <text class="setting-label">提醒通知</text>
+        <switch 
+          checked="{{reviewSettings.reminder_enabled}}"
+          bindchange="toggleReminder"
+          color="#4CAF50"
+        />
+      </view>
+    </view>
+  </view>
+
+  <!-- 复盘统计 -->
+  <view class="stats-section">
+    <view class="section-title">
+      <text>复盘统计</text>
+    </view>
+    
+    <view class="stats-grid">
+      <view class="stat-item">
+        <text class="stat-number">{{reviewStats.total_reviews || 0}}</text>
+        <text class="stat-label">总复盘次数</text>
+      </view>
+      
+      <view class="stat-item">
+        <text class="stat-number">{{reviewStats.completion_rate || 0}}%</text>
+        <text class="stat-label">完成率</text>
+      </view>
+      
+      <view class="stat-item">
+        <text class="stat-number">{{reviewStats.avg_completion_duration || 0}}</text>
+        <text class="stat-label">平均时长(分钟)</text>
+      </view>
+      
+      <view class="stat-item">
+        <text class="stat-number">{{reviewStats.pending_count || 0}}</text>
+        <text class="stat-label">待完成</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 历史记录 -->
+  <view class="history-section">
+    <view class="section-title">
+      <text>最近复盘</text>
+      <text class="more-btn" bindtap="showAllHistory">查看全部</text>
+    </view>
+    
+    <view class="history-list">
+      <view 
+        class="history-item" 
+        wx:for="{{reviewHistory}}" 
+        wx:key="id"
+        bindtap="viewReviewDetail"
+        data-id="{{item.id}}"
+      >
+        <view class="history-date">
+          <text class="date-text">{{item.review_date}}</text>
+          <text class="period-text">{{item.period_start}} - {{item.period_end}}</text>
+        </view>
+        
+        <view class="history-status">
+          <text class="status-badge {{item.status}}">
+            {{statusMap[item.status] || '未知'}}
+          </text>
+        </view>
+        
+        <view class="history-arrow">
+          <text class="arrow-icon">></text>
+        </view>
+      </view>
+      
+      <view class="empty-history" wx:if="{{reviewHistory.length === 0}}">
+        <text>暂无复盘记录</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 复盘设置弹窗 -->
+<view class="settings-modal" wx:if="{{showSettingsModal}}" bindtap="closeSettingsModal">
+  <view class="modal-content" catchtap="stopPropagation">
+    <view class="modal-header">
+      <text class="modal-title">复盘设置</text>
+      <text class="modal-close" bindtap="closeSettingsModal">×</text>
+    </view>
+    
+    <view class="modal-body">
+      <view class="form-group">
+        <text class="form-label">复盘频率</text>
+        <picker 
+          mode="selector" 
+          range="{{frequencyOptions}}" 
+          range-key="label"
+          value="{{frequencyIndex}}"
+          bindchange="onFrequencyChange"
+        >
+          <view class="picker-view">
+            {{frequencyOptions[frequencyIndex].label}}
+            <text class="picker-arrow">></text>
+          </view>
+        </picker>
+      </view>
+      
+      <view class="form-group" wx:if="{{tempSettings.frequency === 'custom'}}">
+        <text class="form-label">自定义天数</text>
+        <input 
+          class="form-input"
+          type="number"
+          placeholder="请输入天数"
+          value="{{tempSettings.custom_days}}"
+          bindinput="onCustomDaysInput"
+        />
+      </view>
+      
+      <view class="form-group">
+        <text class="form-label">偏好时间</text>
+        <picker 
+          mode="time" 
+          value="{{tempSettings.preferred_time}}"
+          bindchange="onTimeChange"
+        >
+          <view class="picker-view">
+            {{tempSettings.preferred_time}}:00
+            <text class="picker-arrow">></text>
+          </view>
+        </picker>
+      </view>
+      
+      <view class="form-group">
+        <text class="form-label">复盘内容</text>
+        <view class="checkbox-group">
+          <label class="checkbox-item">
+            <checkbox 
+              checked="{{tempSettings.include_scores}}"
+              bindchange="onContentChange"
+              data-field="include_scores"
+            />
+            <text>成绩统计</text>
+          </label>
+          
+          <label class="checkbox-item">
+            <checkbox 
+              checked="{{tempSettings.include_mistakes}}"
+              bindchange="onContentChange"
+              data-field="include_mistakes"
+            />
+            <text>错题回顾</text>
+          </label>
+          
+          <label class="checkbox-item">
+            <checkbox 
+              checked="{{tempSettings.include_progress}}"
+              bindchange="onContentChange"
+              data-field="include_progress"
+            />
+            <text>学习进度</text>
+          </label>
+          
+          <label class="checkbox-item">
+            <checkbox 
+              checked="{{tempSettings.include_suggestions}}"
+              bindchange="onContentChange"
+              data-field="include_suggestions"
+            />
+            <text>学习建议</text>
+          </label>
+        </view>
+      </view>
+    </view>
+    
+    <view class="modal-footer">
+      <button class="modal-btn secondary" bindtap="closeSettingsModal">
+        取消
+      </button>
+      <button class="modal-btn primary" bindtap="saveSettings">
+        保存
+      </button>
+    </view>
+  </view>
+</view>

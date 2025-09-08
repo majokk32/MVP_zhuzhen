@@ -62,8 +62,13 @@
         <view class="section-title">
           <text class="title-icon">📈</text>
           <text class="title-text">成绩档位分布</text>
-          <view class="title-action" bindtap="toggleGradeView">
-            <text class="action-text">{{gradeViewMode === 'chart' ? '列表视图' : '图表视图'}}</text>
+          <view class="title-actions">
+            <view class="title-action" bindtap="exportGradeDistribution">
+              <text class="action-text">导出成绩</text>
+            </view>
+            <view class="title-action" bindtap="toggleGradeView">
+              <text class="action-text">{{gradeViewMode === 'chart' ? '列表视图' : '图表视图'}}</text>
+            </view>
           </view>
         </view>
         

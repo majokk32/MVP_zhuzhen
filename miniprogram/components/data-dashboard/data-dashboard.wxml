@@ -1,0 +1,169 @@
+<!-- components/data-dashboard/data-dashboard.wxml -->
+<view class="data-dashboard {{dashboardType}}">
+  
+  <!-- 看板头部 -->
+  <view class="dashboard-header">
+    <view class="header-info">
+      <text class="dashboard-title">{{dashboardConfig.title}}</text>
+      <view class="real-time-indicator">
+        <view class="status-dot"></view>
+        <text class="status-text">实时更新</text>
+      </view>
+    </view>
+    
+    <!-- 时间范围选择 -->
+    <picker 
+      class="time-range-picker"
+      mode="selector"
+      range="{{timeRangeOptions}}"
+      range-key="label"
+      value="{{timeRange}}"
+      bindchange="onTimeRangeChange"
+    >
+      <view class="picker-display">
+        <text class="picker-text">{{timeRangeOptions[timeRange].label}}</text>
+        <text class="picker-arrow">▼</text>
+      </view>
+    </picker>
+    
+    <!-- 操作按钮 -->
+    <view class="header-actions">
+      <button class="refresh-btn" bindtap="refreshDashboard" size="mini">
+        🔄 刷新
+      </button>
+      <button class="export-btn" bindtap="exportDashboard" size="mini">
+        📤 导出
+      </button>
+    </view>
+  </view>
+  
+  <!-- 统计卡片区域 -->
+  <view class="stats-section">
+    <view class="stats-grid">
+      <view 
+        class="stats-card {{loading ? 'loading' : ''}}"
+        wx:for="{{statsCards}}" 
+        wx:key="key"
+        data-card="{{item}}"
+        bindtap="onStatsCardClick"
+      >
+        <!-- 卡片图标 -->
+        <view class="card-icon" style="background-color: {{item.color}}20; color: {{item.color}}">
+          {{item.icon}}
+        </view>
+        
+        <!-- 卡片内容 -->
+        <view class="card-content">
+          <view class="card-value">{{item.value}}</view>
+          <text class="card-label">{{item.label}}</text>
+          
+          <!-- 变化趋势 -->
+          <view class="card-trend" wx:if="{{showTrends && item.changeDirection !== 'stable'}}">
+            <text 
+              class="trend-indicator {{item.changeDirection}}"
+              style="color: {{getThemeColor(item.changeDirection)}}"
+            >
+              {{item.changeDirection === 'up' ? '↗' : '↘'}}
+            </text>
+            <text class="trend-rate">{{item.changeRate}}%</text>
+          </view>
+        </view>
+        
+        <!-- 迷你趋势图 -->
+        <view class="mini-chart" wx:if="{{item.trend && item.trend.length > 0}}">
+          <view class="chart-line"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 图表区域 -->
+  <view class="charts-section" wx:if="{{showCharts}}">
+    
+    <!-- 提交趋势图 -->
+    <view class="chart-container" wx:if="{{chartData.submissions.length > 0}}">
+      <view class="chart-header">
+        <text class="chart-title">提交趋势</text>
+        <text class="chart-subtitle">{{timeRangeOptions[timeRange].label}}数据</text>
+      </view>
+      <view class="chart-content">
+        <view class="chart-placeholder">
+          📊 提交趋势图表区域
+        </view>
+      </view>
+    </view>
+    
+    <!-- 用户活跃度图 -->
+    <view class="chart-container" wx:if="{{chartData.users.length > 0}}">
+      <view class="chart-header">
+        <text class="chart-title">用户活跃度</text>
+        <text class="chart-subtitle">在线用户: {{realTimeStats.onlineUsers}}</text>
+      </view>
+      <view class="chart-content">
+        <view class="chart-placeholder">
+          📈 用户活跃度图表区域
+        </view>
+      </view>
+    </view>
+    
+    <!-- 系统性能图 -->
+    <view class="chart-container" wx:if="{{chartData.performance.length > 0}}">
+      <view class="chart-header">
+        <text class="chart-title">系统性能</text>
+        <text class="chart-subtitle">健康度: {{realTimeStats.systemHealth}}%</text>
+      </view>
+      <view class="chart-content">
+        <view class="chart-placeholder">
+          💚 系统性能图表区域
+        </view>
+      </view>
+    </view>
+    
+  </view>
+  
+  <!-- 快捷操作区域 -->
+  <view class="actions-section">
+    <view class="section-title">快捷操作</view>
+    <view class="actions-grid">
+      <view 
+        class="action-item"
+        wx:for="{{quickActions}}" 
+        wx:key="key"
+        data-action="{{item}}"
+        bindtap="onQuickActionClick"
+      >
+        <view class="action-icon">{{item.icon}}</view>
+        <text class="action-label">{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 实时状态栏 -->
+  <view class="status-bar">
+    <view class="status-item">
+      <text class="status-label">在线用户</text>
+      <text class="status-value">{{realTimeStats.onlineUsers}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">当前提交</text>
+      <text class="status-value">{{realTimeStats.currentSubmissions}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">系统状态</text>
+      <view class="health-indicator">
+        <view 
+          class="health-bar" 
+          style="width: {{realTimeStats.systemHealth}}%; background-color: {{realTimeStats.systemHealth > 80 ? '#52c41a' : realTimeStats.systemHealth > 60 ? '#faad14' : '#f56565'}}"
+        ></view>
+        <text class="health-text">{{realTimeStats.systemHealth}}%</text>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 加载遮罩 -->
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+  
+</view>

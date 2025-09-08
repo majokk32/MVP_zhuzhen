@@ -12,7 +12,7 @@ from typing import List, Optional
 from app.database import get_db
 from app.models import (
     User, Task, Submission, SubmissionStatus, 
-    Grade, UserRole
+    Grade, UserRole, CheckinType
 )
 from app.schemas import (
     ResponseBase, SubmissionCreate, SubmissionGrade, 
@@ -21,6 +21,8 @@ from app.schemas import (
 from app.auth import get_current_user, get_current_teacher
 from app.utils.storage import storage, StorageError
 from app.config import settings
+from app.services.async_learning_data import trigger_checkin_async, trigger_submission_score_async, trigger_grading_score_async
+from app.utils.notification import notification_service
 
 router = APIRouter(prefix="/submissions")
 
@@ -109,39 +111,65 @@ async def submit_homework(
     
     if existing:
         # Check submission count
-        if existing.submit_count >= 3:
+        if existing.submission_count >= 3:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="已达到最大提交次数（3次）"
             )
         
         # Update existing submission
-        existing.images = json.dumps(submission_data.images)
+        existing.images = submission_data.images
         existing.text = submission_data.text
-        existing.submit_count += 1
+        existing.submission_count += 1
         existing.status = SubmissionStatus.SUBMITTED
         existing.grade = None  # Reset grade
-        existing.comment = None
+        existing.feedback = None
         existing.score = None
         existing.graded_by = None
         existing.graded_at = None
         
         await db.commit()
         submission_id = existing.id
+        is_first_submission = False  # 这是重新提交
     else:
         # Create new submission
         new_submission = Submission(
             task_id=submission_data.task_id,
             student_id=current_user.id,
-            images=json.dumps(submission_data.images),
+            images=submission_data.images,
             text=submission_data.text,
-            submit_count=1,
+            submission_count=1,
             status=SubmissionStatus.SUBMITTED
         )
         
         db.add(new_submission)
         await db.commit()
+        await db.refresh(new_submission)  # 获取生成的ID
         submission_id = new_submission.id
+        is_first_submission = True  # 这是首次提交
+    
+    # V1.0 学习数据统计：触发打卡和积分记录
+    try:
+        # 1. 记录作业提交打卡
+        await trigger_checkin_async(
+            user_id=current_user.id,
+            checkin_type=CheckinType.SUBMISSION,
+            db=db,
+            related_task_id=submission_data.task_id,
+            related_submission_id=submission_id
+        )
+        
+        # 2. 记录提交积分
+        await trigger_submission_score_async(
+            user_id=current_user.id,
+            submission_id=submission_id,
+            task_id=submission_data.task_id,
+            db=db,
+            is_first_submission=is_first_submission
+        )
+    except Exception as e:
+        # 学习数据记录失败不应影响主业务流程
+        print(f"学习数据记录失败: {e}")
     
     return ResponseBase(
         data={"submission_id": submission_id},
@@ -172,7 +200,7 @@ async def get_my_submissions(
     submission_list = []
     for sub in submissions:
         sub_info = SubmissionInfo.from_orm(sub)
-        sub_info.images = json.loads(sub.images) if sub.images else []
+        sub_info.images = sub.images if sub.images else []
         
         # Get task title
         task_result = await db.execute(select(Task).where(Task.id == sub.task_id))
@@ -213,7 +241,7 @@ async def get_submission(
         )
     
     sub_info = SubmissionInfo.from_orm(submission)
-    sub_info.images = json.loads(submission.images) if submission.images else []
+    sub_info.images = submission.images if submission.images else []
     
     # Get related info
     student_result = await db.execute(select(User).where(User.id == submission.student_id))
@@ -254,12 +282,51 @@ async def grade_submission(
     # Update grading info
     submission.score = grade_data.score
     submission.grade = Grade(grade_data.grade)
-    submission.comment = grade_data.comment
+    submission.feedback = grade_data.feedback
     submission.graded_by = current_user.id
     submission.graded_at = datetime.utcnow()
     submission.status = SubmissionStatus.GRADED
     
     await db.commit()
+    
+    # V1.0 学习数据统计：触发质量积分更新
+    try:
+        await trigger_grading_score_async(
+            user_id=submission.student_id,
+            submission_id=submission.id,
+            task_id=submission.task_id,
+            grade=submission.grade,
+            db=db
+        )
+    except Exception as e:
+        # 学习数据记录失败不应影响主业务流程
+        print(f"批改积分记录失败: {e}")
+    
+    # V1.0 微信通知：发送批改完成通知
+    try:
+        # 获取学生信息
+        student_result = await db.execute(
+            select(User).where(User.id == submission.student_id)
+        )
+        student = student_result.scalar_one_or_none()
+        
+        # 获取任务信息
+        task_result = await db.execute(
+            select(Task).where(Task.id == submission.task_id)
+        )
+        task = task_result.scalar_one_or_none()
+        
+        if student and task:
+            await notification_service.send_grade_notification(
+                openid=student.openid,
+                task_title=task.title,
+                grade=submission.grade.value,
+                comment=submission.feedback,
+                user_id=student.id
+            )
+    except Exception as e:
+        # 通知发送失败不应影响主业务流程
+        print(f"批改完成通知发送失败: {e}")
     
     return ResponseBase(msg="批改完成")
 
@@ -287,7 +354,7 @@ async def get_pending_submissions(
     submission_list = []
     for sub in submissions:
         sub_info = SubmissionInfo.from_orm(sub)
-        sub_info.images = json.loads(sub.images) if sub.images else []
+        sub_info.images = sub.images if sub.images else []
         
         # Get student info
         student_result = await db.execute(select(User).where(User.id == sub.student_id))
@@ -355,6 +422,19 @@ async def grade_submission_enhanced(
     
     await db.commit()
     await db.refresh(submission)
+    
+    # V1.0 学习数据统计：触发质量积分更新
+    try:
+        await trigger_grading_score_async(
+            user_id=submission.student_id,
+            submission_id=submission.id,
+            task_id=submission.task_id,
+            grade=submission.grade,
+            db=db
+        )
+    except Exception as e:
+        # 学习数据记录失败不应影响主业务流程
+        print(f"批改积分记录失败: {e}")
     
     # 异步发送微信通知
     if student.openid:

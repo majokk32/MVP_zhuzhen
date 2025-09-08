@@ -1,0 +1,93 @@
+<!-- components/error-dialog/error-dialog.wxml -->
+<view class="error-dialog-mask {{show ? 'show' : ''}}" bindtap="onClose">
+  <view class="error-dialog-container" bindtap="preventTap">
+    
+    <!-- 错误图标和标题 -->
+    <view class="error-header">
+      <view 
+        class="error-icon" 
+        style="color: {{getCurrentErrorConfig().iconColor}}"
+      >
+        {{getCurrentErrorConfig().icon}}
+      </view>
+      <view class="error-title">{{getCurrentErrorConfig().title}}</view>
+    </view>
+    
+    <!-- 错误信息 -->
+    <view class="error-content">
+      <view class="error-message">{{getCurrentErrorConfig().message}}</view>
+      
+      <!-- 错误代码 -->
+      <view wx:if="{{errorCode}}" class="error-code">
+        错误代码: {{errorCode}}
+      </view>
+    </view>
+    
+    <!-- 解决建议 -->
+    <view class="suggestions-section" wx:if="{{getCurrentErrorConfig().suggestions.length > 0}}">
+      <view class="suggestions-title">💡 解决建议：</view>
+      <view class="suggestions-list">
+        <view 
+          wx:for="{{getCurrentErrorConfig().suggestions}}" 
+          wx:key="index" 
+          class="suggestion-item"
+        >
+          • {{item}}
+        </view>
+      </view>
+    </view>
+    
+    <!-- 详细信息（可展开） -->
+    <view wx:if="{{showDetails && details}}" class="details-section">
+      <view class="details-toggle" bindtap="toggleDetails">
+        <text class="details-text">详细信息</text>
+        <text class="toggle-icon {{showDetailInfo ? 'expanded' : ''}}">▼</text>
+      </view>
+      
+      <view wx:if="{{showDetailInfo}}" class="details-content">
+        <text class="details-info">{{details}}</text>
+        <button class="copy-button" bindtap="onCopyError">
+          📋 复制错误信息
+        </button>
+      </view>
+    </view>
+    
+    <!-- 操作按钮 -->
+    <view class="error-actions">
+      <!-- 主要按钮 -->
+      <view class="primary-actions">
+        <button 
+          wx:if="{{showRetry}}" 
+          class="action-button primary" 
+          bindtap="onRetry"
+        >
+          🔄 重试
+        </button>
+      </view>
+      
+      <!-- 次要按钮 -->
+      <view class="secondary-actions">
+        <button 
+          wx:if="{{showFeedback}}" 
+          class="action-button secondary" 
+          bindtap="onFeedback"
+        >
+          📝 反馈问题
+        </button>
+        
+        <button 
+          class="action-button secondary" 
+          bindtap="onContactSupport"
+        >
+          💬 联系客服
+        </button>
+      </view>
+    </view>
+    
+    <!-- 关闭按钮 -->
+    <view class="close-button" bindtap="onClose">
+      ✕
+    </view>
+    
+  </view>
+</view>
