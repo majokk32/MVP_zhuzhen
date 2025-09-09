@@ -15,7 +15,7 @@ from app.services.async_subscription import (
     get_subscription_status_async
 )
 
-router = APIRouter(prefix="/subscription")
+router = APIRouter(prefix="/payment/subscription")
 
 
 @router.get("/status", response_model=ResponseBase)

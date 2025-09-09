@@ -81,7 +81,7 @@ class AuthModule {
             })
 
             // 保存登录信息
-            this.saveLoginInfo(loginResult)
+            this.saveLoginInfo(loginResult.data)
             resolve(loginResult)
           } catch (error) {
             reject(error)
