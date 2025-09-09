@@ -1,6 +1,24 @@
 // pages/subscription/subscription.js
 const paymentModule = require('../../modules/payment/payment');
 
+/**
+ * 格式化时间为日期字符串
+ * @param {number|string|Date} timestamp 时间戳或日期
+ * @returns {string} 格式化后的日期字符串
+ */
+function formatDate(timestamp) {
+  if (!timestamp) return '';
+  
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return '';
+  
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+}
+
 Page({
   data: {
     // 订阅计划
@@ -107,7 +125,14 @@ Page({
   async loadPaymentHistory() {
     try {
       const history = await paymentModule.getPaymentHistory(10);
-      this.setData({ paymentHistory: history });
+      
+      // 为每个支付记录添加格式化的时间文本
+      const processedHistory = history.map(item => ({
+        ...item,
+        createdAtText: formatDate(item.created_at)
+      }));
+      
+      this.setData({ paymentHistory: processedHistory });
     } catch (error) {
       console.error('加载支付历史失败:', error);
     }

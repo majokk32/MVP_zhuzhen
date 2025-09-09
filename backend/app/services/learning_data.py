@@ -96,8 +96,8 @@ class LearningDataService:
                 last_weekday = user.last_checkin_date.weekday()  # 0=周一, 6=周日
                 current_weekday = checkin_date.weekday()
                 
-                if (last_weekday == 4 and current_weekday == 0) or \  # 周五->周一
-                   (last_weekday == 5 and current_weekday == 0):      # 周六->周一
+                if ((last_weekday == 4 and current_weekday == 0) or  # 周五->周一
+                    (last_weekday == 5 and current_weekday == 0)):    # 周六->周一
                     # 周末间隔，继续连续
                     user.current_streak += 1
                     user.best_streak = max(user.best_streak, user.current_streak)
@@ -434,3 +434,95 @@ def trigger_checkin(user_id: int, checkin_type: CheckinType, db: Session,
         related_task_id=related_task_id,
         related_submission_id=related_submission_id
     )
+
+
+def get_learning_insights(user_id: int, db: Session) -> Dict:
+    """
+    获取智能学习洞察分析
+    分析用户的学习模式、建议和趋势
+    """
+    service = get_learning_service(db)
+    user_data = service.get_user_learning_data(user_id)
+    
+    if not user_data:
+        return {"insights": [], "suggestions": [], "trends": {}}
+    
+    insights = []
+    suggestions = []
+    trends = {}
+    
+    # 分析连续打卡情况
+    current_streak = user_data.get("current_streak", 0)
+    best_streak = user_data.get("best_streak", 0)
+    
+    if current_streak >= 7:
+        insights.append({
+            "type": "achievement",
+            "title": "连续学习表现优秀",
+            "description": f"您已连续学习{current_streak}天，保持良好的学习节奏！",
+            "level": "good"
+        })
+    elif current_streak >= 3:
+        insights.append({
+            "type": "encouragement", 
+            "title": "学习习惯正在养成",
+            "description": f"连续{current_streak}天学习，继续坚持将会有更大收获！",
+            "level": "normal"
+        })
+    elif current_streak < 3 and best_streak > current_streak:
+        insights.append({
+            "type": "motivation",
+            "title": "可以做得更好",
+            "description": f"您曾连续学习{best_streak}天，重新找回那种节奏吧！",
+            "level": "warning"
+        })
+    
+    # 分析积分情况
+    total_score = user_data.get("total_score", 0)
+    monthly_score = user_data.get("monthly_score", 0)
+    
+    if monthly_score > 50:
+        insights.append({
+            "type": "achievement",
+            "title": "本月表现突出", 
+            "description": f"本月已获得{monthly_score}积分，超越了大部分学员！",
+            "level": "excellent"
+        })
+    
+    # 生成建议
+    week_checkins = user_data.get("week_checkins", 0)
+    if week_checkins < 5:
+        suggestions.append({
+            "type": "habit",
+            "title": "增加学习频率",
+            "description": "建议每周至少学习5天，养成稳定的学习习惯",
+            "priority": "high"
+        })
+    
+    if current_streak == 0:
+        suggestions.append({
+            "type": "restart",
+            "title": "重新开始学习计划",
+            "description": "从今天开始，制定小目标，逐步建立学习节奏", 
+            "priority": "high"
+        })
+    
+    # 趋势分析
+    trends = {
+        "streak_trend": "increasing" if current_streak > 0 else "stable",
+        "score_trend": "increasing" if monthly_score > 0 else "stable",
+        "consistency": "high" if week_checkins >= 5 else "medium" if week_checkins >= 3 else "low"
+    }
+    
+    return {
+        "insights": insights,
+        "suggestions": suggestions,
+        "trends": trends,
+        "summary": {
+            "current_streak": current_streak,
+            "best_streak": best_streak,
+            "total_score": total_score,
+            "monthly_score": monthly_score,
+            "week_checkins": week_checkins
+        }
+    }

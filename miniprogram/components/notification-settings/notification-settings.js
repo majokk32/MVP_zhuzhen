@@ -61,6 +61,27 @@ Component({
 
   methods: {
     /**
+     * 格式化时间
+     * @param {number|string|Date} timestamp 时间戳或日期
+     * @returns {string} 格式化后的时间字符串
+     */
+    formatTime(timestamp) {
+      if (!timestamp) return '';
+      
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) return '';
+      
+      const pad = (n) => String(n).padStart(2, '0');
+      const year = date.getFullYear();
+      const month = pad(date.getMonth() + 1);
+      const day = pad(date.getDate());
+      const hour = pad(date.getHours());
+      const minute = pad(date.getMinutes());
+      
+      return `${year}-${month}-${day} ${hour}:${minute}`;
+    },
+
+    /**
      * 初始化组件
      */
     async initComponent() {
@@ -87,12 +108,18 @@ Component({
         // 获取订阅状态
         const subscriptionStatus = await this.checkSubscriptionStatus();
         
+        // 处理stats数据，添加格式化的时间文本
+        const processedStats = {
+          ...settings.engagement,
+          lastUpdateText: this.formatTime(settings.engagement.lastUpdate)
+        };
+        
         this.setData({
           settings,
           categoryToggles,
           timePreferences: settings.preferences.timePreferences,
           recommendations,
-          stats: settings.engagement,
+          stats: processedStats,
           subscriptionStatus,
           loading: false
         });

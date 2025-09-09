@@ -35,8 +35,11 @@ class PerformanceMonitor {
     this.reportUrl = '/api/performance/metrics';
     this.isCollecting = false;
     this.sessionMetrics = [];
+    this.isDisabled = true; // 禁用性能监控以减少控制台噪声
     
-    this.initPerformanceMonitoring();
+    if (!this.isDisabled) {
+      this.initPerformanceMonitoring();
+    }
   }
 
   /**
@@ -74,7 +77,7 @@ class PerformanceMonitor {
    * 启动性能数据收集
    */
   startPerformanceCollection() {
-    if (this.isCollecting) return;
+    if (this.isDisabled || this.isCollecting) return;
     
     this.isCollecting = true;
     
@@ -110,6 +113,7 @@ class PerformanceMonitor {
    * 记录应用启动指标
    */
   recordAppLaunchMetrics(startTime, launchOptions = {}) {
+    if (this.isDisabled) return;
     try {
       const launchTime = Date.now() - startTime;
       
@@ -119,7 +123,7 @@ class PerformanceMonitor {
         path: launchOptions.path,
         query: launchOptions.query,
         timestamp: Date.now(),
-        systemInfo: wx.getSystemInfoSync(),
+        systemInfo: this.getSystemInfo(),
         performance: this.getSystemPerformanceInfo()
       };
 
@@ -278,6 +282,7 @@ class PerformanceMonitor {
    * 记录API性能指标
    */
   recordApiMetric(apiUrl, method, responseTime, statusCode, dataSize = 0, error = null) {
+    if (this.isDisabled) return;
     try {
       const apiKey = `${method.toUpperCase()} ${apiUrl}`;
       
@@ -469,9 +474,10 @@ class PerformanceMonitor {
    * 收集运行时性能指标
    */
   collectRuntimeMetrics() {
+    if (this.isDisabled) return;
     try {
       // 获取系统信息
-      const systemInfo = wx.getSystemInfoSync();
+      const systemInfo = this.getSystemInfo();
       
       // 记录系统性能快照
       this.addSessionMetric('runtime_snapshot', {
@@ -496,13 +502,29 @@ class PerformanceMonitor {
   }
 
   /**
+   * 获取系统信息（兼容新旧API）
+   */
+  getSystemInfo() {
+    try {
+      return {
+        ...wx.getWindowInfo(),
+        ...wx.getDeviceInfo(),
+        ...wx.getAppBaseInfo()
+      };
+    } catch (e) {
+      // 降级到老版本API
+      return wx.getSystemInfoSync();
+    }
+  }
+
+  /**
    * 获取系统性能信息
    */
   getSystemPerformanceInfo() {
     try {
       return {
         timestamp: Date.now(),
-        platform: wx.getSystemInfoSync().platform,
+        platform: this.getSystemInfo().platform,
         pageCount: getCurrentPages().length,
         // 这里可以添加更多性能指标
       };
@@ -523,7 +545,7 @@ class PerformanceMonitor {
         data: issueData,
         timestamp: Date.now(),
         pageRoute: this.getCurrentPageRoute(),
-        systemInfo: wx.getSystemInfoSync()
+        systemInfo: this.getSystemInfo()
       };
 
       // 记录到会话指标
@@ -846,6 +868,7 @@ class PerformanceMonitor {
    * 上报性能指标
    */
   async reportPerformanceMetrics() {
+    if (this.isDisabled) return;
     try {
       if (this.sessionMetrics.length === 0) return;
 

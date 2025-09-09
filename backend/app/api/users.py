@@ -77,6 +77,20 @@ async def login(
         )
 
 
+@router.post("/phone-login", response_model=ResponseBase)
+async def phone_login(
+    login_data: UserLogin,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Phone number login (using WeChat code for now, can be extended for actual phone auth)
+    For MVP, this redirects to the same WeChat login flow
+    """
+    # For now, use the same WeChat login logic
+    # In future versions, this could handle actual phone number authentication
+    return await login(login_data, db)
+
+
 @router.get("/profile", response_model=ResponseBase)
 async def get_profile(
     current_user: User = Depends(get_current_user),

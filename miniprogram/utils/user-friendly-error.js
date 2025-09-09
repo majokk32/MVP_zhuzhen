@@ -465,9 +465,18 @@ class UserFriendlyErrorManager {
    */
   getUserAgent() {
     try {
-      return wx.getSystemInfoSync();
+      return {
+        ...wx.getWindowInfo(),
+        ...wx.getDeviceInfo(),
+        ...wx.getAppBaseInfo()
+      };
     } catch (error) {
-      return {};
+      // 降级到老版本API
+      try {
+        return wx.getSystemInfoSync();
+      } catch (e) {
+        return {};
+      }
     }
   }
 

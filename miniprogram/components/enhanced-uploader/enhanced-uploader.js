@@ -78,6 +78,9 @@ Component({
     // 上传文件列表
     fileList: [],
     
+    // 格式化的支持类型文本
+    acceptTypesText: '',
+    
     // 上传状态
     uploading: false,
     uploadProgress: 0,
@@ -102,6 +105,26 @@ Component({
     totalSize: 0,
     compressedSize: 0,
     compressionRatio: 0
+  },
+
+  observers: {
+    'acceptTypes': function(acceptTypes) {
+      // 格式化支持的文件类型为字符串
+      const acceptTypesText = acceptTypes && acceptTypes.length > 0 
+        ? acceptTypes.join('、') 
+        : '';
+      this.setData({ acceptTypesText });
+    }
+  },
+
+  lifetimes: {
+    attached() {
+      // 初始化时设置acceptTypesText
+      const acceptTypesText = this.properties.acceptTypes 
+        ? this.properties.acceptTypes.join('、')
+        : '';
+      this.setData({ acceptTypesText });
+    }
   },
 
   methods: {
@@ -248,7 +271,7 @@ Component({
       if (!this.properties.acceptTypes.includes(fileType.toLowerCase())) {
         return {
           valid: false,
-          message: `不支持的文件类型，请选择${this.properties.acceptTypes.join('、')}格式的图片`
+          message: `不支持的文件类型，请选择${this.data.acceptTypesText}格式的图片`
         };
       }
 

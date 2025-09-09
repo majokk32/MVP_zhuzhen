@@ -317,13 +317,14 @@ async def grade_submission(
         task = task_result.scalar_one_or_none()
         
         if student and task:
-            await notification_service.send_grade_notification(
-                openid=student.openid,
-                task_title=task.title,
-                grade=submission.grade.value,
-                comment=submission.feedback,
-                user_id=student.id
-            )
+            # await notification_service.send_grade_notification(
+            #     openid=student.openid,
+            #     task_title=task.title,
+            #     grade=submission.grade.value,
+            #     comment=submission.feedback,
+            #     user_id=student.id
+            # )
+            pass
     except Exception as e:
         # 通知发送失败不应影响主业务流程
         print(f"批改完成通知发送失败: {e}")
@@ -375,7 +376,7 @@ async def get_pending_submissions(
 
 # 增强版批改API，集成微信通知
 from fastapi import BackgroundTasks
-from app.utils.wechat_notify import send_grade_notification
+# from app.utils.notification import notification_service
 
 @router.post("/grade-enhanced", response_model=ResponseBase)
 async def grade_submission_enhanced(
@@ -437,14 +438,14 @@ async def grade_submission_enhanced(
         print(f"批改积分记录失败: {e}")
     
     # 异步发送微信通知
-    if student.openid:
-        background_tasks.add_task(
-            send_grade_notification,
-            openid=student.openid,
-            task_title=task.title,
-            grade=grade_data.grade,
-            score=grade_data.score
-        )
+    # if student.openid:
+    #     background_tasks.add_task(
+    #         notification_service.send_grade_notification,
+    #         openid=student.openid,
+    #         task_title=task.title,
+    #         grade=grade_data.grade,
+    #         user_id=student.id
+    #     )
     
     return ResponseBase(
         data={

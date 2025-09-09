@@ -199,6 +199,33 @@ class PerformanceOptimizer {
   }
 
   /**
+   * 路径解析器 - 从utils/目录解析到正确的模块路径
+   */
+  resolveFromUtils(path) {
+    if (!path) return path;
+    // 已经是相对路径
+    if (path.startsWith('./') || path.startsWith('../')) return path;
+    // 从 app.js 传入的是 'modules/xxx/xxx.js'
+    if (path.startsWith('modules/')) return `../${path}`;
+    // 防止有人传了 '/modules/...'
+    if (path.startsWith('/modules/')) return `..${path}`;
+    return path; // 其他情况原样
+  }
+
+  /**
+   * 安全require - 模块不存在时返回空对象
+   */
+  safeRequire(path) {
+    const resolvedPath = this.resolveFromUtils(path);
+    try {
+      return require(resolvedPath);
+    } catch (e) {
+      console.warn('safeRequire fail:', path, '->', resolvedPath, e);
+      return {};
+    }
+  }
+
+  /**
    * 懒加载模块
    * @param {string} modulePath - 模块路径
    * @param {boolean} critical - 是否为关键模块
@@ -218,8 +245,8 @@ class PerformanceOptimizer {
         await this.delay(this.config.lazyLoadDelay);
       }
       
-      // 加载模块
-      const module = require(modulePath);
+      // 安全加载模块
+      const module = this.safeRequire(modulePath);
       
       // 记录加载时间
       const loadTime = Date.now() - startTime;
@@ -231,8 +258,11 @@ class PerformanceOptimizer {
       return module;
       
     } catch (error) {
-      console.error('懒加载模块失败:', modulePath, error);
-      throw error;
+      console.warn('懒加载模块失败，返回空对象:', modulePath, error);
+      // 返回空对象作为占位，防止阻塞UI
+      const placeholderModule = {};
+      this.lazyModuleCache.set(modulePath, placeholderModule);
+      return placeholderModule;
     }
   }
 
@@ -318,17 +348,55 @@ class PerformanceOptimizer {
    * @param {string} imageUrl - 图片URL
    */
   async preloadImage(imageUrl) {
-    return new Promise((resolve, reject) => {
-      wx.downloadFile({
-        url: imageUrl,
-        success: (res) => {
-          if (res.statusCode === 200) {
-            resolve(res.tempFilePath);
-          } else {
-            reject(new Error(`图片预加载失败: ${res.statusCode}`));
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      return Promise.resolve();
+    }
+
+    // 1) 阻止SVG预加载（小程序不支持）
+    if (/\.svg(\?.*)?$/i.test(imageUrl)) {
+      console.warn('跳过SVG预加载（小程序不支持）:', imageUrl);
+      return Promise.resolve();
+    }
+
+    // 2) 远程HTTPS URL → downloadFile
+    if (/^https?:\/\//i.test(imageUrl)) {
+      return new Promise((resolve) => {
+        wx.downloadFile({
+          url: imageUrl,
+          success: (res) => {
+            if (res.statusCode === 200) {
+              // 可选：对临时文件使用 getImageInfo 预热缓存
+              wx.getImageInfo({
+                src: res.tempFilePath,
+                success: () => resolve(res.tempFilePath),
+                fail: (e) => {
+                  console.warn('getImageInfo在下载后失败', e);
+                  resolve(res.tempFilePath);
+                }
+              });
+            } else {
+              console.warn('downloadFile非200状态码:', res.statusCode, imageUrl);
+              resolve(); // 预加载失败不应阻塞应用
+            }
+          },
+          fail: (err) => {
+            console.warn('downloadFile失败:', imageUrl, err);
+            resolve(); // 预加载失败不应阻塞应用
           }
-        },
-        fail: reject
+        });
+      });
+    }
+
+    // 3) 本地项目资源（相对路径或以/开头） → getImageInfo
+    const localSrc = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+    return new Promise((resolve) => {
+      wx.getImageInfo({
+        src: localSrc,
+        success: () => resolve(localSrc),
+        fail: (e) => {
+          console.warn('getImageInfo（本地）失败:', localSrc, e);
+          resolve(); // 预加载失败不应阻塞应用
+        }
       });
     });
   }
@@ -437,7 +505,7 @@ class PerformanceOptimizer {
    * 执行关键认证任务
    */
   async executeCriticalAuth(task) {
-    const auth = await this.lazyLoadModule('../../modules/auth/auth', true);
+    const auth = await this.lazyLoadModule('/modules/auth/auth.js', true);
     return auth.checkLogin();
   }
 
@@ -445,7 +513,7 @@ class PerformanceOptimizer {
    * 执行关键用户信息任务
    */
   async executeCriticalUserInfo(task) {
-    const auth = await this.lazyLoadModule('../../modules/auth/auth', true);
+    const auth = await this.lazyLoadModule('/modules/auth/auth.js', true);
     return auth.getUserInfo();
   }
 
@@ -453,7 +521,7 @@ class PerformanceOptimizer {
    * 执行关键任务列表任务
    */
   async executeCriticalTaskList(task) {
-    const taskModule = await this.lazyLoadModule('../../modules/task/task', true);
+    const taskModule = await this.lazyLoadModule('/modules/task/task.js', true);
     return taskModule.getTaskList({ page: 1, page_size: 10 });
   }
 

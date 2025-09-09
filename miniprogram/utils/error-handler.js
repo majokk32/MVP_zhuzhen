@@ -6,8 +6,15 @@
 
 class ErrorHandler {
   constructor() {
+    // 清理现有的错误日志存储，避免10MB限制问题
+    try {
+      wx.removeStorageSync('error_logs');
+    } catch (e) {
+      // 忽略清理错误
+    }
+    
     this.errorLogs = [];
-    this.maxErrorLogs = 100;
+    this.maxErrorLogs = 20; // 减少到20个，避免存储溢出
     this.reportUrl = '/api/error-report';
     this.isReporting = false;
     
@@ -70,7 +77,7 @@ class ErrorHandler {
         message: error,
         timestamp: new Date().toISOString(),
         stack: error.stack || 'No stack trace available',
-        userAgent: wx.getSystemInfoSync(),
+        userAgent: this.getSystemInfo(),
         pageRoute: this.getCurrentPageRoute(),
         context: this.getErrorContext()
       };
@@ -265,20 +272,38 @@ class ErrorHandler {
    */
   logError(errorInfo) {
     try {
-      // 添加到内存日志
-      this.errorLogs.unshift(errorInfo);
+      // 临时禁用存储，只在控制台显示
+      // this.errorLogs.unshift(errorInfo);
       
-      // 保持日志数量在限制内
-      if (this.errorLogs.length > this.maxErrorLogs) {
-        this.errorLogs = this.errorLogs.slice(0, this.maxErrorLogs);
-      }
-
-      // 存储到本地
-      wx.setStorageSync('error_logs', this.errorLogs);
-      
-      console.error('错误记录:', errorInfo);
+      // 只在控制台输出，不存储
+      const originalConsoleError = console.error;
+      originalConsoleError.call(console, '错误记录:', JSON.stringify(errorInfo, null, 2));
     } catch (storageError) {
-      console.error('记录错误日志失败:', storageError);
+      // 不再记录存储错误，避免循环
+    }
+  }
+
+  /**
+   * 安全设置存储，避免10MB限制
+   */
+  safeSetStorage(key, data) {
+    try {
+      wx.setStorageSync(key, data);
+    } catch (error) {
+      if (error.message && error.message.includes('exceed storage max size')) {
+        // 存储超限，清理并只保留最新的几条
+        console.warn('存储超限，清理错误日志');
+        this.errorLogs = this.errorLogs.slice(0, 5);
+        try {
+          wx.removeStorageSync(key);
+          wx.setStorageSync(key, this.errorLogs);
+        } catch (e) {
+          // 如果还是失败，就不存储了
+          console.error('清理后仍然无法存储');
+        }
+      } else {
+        throw error;
+      }
     }
   }
 
@@ -436,11 +461,27 @@ class ErrorHandler {
   }
 
   /**
+   * 获取系统信息（兼容新旧API）
+   */
+  getSystemInfo() {
+    try {
+      return {
+        ...wx.getWindowInfo(),
+        ...wx.getDeviceInfo(),
+        ...wx.getAppBaseInfo()
+      };
+    } catch (e) {
+      // 降级到老版本API
+      return wx.getSystemInfoSync();
+    }
+  }
+
+  /**
    * 获取设备信息
    */
   getDeviceInfo() {
     try {
-      const systemInfo = wx.getSystemInfoSync();
+      const systemInfo = this.getSystemInfo();
       return {
         platform: systemInfo.platform,
         model: systemInfo.model,
@@ -571,21 +612,33 @@ class ErrorHandler {
 // 创建全局实例
 const errorHandler = new ErrorHandler();
 
-// 扩展console，自动捕获console.error
+// 扩展console，自动捕获console.error (临时禁用以防止存储循环)
 const originalConsoleError = console.error;
-console.error = function(...args) {
-  originalConsoleError.apply(console, args);
-  
-  // 将console.error的内容也记录到错误处理器
-  if (args.length > 0) {
-    errorHandler.logError({
-      type: 'CONSOLE_ERROR',
-      message: args.join(' '),
-      timestamp: new Date().toISOString(),
-      pageRoute: errorHandler.getCurrentPageRoute(),
-      context: errorHandler.getErrorContext()
-    });
-  }
-};
+// console.error = function(...args) {
+//   originalConsoleError.apply(console, args);
+//   
+//   // 将console.error的内容也记录到错误处理器
+//   if (args.length > 0) {
+//     // 正确处理对象参数
+//     const message = args.map(arg => {
+//       if (typeof arg === 'object' && arg !== null) {
+//         try {
+//           return JSON.stringify(arg, null, 2);
+//         } catch (e) {
+//           return String(arg);
+//         }
+//       }
+//       return String(arg);
+//     }).join(' ');
+//     
+//     errorHandler.logError({
+//       type: 'CONSOLE_ERROR',
+//       message: message,
+//       timestamp: new Date().toISOString(),
+//       pageRoute: errorHandler.getCurrentPageRoute(),
+//       context: errorHandler.getErrorContext()
+//     });
+//   }
+// };
 
 module.exports = errorHandler;

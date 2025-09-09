@@ -4,9 +4,10 @@
  * @module auth
  */
 
-const app = getApp()
-
 class AuthModule {
+  getApp() {
+    return getApp()
+  }
   constructor() {
     this.token = wx.getStorageSync('token') || null
     this.userInfo = wx.getStorageSync('userInfo') || null
@@ -72,6 +73,7 @@ class AuthModule {
 
           try {
             // 用code换取token和用户信息
+            const app = this.getApp()
             const loginResult = await app.request({
               url: '/users/login',
               method: 'POST',
@@ -98,6 +100,7 @@ class AuthModule {
    * @returns {Promise<object>}
    */
   async updateProfile(profileData) {
+    const app = this.getApp()
     const result = await app.request({
       url: '/users/profile',
       method: 'PUT',
@@ -108,6 +111,7 @@ class AuthModule {
     if (result) {
       this.userInfo = { ...this.userInfo, ...result }
       wx.setStorageSync('userInfo', this.userInfo)
+      const app = this.getApp()
       app.globalData.userInfo = this.userInfo
     }
 
@@ -153,6 +157,7 @@ class AuthModule {
     wx.setStorageSync('userInfo', user)
     
     // 更新全局数据
+    const app = this.getApp()
     app.globalData.token = token
     app.globalData.userInfo = user
     app.globalData.isLogin = true
@@ -175,6 +180,7 @@ class AuthModule {
     wx.removeStorageSync('userInfo')
     
     // 清除全局数据
+    const app = this.getApp()
     app.globalData.token = null
     app.globalData.userInfo = null
     app.globalData.isLogin = false

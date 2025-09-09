@@ -1,6 +1,6 @@
 /* 任务详情页样式 */
 .container {
-  min-height: 100vh;
+  min-height: 1vh;
   background: #f5f6fa;
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -8,32 +8,32 @@
 /* 任务信息卡片 */
 .task-info-card {
   background: white;
-  padding: 32rpx;
-  margin-bottom: 20rpx;
+  padding: 3rp;
+  margin-bottom: rp;
 }
 
 .task-header {
-  margin-bottom: 24rpx;
+  margin-bottom: 4rp;
 }
 
 .task-title {
-  font-size: 36rpx;
+  font-size: 36rp;
   font-weight: bold;
   color: #1a1a1a;
   line-height: 1.4;
-  margin-bottom: 16rpx;
+  margin-bottom: 16rp;
 }
 
 .task-meta {
-  display: flex;
+  display: fle;
   align-items: center;
-  gap: 20rpx;
+  gap: rp;
 }
 
 .task-type {
-  padding: 4rpx 12rpx;
-  border-radius: 6rpx;
-  font-size: 24rpx;
+  padding: 4rp 1rp;
+  border-radius: 6rp;
+  font-size: 4rp;
 }
 
 .task-type.live {
@@ -41,65 +41,65 @@
   color: #ff6b6b;
 }
 
-.task-type.extra {
+.task-type.etra {
   background: #fff3cd;
-  color: #ffc107;
+  color: #ffc17;
 }
 
 .task-type.normal {
-  background: #e3f2fd;
-  color: #2196f3;
+  background: #e3ffd;
+  color: #196f3;
 }
 
 .task-date {
-  font-size: 24rpx;
+  font-size: 4rp;
   color: #999;
 }
 
 /* 任务要求 */
 .task-requirements {
-  padding: 24rpx 0;
-  border-top: 1px solid #f0f0f0;
-  border-bottom: 1px solid #f0f0f0;
-  margin: 24rpx 0;
+  padding: 4rp ;
+  border-top: 1p solid #fff;
+  border-bottom: 1p solid #fff;
+  margin: 4rp ;
 }
 
 .section-title {
-  display: flex;
+  display: fle;
   align-items: center;
-  gap: 12rpx;
-  margin-bottom: 16rpx;
-  font-size: 30rpx;
-  font-weight: 500;
+  gap: 1rp;
+  margin-bottom: 16rp;
+  font-size: 3rp;
+  font-weight: 5;
   color: #333;
 }
 
 .section-title .icon {
-  font-size: 32rpx;
+  font-size: 3rp;
 }
 
 .requirements-content {
-  font-size: 28rpx;
+  font-size: rp;
   color: #666;
   line-height: 1.6;
 }
 
 /* 截止时间 */
 .deadline-info {
-  display: flex;
+  display: fle;
   align-items: center;
-  padding-top: 24rpx;
+  padding-top: 4rp;
 }
 
 .deadline-label {
-  font-size: 28rpx;
+  font-size: rp;
   color: #666;
 }
 
 .deadline-time {
-  font-size: 28rpx;
+  font-size: rp;
   color: #333;
-  font-weight: 500;
+  font-weight: 5;
 }
 
 .deadline-time.overdue {
@@ -107,180 +107,180 @@
 }
 
 .remaining-time {
-  font-size: 24rpx;
-  color: #ff9800;
-  margin-left: 8rpx;
+  font-size: 4rp;
+  color: #ff9;
+  margin-left: rp;
 }
 
 /* 提交限制提示 */
 .submit-limit-tip {
-  display: flex;
+  display: fle;
   align-items: center;
-  gap: 12rpx;
-  padding: 20rpx;
-  background: #f0f9ff;
-  border-radius: 12rpx;
-  margin-top: 24rpx;
-  font-size: 26rpx;
-  color: #0984e3;
+  gap: 1rp;
+  padding: rp;
+  background: #ff9ff;
+  border-radius: 1rp;
+  margin-top: 4rp;
+  font-size: 6rp;
+  color: #94e3;
 }
 
 /* 待复盘重置提示 */
 .review-reset-tip {
-  display: flex;
+  display: fle;
   align-items: center;
-  gap: 12rpx;
-  padding: 20rpx;
-  background: #f0fff4;
-  border-radius: 12rpx;
-  margin-top: 16rpx;
-  font-size: 26rpx;
-  color: #00b894;
-  border-left: 4rpx solid #00b894;
+  gap: 1rp;
+  padding: rp;
+  background: #ffff4;
+  border-radius: 1rp;
+  margin-top: 16rp;
+  font-size: 6rp;
+  color: #b94;
+  border-left: 4rp solid #b94;
 }
 
 /* 通用卡片样式 */
 .section-card {
   background: white;
-  padding: 32rpx;
-  margin-bottom: 20rpx;
+  padding: 3rp;
+  margin-bottom: rp;
 }
 
 /* 上传区域 */
 .upload-area {
-  margin-top: 24rpx;
+  margin-top: 4rp;
 }
 
 .upload-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20rpx;
+  gap: rp;
 }
 
 .upload-item {
   position: relative;
-  width: 100%;
-  padding-bottom: 100%;
+  width: 1%;
+  padding-bottom: 1%;
   background: #f5f5f5;
-  border-radius: 12rpx;
+  border-radius: 1rp;
   overflow: hidden;
 }
 
 .upload-item image {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: ;
+  left: ;
+  width: 1%;
+  height: 1%;
   object-fit: cover;
 }
 
 .delete-btn {
   position: absolute;
-  top: 8rpx;
-  right: 8rpx;
-  width: 40rpx;
-  height: 40rpx;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 50%;
-  display: flex;
+  top: rp;
+  right: rp;
+  width: 4rp;
+  height: 4rp;
+  background: rgba(, , , .5);
+  border-radius: 5%;
+  display: fle;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 24rpx;
+  font-size: 4rp;
 }
 
 .upload-btn {
   position: relative;
-  width: 100%;
-  padding-bottom: 100%;
+  width: 1%;
+  padding-bottom: 1%;
   background: #f5f5f5;
-  border: 2rpx dashed #ddd;
-  border-radius: 12rpx;
-  display: flex;
-  flex-direction: column;
+  border: rp dashed #ddd;
+  border-radius: 1rp;
+  display: fle;
+  fle-direction: column;
   align-items: center;
   justify-content: center;
 }
 
 .upload-icon {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -60%);
-  font-size: 48rpx;
+  top: 5%;
+  left: 5%;
+  transform: translate(-5%, -6%);
+  font-size: 4rp;
   color: #999;
 }
 
-.upload-text {
+.upload-tet {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, 10%);
-  font-size: 24rpx;
+  top: 5%;
+  left: 5%;
+  transform: translate(-5%, 1%);
+  font-size: 4rp;
   color: #999;
 }
 
 .upload-tip {
   position: absolute;
-  bottom: 16rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 20rpx;
+  bottom: 16rp;
+  left: 5%;
+  transform: translateX(-5%);
+  font-size: rp;
   color: #bbb;
 }
 
 .upload-tips {
-  margin-top: 20rpx;
-  padding: 16rpx;
+  margin-top: rp;
+  padding: 16rp;
   background: #f9f9f9;
-  border-radius: 8rpx;
+  border-radius: rp;
 }
 
-.upload-tips text {
+.upload-tips tet {
   display: block;
-  font-size: 24rpx;
+  font-size: 4rp;
   color: #999;
-  line-height: 1.8;
+  line-height: 1.;
 }
 
 /* 文字输入区域 */
-.text-input-area {
-  margin-top: 32rpx;
+.tet-input-area {
+  margin-top: 3rp;
   position: relative;
 }
 
-.text-input {
-  width: 100%;
-  min-height: 200rpx;
-  padding: 20rpx;
+.tet-input {
+  width: 1%;
+  min-height: rp;
+  padding: rp;
   background: #f9f9f9;
-  border-radius: 12rpx;
-  font-size: 28rpx;
+  border-radius: 1rp;
+  font-size: rp;
   line-height: 1.6;
-  box-sizing: border-box;
+  bo-sizing: border-bo;
 }
 
-.text-counter {
+.tet-counter {
   position: absolute;
-  bottom: 20rpx;
-  right: 20rpx;
-  font-size: 24rpx;
+  bottom: rp;
+  right: rp;
+  font-size: 4rp;
   color: #999;
 }
 
 /* 提交按钮 */
 .submit-btn {
-  width: 100%;
-  height: 88rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 1%;
+  height: rp;
+  background: linear-gradient(135deg, #667eea %, #764ba 1%);
   color: white;
   border: none;
-  border-radius: 44rpx;
-  font-size: 32rpx;
-  font-weight: 500;
-  margin-top: 40rpx;
-  display: flex;
+  border-radius: 44rp;
+  font-size: 3rp;
+  font-weight: 5;
+  margin-top: 4rp;
+  display: fle;
   align-items: center;
   justify-content: center;
 }
@@ -293,71 +293,71 @@
 /* 历史提交 */
 .history-section {
   background: white;
-  padding: 32rpx;
-  margin-top: 20rpx;
+  padding: 3rp;
+  margin-top: rp;
 }
 
 .history-list {
-  margin-top: 24rpx;
+  margin-top: 4rp;
 }
 
 .history-item {
-  padding: 20rpx;
+  padding: rp;
   background: #f9f9f9;
-  border-radius: 12rpx;
-  margin-bottom: 16rpx;
+  border-radius: 1rp;
+  margin-bottom: 16rp;
 }
 
 .history-header {
-  display: flex;
+  display: fle;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12rpx;
+  margin-bottom: 1rp;
 }
 
 .submission-time {
-  font-size: 26rpx;
+  font-size: 6rp;
   color: #666;
 }
 
 .submission-status {
-  font-size: 24rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 6rpx;
+  font-size: 4rp;
+  padding: 4rp 1rp;
+  border-radius: 6rp;
 }
 
 .submission-status.pending {
   background: #fff3cd;
-  color: #856404;
+  color: #5644;
 }
 
 .submission-status.reviewed {
   background: #d4edda;
-  color: #155724;
+  color: #15574;
 }
 
 .history-grade {
-  display: flex;
+  display: fle;
   align-items: center;
 }
 
 .grade-label {
-  font-size: 24rpx;
+  font-size: 4rp;
   color: #999;
-  margin-right: 12rpx;
+  margin-right: 1rp;
 }
 
 .grade-value {
-  font-size: 24rpx;
-  font-weight: 500;
+  font-size: 4rp;
+  font-weight: 5;
 }
 
-.grade-value.excellent {
-  color: #28a745;
+.grade-value.ecellent {
+  color: #a745;
 }
 
 .grade-value.good {
-  color: #ffc107;
+  color: #ffc17;
 }
 
 .grade-value.review {
@@ -366,228 +366,228 @@
 
 /* 待批改状态 */
 .status-banner {
-  display: flex;
+  display: fle;
   align-items: center;
-  padding: 32rpx;
-  background: linear-gradient(135deg, #fff9e6 0%, #ffe4b3 100%);
-  border-radius: 16rpx;
-  margin-bottom: 32rpx;
+  padding: 3rp;
+  background: linear-gradient(135deg, #fff9e6 %, #ffe4b3 1%);
+  border-radius: 16rp;
+  margin-bottom: 3rp;
 }
 
 .status-banner.pending {
-  background: linear-gradient(135deg, #fff9e6 0%, #ffe4b3 100%);
+  background: linear-gradient(135deg, #fff9e6 %, #ffe4b3 1%);
 }
 
 .status-icon {
-  width: 80rpx;
-  height: 80rpx;
-  margin-right: 24rpx;
+  width: rp;
+  height: rp;
+  margin-right: 4rp;
 }
 
 .status-info {
-  flex: 1;
+  fle: 1;
 }
 
 .status-title {
   display: block;
-  font-size: 32rpx;
+  font-size: 3rp;
   font-weight: bold;
   color: #333;
-  margin-bottom: 8rpx;
+  margin-bottom: rp;
 }
 
 .status-desc {
   display: block;
-  font-size: 26rpx;
+  font-size: 6rp;
   color: #666;
 }
 
 /* 提交内容预览 */
 .submission-preview {
-  padding-top: 32rpx;
-  border-top: 1px solid #f0f0f0;
+  padding-top: 3rp;
+  border-top: 1p solid #fff;
 }
 
 .submit-time {
-  font-size: 26rpx;
+  font-size: 6rp;
   color: #999;
-  margin-bottom: 24rpx;
+  margin-bottom: 4rp;
 }
 
 .preview-images {
-  margin: 24rpx 0;
+  margin: 4rp ;
 }
 
 .image-scroll {
-  width: 100%;
+  width: 1%;
   white-space: nowrap;
 }
 
 .image-list {
-  display: inline-flex;
-  gap: 16rpx;
+  display: inline-fle;
+  gap: 16rp;
 }
 
 .preview-image {
-  width: 200rpx;
-  height: 200rpx;
-  border-radius: 12rpx;
-  flex-shrink: 0;
+  width: rp;
+  height: rp;
+  border-radius: 1rp;
+  fle-shrink: ;
 }
 
-.preview-text {
-  padding: 20rpx;
+.preview-tet {
+  padding: rp;
   background: #f9f9f9;
-  border-radius: 12rpx;
-  font-size: 28rpx;
+  border-radius: 1rp;
+  font-size: rp;
   color: #333;
   line-height: 1.6;
 }
 
 /* 已批改状态 */
 .grade-result-card {
-  padding: 32rpx;
-  border-radius: 16rpx;
-  margin-bottom: 32rpx;
+  padding: 3rp;
+  border-radius: 16rp;
+  margin-bottom: 3rp;
 }
 
-.grade-result-card.excellent {
-  background: linear-gradient(135deg, #d4f8d4 0%, #a8e6a8 100%);
+.grade-result-card.ecellent {
+  background: linear-gradient(135deg, #d4fd4 %, #ae6a 1%);
 }
 
 .grade-result-card.good {
-  background: linear-gradient(135deg, #fff9e6 0%, #ffe4b3 100%);
+  background: linear-gradient(135deg, #fff9e6 %, #ffe4b3 1%);
 }
 
 .grade-result-card.review {
-  background: linear-gradient(135deg, #ffe4e4 0%, #ffb3b3 100%);
+  background: linear-gradient(135deg, #ffe4e4 %, #ffb3b3 1%);
 }
 
 .grade-header {
-  display: flex;
+  display: fle;
   align-items: center;
 }
 
 .grade-icon {
-  width: 80rpx;
-  height: 80rpx;
-  margin-right: 24rpx;
+  width: rp;
+  height: rp;
+  margin-right: 4rp;
 }
 
 .grade-info {
-  flex: 1;
+  fle: 1;
 }
 
 .grade-title {
   display: block;
-  font-size: 36rpx;
+  font-size: 36rp;
   font-weight: bold;
   color: #333;
-  margin-bottom: 8rpx;
+  margin-bottom: rp;
 }
 
 .grade-desc {
   display: block;
-  font-size: 26rpx;
+  font-size: 6rp;
   color: #666;
 }
 
 .score-detail {
-  display: flex;
+  display: fle;
   align-items: baseline;
-  margin-top: 24rpx;
-  padding-top: 24rpx;
-  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  margin-top: 4rp;
+  padding-top: 4rp;
+  border-top: 1p solid rgba(55, 55, 55, .3);
 }
 
 .score-label {
-  font-size: 28rpx;
+  font-size: rp;
   color: #666;
-  margin-right: 12rpx;
+  margin-right: 1rp;
 }
 
 .score-value {
-  font-size: 48rpx;
+  font-size: 4rp;
   font-weight: bold;
   color: #333;
 }
 
 .score-total {
-  font-size: 28rpx;
+  font-size: rp;
   color: #666;
-  margin-left: 8rpx;
+  margin-left: rp;
 }
 
 /* 老师评语 */
 .teacher-feedback {
-  padding: 32rpx;
+  padding: 3rp;
   background: #f9f9f9;
-  border-radius: 16rpx;
-  margin-bottom: 32rpx;
+  border-radius: 16rp;
+  margin-bottom: 3rp;
 }
 
 .feedback-content {
-  font-size: 28rpx;
+  font-size: rp;
   color: #333;
-  line-height: 1.8;
-  margin-bottom: 24rpx;
+  line-height: 1.;
+  margin-bottom: 4rp;
 }
 
 .feedback-footer {
-  display: flex;
+  display: fle;
   justify-content: space-between;
-  padding-top: 20rpx;
-  border-top: 1px solid #eee;
-  font-size: 24rpx;
+  padding-top: rp;
+  border-top: 1p solid #eee;
+  font-size: 4rp;
   color: #999;
 }
 
 /* 作业内容 */
 .submission-content {
-  padding-top: 32rpx;
-  border-top: 1px solid #f0f0f0;
+  padding-top: 3rp;
+  border-top: 1p solid #fff;
 }
 
 .content-images {
-  margin: 24rpx 0;
+  margin: 4rp ;
 }
 
 .image-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16rpx;
+  gap: 16rp;
 }
 
 .content-image {
-  width: 100%;
-  padding-bottom: 100%;
-  border-radius: 12rpx;
+  width: 1%;
+  padding-bottom: 1%;
+  border-radius: 1rp;
   background: #f5f5f5;
 }
 
-.content-text {
-  padding: 20rpx;
+.content-tet {
+  padding: rp;
   background: #f9f9f9;
-  border-radius: 12rpx;
-  font-size: 28rpx;
+  border-radius: 1rp;
+  font-size: rp;
   color: #333;
   line-height: 1.6;
 }
 
 /* 操作按钮 */
 .action-buttons {
-  display: flex;
-  gap: 24rpx;
-  margin-top: 32rpx;
+  display: fle;
+  gap: 4rp;
+  margin-top: 3rp;
 }
 
 .action-buttons button {
-  flex: 1;
-  height: 88rpx;
-  border-radius: 44rpx;
-  font-size: 30rpx;
-  font-weight: 500;
-  display: flex;
+  fle: 1;
+  height: rp;
+  border-radius: 44rp;
+  font-size: 3rp;
+  font-weight: 5;
+  display: fle;
   align-items: center;
   justify-content: center;
 }
@@ -595,7 +595,7 @@
 .resubmit-btn {
   background: #fff;
   color: #667eea;
-  border: 2rpx solid #667eea;
+  border: rp solid #667eea;
 }
 
 .resubmit-btn.outline {
@@ -603,63 +603,63 @@
 }
 
 .share-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea %, #764ba 1%);
   color: white;
   border: none;
 }
 
 /* 教师视图 */
 .teacher-section {
-  margin-top: 20rpx;
+  margin-top: rp;
 }
 
 .teacher-stats {
-  display: flex;
+  display: fle;
   justify-content: space-around;
-  padding: 32rpx 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 3rp ;
+  border-bottom: 1p solid #fff;
 }
 
 .stat-item {
-  text-align: center;
+  tet-align: center;
 }
 
 .stat-label {
   display: block;
-  font-size: 26rpx;
+  font-size: 6rp;
   color: #999;
-  margin-bottom: 12rpx;
+  margin-bottom: 1rp;
 }
 
 .stat-value {
   display: block;
-  font-size: 48rpx;
+  font-size: 4rp;
   font-weight: bold;
   color: #333;
 }
 
 .teacher-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 20rpx;
-  padding-top: 32rpx;
+  display: fle;
+  fle-direction: column;
+  gap: rp;
+  padding-top: 3rp;
 }
 
 .action-btn {
-  height: 88rpx;
-  border-radius: 44rpx;
-  font-size: 30rpx;
-  font-weight: 500;
+  height: rp;
+  border-radius: 44rp;
+  font-size: 3rp;
+  font-weight: 5;
   background: #fff;
   color: #667eea;
-  border: 2rpx solid #667eea;
-  display: flex;
+  border: rp solid #667eea;
+  display: fle;
   align-items: center;
   justify-content: center;
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea %, #764ba 1%);
   color: white;
   border: none;
 }

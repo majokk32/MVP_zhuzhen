@@ -390,19 +390,19 @@
   color: white;
 }
 
-.grade-value.优秀 {
+.grade-value.excellent {
   background: #4ecdc4;
 }
 
-.grade-value.良好 {
+.grade-value.good {
   background: #ffa726;
 }
 
-.grade-value.及格 {
+.grade-value.pass {
   background: #42a5f5;
 }
 
-.grade-value.不及格 {
+.grade-value.fail {
   background: #ff6b6b;
 }
 

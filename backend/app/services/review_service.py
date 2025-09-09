@@ -13,7 +13,7 @@ from app.models import (
     ReviewFrequency, ReviewStatus, Grade, UserScoreRecord,
     UserCheckin, CheckinType
 )
-from app.database import get_db_session
+from app.database import get_db
 import logging
 
 logger = logging.getLogger(__name__)

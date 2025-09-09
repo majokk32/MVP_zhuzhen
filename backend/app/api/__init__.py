@@ -3,7 +3,7 @@ API routes initialization
 """
 
 from fastapi import APIRouter
-from app.api import users, tasks, submissions, admin, notifications, learning_data, subscription, reviews, materials, tags
+from app.api import users, tasks, submissions, admin, notifications, learning_data, subscription, reviews, materials, tags, analytics
 
 # Create main API router
 api_router = APIRouter(prefix="/api/v1")
@@ -19,3 +19,4 @@ api_router.include_router(subscription.router, tags=["subscription"])
 api_router.include_router(reviews.router, tags=["reviews"])
 api_router.include_router(materials.router, tags=["materials"])
 api_router.include_router(tags.router, tags=["tags"])
+api_router.include_router(analytics.router, tags=["analytics"])

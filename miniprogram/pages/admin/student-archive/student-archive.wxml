@@ -81,7 +81,7 @@
         <view class="task-result" wx:if="{{item.status === 'graded'}}">
           <view class="score-section">
             <text class="score-label">评价：</text>
-            <text class="score-value {{item.evaluation}}">{{item.evaluation || '暂无评价'}}</text>
+            <text class="score-value {{item.evaluationClass}}">{{item.evaluation || '暂无评价'}}</text>
           </view>
           <view class="comment-preview" wx:if="{{item.teacher_comment}}">
             <text class="comment-text">{{item.teacher_comment}}</text>
