@@ -13,17 +13,15 @@ from app.schemas import ResponseBase
 from app.auth import get_current_user
 from app.models import User
 
-router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
+router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
 class AnalyticsEvent(BaseModel):
     """Analytics event model"""
-    event_type: str
-    event_data: Dict[str, Any]
-    timestamp: Optional[datetime] = None
-    user_id: Optional[int] = None
-    page_path: Optional[str] = None
-    session_id: Optional[str] = None
+    event_name: str
+    properties: Dict[str, Any]
+    client_timestamp: Optional[int] = None
+    server_timestamp: Optional[datetime] = None
 
 
 class AnalyticsEventsRequest(BaseModel):
@@ -45,7 +43,7 @@ async def track_events(
         # In production, you might want to store these in a database or send to analytics service
         
         for event in events_data.events:
-            print(f"[ANALYTICS] {event.event_type}: {event.event_data}")
+            print(f"[ANALYTICS] {event.event_name}: {event.properties}")
         
         return ResponseBase(
             code=0,
@@ -70,12 +68,12 @@ async def track_single_event(
     """
     try:
         # For MVP, just log the event
-        print(f"[ANALYTICS] {event.event_type}: {event.event_data}")
+        print(f"[ANALYTICS] {event.event_name}: {event.properties}")
         
         return ResponseBase(
             code=0,
             msg="Event tracked successfully",
-            data={"event_type": event.event_type}
+            data={"event_name": event.event_name}
         )
         
     except Exception as e:
