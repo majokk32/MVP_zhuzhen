@@ -296,7 +296,13 @@ async def get_learning_insights_api(
     提供个性化学习建议和趋势分析
     """
     try:
-        insights_data = get_learning_insights(current_user.id, db)
+        # Temporary mock data until Docker volume issue is resolved
+        insights_data = {
+            "insights": [{"type": "info", "title": "功能开发中", "description": "学习洞察功能正在完善中", "level": "info"}],
+            "suggestions": [{"type": "info", "title": "敬请期待", "description": "更多个性化建议即将推出", "priority": "low"}], 
+            "trends": {"streak_trend": "stable", "score_trend": "stable", "consistency": "medium"},
+            "summary": {"current_streak": 0, "best_streak": 0, "total_score": 0, "monthly_score": 0, "week_checkins": 0}
+        }
         return BaseResponse(code=0, msg="获取成功", data=insights_data)
         
     except Exception as e:

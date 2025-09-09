@@ -572,3 +572,56 @@ class MaterialLike(Base):
     )
 
 
+# Task Tag related enums and models
+class TagLevel(str, enum.Enum):
+    PRIMARY = "primary"      # 一级标签
+    SECONDARY = "secondary"  # 二级标签
+    TERTIARY = "tertiary"    # 三级标签
+
+
+class TaskTag(Base):
+    """任务标签表"""
+    __tablename__ = "task_tags"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(50), nullable=False, index=True)
+    level = Column(SQLEnum(TagLevel), nullable=False)
+    parent_id = Column(Integer, ForeignKey("task_tags.id"), nullable=True)
+    
+    # 显示信息
+    display_name = Column(String(100), nullable=True)
+    description = Column(Text, nullable=True)
+    color = Column(String(20), nullable=True)  # 显示颜色
+    icon = Column(String(50), nullable=True)   # 图标
+    
+    # 排序和状态
+    sort_order = Column(Integer, default=0, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    
+    # 统计信息
+    usage_count = Column(Integer, default=0, nullable=False)
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    parent = relationship("TaskTag", remote_side=[id], backref="children")
+    usages = relationship("TaskTagUsage", back_populates="tag")
+
+
+class TaskTagUsage(Base):
+    """任务标签使用关系表"""
+    __tablename__ = "task_tag_usages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False, index=True)
+    tag_id = Column(Integer, ForeignKey("task_tags.id"), nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    task = relationship("Task", back_populates="tag_usages")
+    tag = relationship("TaskTag", back_populates="usages")
+    creator = relationship("User", back_populates="task_tag_usages")
+
+

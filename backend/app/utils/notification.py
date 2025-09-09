@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.config import settings
-from app.database import get_db_session
+from app.database import get_db
 from app.models import NotificationSettings
 import logging
 
@@ -292,7 +292,7 @@ class NotificationService:
             是否允许发送通知
         """
         try:
-            async with get_db_session() as db:
+            async with get_db() as db:
                 # 获取用户通知设置
                 result = await db.execute(
                     select(NotificationSettings).where(NotificationSettings.user_id == user_id)

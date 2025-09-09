@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import logging
 
-from app.database import get_db_session
+from app.database import get_db
 from app.models import Task, User, Submission, TaskStatus
 from app.utils.notification import notification_service
 from app.services.review_service import review_service
@@ -51,7 +51,7 @@ class SchedulerService:
         """执行每小时任务"""
         logger.info("执行每小时定时任务")
         
-        async with get_db_session() as db:
+        async with get_db() as db:
             await self.check_deadline_reminders(db)
             
             # 每天早上8点检查复盘提醒

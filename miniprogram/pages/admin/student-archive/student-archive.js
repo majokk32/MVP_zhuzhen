@@ -174,9 +174,23 @@ Page({
       course_type: item.course_type || 'essay',
       status: item.teacher_evaluation ? 'graded' : (item.submitted_at ? 'submitted' : 'pending'),
       evaluation: item.teacher_evaluation,
+      evaluationClass: this.getEvaluationClass(item.teacher_evaluation),
       teacher_comment: item.teacher_comment,
       submission_images: item.submission_images || []
     }
+  },
+
+  /**
+   * 获取评价对应的CSS类名
+   */
+  getEvaluationClass(evaluation) {
+    const classMap = {
+      '优秀': 'excellent',
+      '良好': 'good', 
+      '及格': 'pass',
+      '不及格': 'fail'
+    };
+    return classMap[evaluation] || '';
   },
 
   /**

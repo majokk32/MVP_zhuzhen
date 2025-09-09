@@ -253,19 +253,19 @@
   color: white;
 }
 
-.score-value.优秀 {
+.score-value.excellent {
   background: #4ecdc4;
 }
 
-.score-value.良好 {
+.score-value.good {
   background: #ffa726;
 }
 
-.score-value.及格 {
+.score-value.pass {
   background: #42a5f5;
 }
 
-.score-value.不及格 {
+.score-value.fail {
   background: #ff6b6b;
 }
 

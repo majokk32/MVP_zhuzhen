@@ -219,6 +219,28 @@ Component({
       const startTime = Date.now();
       
       try {
+        // 检查是否为SVG（不支持）
+        if (/\.svg(\?.*)?$/i.test(src)) {
+          throw new Error('SVG格式在小程序中不支持');
+        }
+
+        // 检查是否为本地路径，如果是则直接使用getImageInfo
+        if (!src.startsWith('http')) {
+          const imageInfo = await new Promise((resolve, reject) => {
+            wx.getImageInfo({
+              src: src,
+              success: resolve,
+              fail: reject
+            });
+          });
+          
+          this.setData({ progress: 100 });
+          
+          // 直接使用本地图片
+          this.finishImageLoad(src, null, imageInfo, startTime);
+          return;
+        }
+
         // 模拟进度更新
         const progressTimer = setInterval(() => {
           if (this.data.progress < 90) {
@@ -228,7 +250,7 @@ Component({
           }
         }, 200);
 
-        // 下载图片
+        // 下载远程图片
         const downloadResult = await wx.downloadFile({
           url: src
         });

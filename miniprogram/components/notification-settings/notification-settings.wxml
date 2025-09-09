@@ -284,7 +284,7 @@
             <view class="stat-row">
               <text class="stat-desc">最后更新时间</text>
               <text class="stat-time">
-                {{stats.lastUpdate ? new Date(stats.lastUpdate).toLocaleString() : '暂无数据'}}
+                {{stats.lastUpdateText || '暂无数据'}}
               </text>
             </view>
           </view>

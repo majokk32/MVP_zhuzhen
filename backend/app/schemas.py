@@ -1,11 +1,13 @@
+from __future__ import annotations
 """
 Pydantic models for request/response validation
 """
 
-from pydantic import BaseModel, Field, validator
-from typing import List, Optional, Any
+from pydantic import BaseModel, Field, field_validator
+from typing import List, Optional, Any, Generic, TypeVar
 from datetime import datetime
 from enum import Enum
+
 
 
 # Enums
@@ -25,11 +27,17 @@ class GradeEnum(str, Enum):
     excellent = "极佳"
 
 
+# Type variable for generic response
+T = TypeVar('T')
+
 # Base response model
-class ResponseBase(BaseModel):
+class BaseResponse(BaseModel, Generic[T]):
     code: int = Field(default=0, description="状态码，0表示成功")
     msg: str = Field(default="ok", description="响应消息")
-    data: Optional[Any] = Field(default=None, description="响应数据")
+    data: Optional[T] = Field(default=None, description="响应数据")
+
+# Alias for backward compatibility
+ResponseBase = BaseResponse
 
 
 # User schemas
@@ -103,7 +111,8 @@ class SubmissionCreate(BaseModel):
     images: List[str] = Field(..., min_items=1, max_items=6, description="图片URL列表")
     text: Optional[str] = Field(None, description="文字内容")
     
-    @validator('images')
+    @field_validator('images')
+    @classmethod
     def validate_images(cls, v):
         if not v or len(v) == 0:
             raise ValueError('至少需要上传一张图片')

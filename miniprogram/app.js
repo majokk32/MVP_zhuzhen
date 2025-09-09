@@ -4,6 +4,7 @@ const performanceOptimizer = require('./utils/performance-optimizer');
 const errorHandler = require('./utils/error-handler');
 const { analyticsHelper, analytics } = require('./utils/analytics-helper');
 const performanceMonitor = require('./utils/performance-monitor');
+const storageCleaner = require('./utils/storage-cleaner');
 
 App({
   // 优化的启动流程
@@ -33,7 +34,12 @@ App({
       
       // 阶段2: 关键路径任务（异步并行）
       const criticalTasks = this.defineCriticalTasks();
-      await performanceOptimizer.optimizeCriticalPath(criticalTasks);
+      try {
+        await performanceOptimizer.optimizeCriticalPath(criticalTasks);
+      } catch (e) {
+        console.warn('Critical path failed, showing UI anyway:', e);
+        // 不 throw；继续后续流程，让页面渲染
+      }
       
       // 阶段3: 次要任务（延迟执行）
       setTimeout(() => {
@@ -58,8 +64,25 @@ App({
 
   // 关键系统初始化
   initCriticalSystems() {
-    // 获取系统信息（同步，必需）
-    this.globalData.systemInfo = wx.getSystemInfoSync();
+    // 紧急清理存储，防止10MB溢出
+    try {
+      storageCleaner.clearErrorLogs();
+      console.log('启动时清理存储完成');
+    } catch (e) {
+      console.error('清理存储失败:', e);
+    }
+    
+    // 获取系统信息（使用新API，兼容老版本）
+    try {
+      this.globalData.systemInfo = {
+        ...wx.getWindowInfo(),
+        ...wx.getDeviceInfo(),
+        ...wx.getAppBaseInfo()
+      };
+    } catch (e) {
+      // 降级到老版本API
+      this.globalData.systemInfo = wx.getSystemInfoSync();
+    }
     
     // 设置全局错误处理（同步，必需）
     this.setupGlobalErrorHandler();
@@ -107,20 +130,20 @@ App({
     // 预加载任务模块
     performanceOptimizer.addPreloadTask({
       type: 'module',
-      path: '../../modules/task/task',
+      path: 'modules/task/task.js',
       priority: 'high'
     });
     
     // 预加载常用图片资源
     performanceOptimizer.addPreloadTask({
       type: 'image',
-      url: '/assets/images/default-avatar.svg',
+      url: '/assets/images/default-avatar.png',
       priority: 'medium'
     });
     
     performanceOptimizer.addPreloadTask({
       type: 'image', 
-      url: '/assets/images/avatar-placeholder.svg',
+      url: '/assets/images/avatar-placeholder.png',
       priority: 'low'
     });
   },
@@ -672,8 +695,8 @@ App({
           );
           
           // 请求成功时重置重试计数
-          if (this.retryManager.retryRecord[requestKey]) {
-            delete this.retryManager.retryRecord[requestKey];
+          if (this.retryManager.retryMap.has(requestKey)) {
+            this.retryManager.retryMap.delete(requestKey);
           }
           
           // 处理HTTP状态码
@@ -860,8 +883,8 @@ App({
             const data = JSON.parse(res.data);
             
             // 上传成功时重置重试计数
-            if (this.retryManager.retryRecord[uploadKey]) {
-              delete this.retryManager.retryRecord[uploadKey];
+            if (this.retryManager.retryMap.has(uploadKey)) {
+              this.retryManager.retryMap.delete(uploadKey);
             }
             
             if (data.code === 0 || data.code === 200) {

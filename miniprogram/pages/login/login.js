@@ -1,6 +1,11 @@
 // pages/login/login.js
+console.log('[login] 文件开始加载 📄');
+
 const auth = require('../../modules/auth/auth')
+console.log('[login] auth模块加载成功 ✅');
+
 const app = getApp()
+console.log('[login] app实例获取成功 ✅');
 
 Page({
   data: {
@@ -13,6 +18,7 @@ Page({
   },
 
   onLoad() {
+    console.log('[login] onLoad - 登录页面已加载 ✅');
     // 检查API可用性
     if (wx.getUserProfile) {
       this.setData({
@@ -38,6 +44,10 @@ Page({
     if (auth.isLogin()) {
       this.navigateToHome()
     }
+  },
+
+  onShow() {
+    console.log('[login] onShow - 登录页面显示 ✅');
   },
 
   // 一键登录（静默登录）

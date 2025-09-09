@@ -205,7 +205,7 @@
       >
         <view class="payment-info">
           <text class="payment-plan">{{item.plan.name}}</text>
-          <text class="payment-date">{{new Date(item.created_at).toLocaleDateString()}}</text>
+          <text class="payment-date">{{item.createdAtText}}</text>
         </view>
         <view class="payment-amount">
           <text class="amount-text">¥{{item.amount/100}}</text>

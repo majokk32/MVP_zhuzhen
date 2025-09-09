@@ -8,6 +8,7 @@ pydantic-settings==2.1.0
 # Database
 aiosqlite==0.19.0  # For async SQLite support
 psycopg2-binary==2.9.9  # PostgreSQL driver (for production)
+asyncpg==0.29.0  # Async PostgreSQL driver
 
 # File handling
 python-multipart==0.0.6

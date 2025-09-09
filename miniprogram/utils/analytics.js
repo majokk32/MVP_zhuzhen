@@ -30,7 +30,7 @@ class Analytics {
    */
   initDeviceInfo() {
     try {
-      const systemInfo = wx.getSystemInfoSync();
+      const systemInfo = this.getSystemInfo();
       this.deviceInfo = {
         brand: systemInfo.brand,
         model: systemInfo.model,
@@ -50,6 +50,22 @@ class Analytics {
     } catch (error) {
       console.error('获取设备信息失败:', error);
       this.deviceInfo = {};
+    }
+  }
+
+  /**
+   * 获取系统信息（兼容新旧API）
+   */
+  getSystemInfo() {
+    try {
+      return {
+        ...wx.getWindowInfo(),
+        ...wx.getDeviceInfo(),
+        ...wx.getAppBaseInfo()
+      };
+    } catch (e) {
+      // 降级到老版本API
+      return wx.getSystemInfoSync();
     }
   }
 
@@ -446,10 +462,11 @@ class Analytics {
       return;
     }
 
+    let eventsToReport = [];
     try {
       this.isReporting = true;
       
-      const eventsToReport = [...this.eventQueue];
+      eventsToReport = [...this.eventQueue];
       this.eventQueue = [];
 
       const app = getApp();

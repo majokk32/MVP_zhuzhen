@@ -28,9 +28,6 @@ COPY . .
 # 创建必要的目录
 RUN mkdir -p /app/data /app/logs /app/uploads
 
-# 设置权限
-RUN chmod +x deploy_config.py
-
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
