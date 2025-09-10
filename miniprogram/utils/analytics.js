@@ -9,7 +9,7 @@ class Analytics {
     this.sessionId = this.generateSessionId();
     this.eventQueue = [];
     this.maxQueueSize = 50;
-    this.reportUrl = '/api/analytics/events';
+    this.reportUrl = '/analytics/events';
     this.isReporting = false;
     this.sessionStartTime = Date.now();
     
