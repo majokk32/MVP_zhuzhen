@@ -260,12 +260,12 @@ class LearningDataService:
         
         return {
             "user_id": user_id,
-            "current_streak": user.current_streak,
-            "best_streak": user.best_streak,
-            "total_score": user.total_score,
-            "monthly_score": user.monthly_score,
-            "quarterly_score": user.quarterly_score,
-            "total_submissions": user.total_submissions,
+            "current_streak": user.current_streak or 0,
+            "best_streak": user.best_streak or 0,
+            "total_score": user.total_score or 0,
+            "monthly_score": user.monthly_score or 0,
+            "quarterly_score": user.quarterly_score or 0,
+            "total_submissions": user.total_submissions or 0,
             "week_checkins": week_checkins,
             "last_checkin_date": user.last_checkin_date.isoformat() if user.last_checkin_date else None
         }
