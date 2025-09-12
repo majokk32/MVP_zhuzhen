@@ -58,42 +58,43 @@
     <!-- 骨架屏 -->
     <skeleton show="{{loading}}" type="task-list" count="{{3}}"></skeleton>
     
-    <!-- 虚拟列表 -->
-    <virtual-list 
+    <!-- 任务列表 - 使用直接渲染（性能更好的虚拟列表后续优化） -->
+    <scroll-view
       wx:if="{{!loading}}"
-      items="{{taskList}}"
-      height="{{listHeight}}"
-      estimated-item-height="{{200}}"
-      overscan="{{3}}"
+      class="task-scroll-container"
+      style="height: {{listHeight}}px;"
+      scroll-y
+      enable-back-to-top
       refresher-enabled="{{true}}"
-      refreshing="{{refreshing}}"
-      bind:scroll="onVirtualScroll"
-      bind:scrolltolower="onLoadMore"
-      bind:refresherrefresh="onRefresh"
+      refresher-triggered="{{refreshing}}"
+      bindscrolltolower="onLoadMore"
+      bindrefresherrefresh="onRefresh"
     >
-      <!-- 任务卡片插槽 -->
-      <task-card 
-        slot="item"
-        task="{{item}}"
-        index="{{index}}"
-        bind:click="onTaskClick"
-        bind:toggleStatus="onToggleStatus"
-        bind:share="onShareTask"
-        bind:viewStats="onViewStats"
-      />
-      
-      <!-- 空状态插槽 -->
-      <empty-state
-        slot="empty"
-        icon="📝"
-        title="暂无任务"
-        description="{{currentFilter === 'ongoing' ? '没有进行中的任务' : currentFilter === 'ended' ? '没有已结束的任务' : '老师还没有发布任务'}}"
-        show-action="{{isTeacher}}"
-        action-text="立即创建任务"
-        action-type="primary"
-        bind:actionClick="onCreateTask"
-      />
-    </virtual-list>
+      <view class="task-list-direct">
+        <block wx:for="{{taskList}}" wx:key="id">
+          <task-card 
+            task="{{item}}"
+            index="{{index}}"
+            bind:click="onTaskClick"
+            bind:toggleStatus="onToggleStatus"
+            bind:share="onShareTask"
+            bind:viewStats="onViewStats"
+          />
+        </block>
+      </view>
+    </scroll-view>
+    
+    <!-- 空状态 -->
+    <empty-state
+      wx:if="{{!loading && isEmpty}}"
+      icon="📝"
+      title="暂无任务"
+      description="{{currentFilter === 'ongoing' ? '没有进行中的任务' : currentFilter === 'ended' ? '没有已结束的任务' : '老师还没有发布任务'}}"
+      show-action="{{isTeacher}}"
+      action-text="立即创建任务"
+      action-type="primary"
+      bind:actionClick="onCreateTask"
+    />
 
     <!-- 加载更多 -->
     <view wx:if="{{loadingMore}}" class="loading-more">

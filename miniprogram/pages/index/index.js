@@ -9,7 +9,7 @@ let taskModule = null;
 async function loadAuth() {
   if (!auth) {
     const performanceOptimizer = app.globalData.performanceOptimizer;
-    auth = await performanceOptimizer.lazyLoadModule('../../modules/auth/auth', true);
+    auth = await performanceOptimizer.lazyLoadModule('modules/auth/auth.js', true);
   }
   return auth;
 }
@@ -17,7 +17,7 @@ async function loadAuth() {
 async function loadTaskModule() {
   if (!taskModule) {
     const performanceOptimizer = app.globalData.performanceOptimizer;
-    taskModule = await performanceOptimizer.lazyLoadModule('../../modules/task/task', false);
+    taskModule = await performanceOptimizer.lazyLoadModule('modules/task/task.js', false);
   }
   return taskModule;
 }
@@ -70,15 +70,34 @@ Page({
         this.calculateListHeight() // 同步计算，立即完成
       ]);
       
-      // 检查登录状态
-      if (!authModule.checkLogin()) {
-        console.log('用户未登录，跳转登录页');
-        return;
+      // 检查认证模块是否正确加载
+      if (!authModule || typeof authModule.checkLogin !== 'function') {
+        console.error('认证模块加载失败:', authModule);
+        console.error('authModule keys:', Object.keys(authModule || {}));
+        // 降级处理：使用同步require方式加载
+        try {
+          const authSync = require('../../modules/auth/auth');
+          auth = authSync.default || authSync;
+          if (!auth.checkLogin()) {
+            console.log('用户未登录，跳转登录页');
+            return;
+          }
+        } catch (e) {
+          console.error('同步加载认证模块也失败:', e);
+          return;
+        }
+      } else {
+        // 检查登录状态
+        if (!authModule.checkLogin()) {
+          console.log('用户未登录，跳转登录页');
+          return;
+        }
       }
       
       // 获取用户信息（已缓存，速度很快）
-      const token = authModule.getToken();
-      const userInfo = authModule.getUserInfo();
+      const currentAuth = auth || authModule;
+      const token = currentAuth.getToken();
+      const userInfo = currentAuth.getUserInfo();
       
       if (token && userInfo) {
         // 同步全局状态
@@ -89,7 +108,7 @@ Page({
         // 立即更新UI显示用户信息
         this.setData({
           userInfo,
-          isTeacher: authModule.isTeacher()
+          isTeacher: currentAuth.isTeacher()
         });
         
         console.log('用户信息加载完成:', Date.now() - pageStartTime + 'ms');
@@ -97,11 +116,16 @@ Page({
       
       // 阶段3: 异步加载任务列表（不阻塞首屏渲染）
       setTimeout(async () => {
+        console.log('🎯 [DEBUG] 开始异步加载任务列表...');
+        console.log('🎯 [DEBUG] 重置loading状态以允许任务加载');
+        // 重置loading状态，允许loadTaskList执行
+        this.setData({ loading: false });
         try {
+          console.log('🎯 [DEBUG] 调用 this.loadTaskList()...');
           await this.loadTaskList();
-          console.log('任务列表加载完成');
+          console.log('🎯 [DEBUG] 任务列表加载完成');
         } catch (error) {
-          console.error('任务列表加载失败:', error);
+          console.error('🎯 [DEBUG] 任务列表加载失败:', error);
           this.setData({ loading: false });
         }
       }, 50); // 很短的延迟，让首屏先渲染
@@ -133,8 +157,9 @@ Page({
       const authModule = require('../../modules/auth/auth');
       const taskModuleSync = require('../../modules/task/task');
       
-      auth = authModule;
-      taskModule = taskModuleSync;
+      // 兼容default导出
+      auth = authModule.default || authModule;
+      taskModule = taskModuleSync.default || taskModuleSync;
       
       if (!auth.checkLogin()) return;
       
@@ -176,15 +201,24 @@ Page({
 
   // 加载任务列表
   async loadTaskList(loadMore = false) {
-    if (this.data.loading || this.data.loadingMore) return;
+    console.log('🎯 [DEBUG] loadTaskList 函数开始执行, loadMore:', loadMore);
+    console.log('🎯 [DEBUG] 当前loading状态:', this.data.loading, this.data.loadingMore);
     
+    if (this.data.loading || this.data.loadingMore) {
+      console.log('🎯 [DEBUG] 已在加载中，跳过请求');
+      return;
+    }
+    
+    console.log('🎯 [DEBUG] 设置loading状态...');
     this.setData({
       [loadMore ? 'loadingMore' : 'loading']: true
     });
     
     try {
+      console.log('🎯 [DEBUG] 开始懒加载任务模块...');
       // 懒加载任务模块
       const taskModuleInstance = await loadTaskModule();
+      console.log('🎯 [DEBUG] 任务模块加载完成:', !!taskModuleInstance);
       
       const params = {
         page: loadMore ? this.data.page + 1 : 1,
@@ -196,7 +230,9 @@ Page({
         params.status = this.data.currentFilter;
       }
       
+      console.log('🎯 [DEBUG] 准备调用 taskModuleInstance.getTaskList, params:', params);
       const result = await taskModuleInstance.getTaskList(params);
+      console.log('🎯 [DEBUG] getTaskList 调用完成, result:', result);
       
       // 处理置顶逻辑（课后加餐任务置顶）
       let tasks = result.tasks || []
@@ -206,6 +242,7 @@ Page({
         const normalTasks = tasks.filter(t => !(t.task_type === "extra" && t.submission_status === '未提交'))
         tasks = [...pinnedTasks, ...normalTasks]
       }
+      
       
       this.setData({
         taskList: loadMore ? [...this.data.taskList, ...tasks] : tasks,

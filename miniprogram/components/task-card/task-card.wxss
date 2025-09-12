@@ -7,9 +7,9 @@
   margin-bottom: 24rpx;
   box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
-  /* 初始状态（用于动画） */
-  opacity: 0;
-  transform: translateY(20rpx);
+  /* 初始状态（用于动画） - 临时修复：设为可见 */
+  opacity: 1;
+  transform: translateY(0rpx);
 }
 
 .task-card:active {

@@ -490,6 +490,7 @@ App({
 
   // 智能重试管理器
   retryManager: {
+    maxRetries: 3,
     retryMap: new Map(),
     
     // 添加重试策略
@@ -644,13 +645,17 @@ App({
 
   // 封装网络请求
   request(options) {
+    console.log('📡 [DEBUG] app.request 被调用, options:', options);
     const requestKey = options.requestKey || `${options.method || 'GET'}_${options.url}_${Date.now()}`;
+    console.log('📡 [DEBUG] 生成requestKey:', requestKey);
     
     return this._executeRequest(options, requestKey);
   },
   
   // 内部执行请求的方法
   _executeRequest(options, requestKey, retryCount = 0) {
+    console.log('📡 [DEBUG] _executeRequest 开始执行, url:', options.url, 'retryCount:', retryCount);
+    
     let loadingId = null;
     const requestStartTime = Date.now(); // 记录请求开始时间
     
@@ -666,9 +671,15 @@ App({
     const baseUrl = this.globalData.baseUrl;
     const token = this.globalData.token || wx.getStorageSync('token');
     
+    console.log('📡 [DEBUG] 请求配置 - baseUrl:', baseUrl, 'token存在:', !!token);
+    
     return new Promise((resolve, reject) => {
+      const finalUrl = baseUrl + options.url;
+      console.log('📡 [DEBUG] 发起 wx.request - 完整URL:', finalUrl);
+      console.log('📡 [DEBUG] 请求数据:', options.data);
+      
       wx.request({
-        url: baseUrl + options.url,
+        url: finalUrl,
         method: options.method || 'GET',
         data: options.data || {},
         header: {
@@ -677,6 +688,9 @@ App({
           ...options.header
         },
         success: (res) => {
+          console.log('📡 [DEBUG] wx.request success, statusCode:', res.statusCode);
+          console.log('📡 [DEBUG] 响应数据:', res.data);
+          
           // 隐藏loading
           if (loadingId) {
             this.loadingManager.hide(loadingId);
@@ -703,7 +717,9 @@ App({
           if (res.statusCode === 200) {
             // 处理业务状态码
             if (res.data.code === 0 || res.data.code === 200) {
-              resolve(res.data);
+              // 智能提取数据，优先返回 data 字段内容
+              const responseData = res.data.data !== undefined ? res.data.data : res.data;
+              resolve(responseData);
             } else {
               // 业务错误处理
               const error = res.data;
@@ -737,6 +753,8 @@ App({
           }
         },
         fail: (err) => {
+          console.log('📡 [DEBUG] wx.request fail, error:', err);
+          
           // 隐藏loading
           if (loadingId) {
             this.loadingManager.hide(loadingId);
@@ -791,7 +809,8 @@ App({
   // 判断是否应该重试请求
   shouldRetryRequest(error, retryCount) {
     // 检查是否达到最大重试次数
-    if (retryCount >= this.retryManager.maxRetries) {
+    const MAX = this.retryManager.maxRetries ?? 3;
+    if (retryCount >= MAX) {
       return false;
     }
 
@@ -907,7 +926,7 @@ App({
               
               if (options.showError !== false) {
                 this.errorManager.showErrorMessage(errorType, data, {
-                  showRetry: this.errorManager.isRetryableError(errorType) && retryCount < this.retryManager.maxRetries,
+                  showRetry: this.errorManager.isRetryableError(errorType) && retryCount < (this.retryManager.maxRetries ?? 3),
                   onRetry: () => this._handleUploadRetry(options, uploadKey, retryCount)
                 });
               }
@@ -941,7 +960,7 @@ App({
           const errorType = this.errorManager.classifyError(err);
           
           // 自动重试逻辑
-          if (this.errorManager.isRetryableError(errorType) && retryCount < this.retryManager.maxRetries) {
+          if (this.errorManager.isRetryableError(errorType) && retryCount < (this.retryManager.maxRetries ?? 3)) {
             this.retryManager.executeRetry(uploadKey, () => {
               this._executeUpload(options, uploadKey, retryCount + 1)
                 .then(resolve)
