@@ -123,6 +123,15 @@
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
 }
 
+/* 任务滚动容器 */
+.task-scroll-container {
+  width: 100%;
+}
+
+.task-list-direct {
+  padding: 0 24rpx;
+}
+
 /* 加载更多 */
 .loading-more {
   padding: 30rpx;

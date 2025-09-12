@@ -200,20 +200,33 @@ class PerformanceOptimizer {
 
   /**
    * 路径解析器 - 从utils/目录解析到正确的模块路径
+   * 统一处理页面传来的相对路径，转换为utils目录能require的路径
    */
   resolveFromUtils(path) {
     if (!path) return path;
-    // 已经是相对路径
-    if (path.startsWith('./') || path.startsWith('../')) return path;
-    // 从 app.js 传入的是 'modules/xxx/xxx.js'
+
+    // 已经是utils自己能用的相对路径
+    if (path.startsWith('./') || path.startsWith('../')) {
+      // 典型页面相对路径 '../../modules/...'：utils下require需要 '../modules/...'
+      if (path.startsWith('../../modules/')) {
+        return path.replace('../../modules/', '../modules/');
+      }
+      if (path.startsWith('../modules/')) {
+        return path; // 已经正确
+      }
+      return path;
+    }
+
+    // 约定：调用方传"工程根相对"路径
+    // 例如 'modules/auth/auth.js' 或 'modules/task/task.js'
     if (path.startsWith('modules/')) return `../${path}`;
-    // 防止有人传了 '/modules/...'
-    if (path.startsWith('/modules/')) return `..${path}`;
+    if (path.startsWith('/modules/')) return `..${path}`; // '/modules/x' -> '../modules/x'
+    
     return path; // 其他情况原样
   }
 
   /**
-   * 安全require - 模块不存在时返回空对象
+   * 安全require - 模块不存在时返回null避免假成功
    */
   safeRequire(path) {
     const resolvedPath = this.resolveFromUtils(path);
@@ -221,7 +234,7 @@ class PerformanceOptimizer {
       return require(resolvedPath);
     } catch (e) {
       console.warn('safeRequire fail:', path, '->', resolvedPath, e);
-      return {};
+      return null; // 失败返回null，不要返回{}避免"假成功"
     }
   }
 
@@ -248,21 +261,27 @@ class PerformanceOptimizer {
       // 安全加载模块
       const module = this.safeRequire(modulePath);
       
-      // 记录加载时间
+      if (!module) {
+        // 明确失败，不要缓存，交给调用方降级处理
+        throw new Error(`lazyLoadModule failed: ${modulePath}`);
+      }
+      
+      // 兼容ESModule的default导出
+      const resolvedModule = module.default || module;
+      
+      // 记录加载时间（只在成功时记录，避免误导）
       const loadTime = Date.now() - startTime;
       this.recordModuleLoadTime(modulePath, loadTime);
       
       // 缓存模块
-      this.lazyModuleCache.set(modulePath, module);
+      this.lazyModuleCache.set(modulePath, resolvedModule);
       
-      return module;
+      return resolvedModule;
       
     } catch (error) {
-      console.warn('懒加载模块失败，返回空对象:', modulePath, error);
-      // 返回空对象作为占位，防止阻塞UI
-      const placeholderModule = {};
-      this.lazyModuleCache.set(modulePath, placeholderModule);
-      return placeholderModule;
+      console.error('懒加载模块失败:', modulePath, error);
+      // 不要缓存失败的结果，让调用方处理错误
+      throw error;
     }
   }
 

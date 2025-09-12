@@ -18,17 +18,27 @@ class TaskModule {
    * @returns {Promise<Array>}
    */
   async getTaskList(params = {}) {
+    console.log('🚀 [DEBUG] TaskModule.getTaskList 开始执行, params:', params);
+    
     const defaultParams = {
       page: 1,
       page_size: 20,
       ...params
     }
+    
+    console.log('🚀 [DEBUG] 最终请求参数:', defaultParams);
 
     try {
+      console.log('🚀 [DEBUG] 准备调用 app.request...');
+      console.log('🚀 [DEBUG] app 对象:', !!app);
+      console.log('🚀 [DEBUG] app.request 函数:', typeof app.request);
+      
       const result = await app.request({
         url: '/tasks/',
         data: defaultParams
       })
+      
+      console.log('🚀 [DEBUG] app.request 完成, result:', result);
 
       // 处理任务数据，添加显示状态
       const tasks = result.tasks || []

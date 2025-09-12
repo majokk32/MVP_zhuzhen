@@ -1,10 +1,12 @@
 /* pages/login/login.wxss */
-.container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  flex-direction: column;
-  padding: 60rpx 40rpx;
+.login-container {
+  min-height: 100vh !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 60rpx 40rpx !important;
+  height: auto !important;
+  box-sizing: border-box !important;
 }
 
 /* 应用头部Logo区域 */

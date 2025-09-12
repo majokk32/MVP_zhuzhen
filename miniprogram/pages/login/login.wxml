@@ -1,5 +1,5 @@
 <!--pages/login/login.wxml-->
-<view class="container">
+<view class="login-container">
   <!-- 应用Logo/名称 -->
   <view class="app-header">
     <view class="logo-container">
