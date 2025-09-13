@@ -80,8 +80,8 @@ class AuthModule {
               data: { code: res.code }
             })
 
-            // 保存登录信息
-            this.saveLoginInfo(loginResult.data)
+            // 保存登录信息 - loginResult 已经是处理后的数据 {token, user}
+            this.saveLoginInfo(loginResult)
             resolve(loginResult)
           } catch (error) {
             reject(error)
@@ -146,7 +146,17 @@ class AuthModule {
    * @param {object} loginData - {token, user}
    */
   saveLoginInfo(loginData) {
-    const { token, user } = loginData
+    console.log('🔐 [DEBUG] saveLoginInfo - loginData:', loginData);
+    
+    if (!loginData || typeof loginData !== 'object') {
+      throw new Error('Invalid login data');
+    }
+    
+    const { token, user } = loginData;
+    
+    if (!token || !user) {
+      throw new Error(`Login data incomplete - token: ${!!token}, user: ${!!user}`);
+    }
     
     // 保存到内存
     this.token = token

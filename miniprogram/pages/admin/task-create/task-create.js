@@ -80,7 +80,10 @@ Page({
    */
   checkPermission() {
     const userInfo = wx.getStorageSync('userInfo')
-    if (!userInfo || !userInfo.isTeacher) {
+    console.log('🔐 [DEBUG] 任务创建权限检查 - userInfo:', userInfo);
+    
+    if (!userInfo || userInfo.role !== 'teacher') {
+      console.log('🔐 [ERROR] 权限不足 - role:', userInfo?.role, '预期: teacher');
       wx.showModal({
         title: '权限不足',
         content: '您没有创建任务的权限',
@@ -346,25 +349,36 @@ Page({
 
       const { formData } = this.data
       
-      // 构建提交数据
+      // 构建提交数据（匹配后端TaskCreate schema）
       const submitData = {
         title: formData.title.trim(),
-        course_date: `${formData.date} ${formData.time}:00`,
-        requirements: formData.requirements.trim(),
-        task_type: this.data.taskTypes[formData.typeIndex].value,
-        total_score: parseInt(formData.totalScore) || 100,
-        max_submissions: parseInt(formData.maxSubmissions) || 3,
-        status: mode === 'publish' ? 'ongoing' : 'draft'
+        course: this.data.taskTypes[formData.typeIndex].name, // 使用课程类型名称
+        desc: formData.requirements.trim(),
+        total_score: parseFloat(formData.totalScore) || 100,
+        deadline: formData.date && formData.time ? new Date(`${formData.date} ${formData.time}:00`).toISOString() : null
       }
 
+      console.log('📝 [DEBUG] 提交任务数据:', submitData);
+      
+      const app = getApp();
       let res
       if (this.data.isEditMode) {
-        res = await this.request(`/api/admin/tasks/${this.data.taskId}`, submitData, 'PUT')
+        res = await app.request({
+          url: `/tasks/${this.data.taskId}`,
+          method: 'PUT',
+          data: submitData
+        });
       } else {
-        res = await this.request('/api/admin/tasks', submitData, 'POST')
+        res = await app.request({
+          url: '/tasks',
+          method: 'POST', 
+          data: submitData
+        });
       }
+      
+      console.log('📝 [DEBUG] 任务创建响应:', res);
 
-      if (res.code === 0) {
+      if (res && res.id) {  // app.request提取了data，直接检查返回数据
         const actionText = this.data.isEditMode ? '更新' : (mode === 'publish' ? '发布' : '保存')
         wx.showToast({
           title: `${actionText}成功`,
@@ -400,7 +414,7 @@ Page({
       const token = wx.getStorageSync('token')
       
       wx.request({
-        url: `${getApp().globalData.apiBase}${url}`,
+        url: `${getApp().globalData.baseUrl}${url}`,
         data: data,
         method: method,
         header: {

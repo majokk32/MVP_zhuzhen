@@ -42,7 +42,10 @@ Page({
    */
   checkPermission() {
     const userInfo = wx.getStorageSync('userInfo')
-    if (!userInfo || !userInfo.isTeacher) {
+    console.log('🔐 [DEBUG] 教研权限检查 - userInfo:', userInfo);
+    
+    if (!userInfo || userInfo.role !== 'teacher') {
+      console.log('🔐 [ERROR] 权限不足 - role:', userInfo?.role, '预期: teacher');
       wx.showModal({
         title: '权限不足',
         content: '您没有访问教研功能的权限',
@@ -55,6 +58,8 @@ Page({
       })
       return false
     }
+    
+    console.log('🔐 [DEBUG] 权限验证通过');
     return true
   },
 
@@ -65,25 +70,40 @@ Page({
     try {
       this.setData({ loading: true })
       
-      // 获取统计数据
-      const res = await this.request('/api/admin/stats')
+      // 获取统计数据 - 使用统一的 app.request 方法
+      const app = getApp();
+      console.log('📊 [DEBUG] app实例:', app);
+      console.log('📊 [DEBUG] app.globalData:', app.globalData);
+      console.log('📊 [DEBUG] baseUrl:', app.globalData?.baseUrl);
       
-      if (res.code === 0) {
-        const stats = res.data
-        this.setData({
-          stats: {
-            totalTasks: stats.total_tasks || 0,
-            pendingGrade: stats.pending_grade || 0,
-            totalStudents: stats.total_students || 0,
-            recentTasks: stats.recent_tasks || 0,
-            activeStudents: stats.active_students || 0
-          },
-          isEmpty: stats.total_tasks === 0,
-          loading: false
-        })
-      } else {
-        throw new Error(res.msg || '获取数据失败')
+      // 防护：如果 baseUrl 未定义，使用硬编码值
+      if (!app.globalData?.baseUrl) {
+        console.warn('📊 [WARN] baseUrl未定义，使用默认值');
+        app.globalData = app.globalData || {};
+        app.globalData.baseUrl = 'http://192.168.1.139:8000/api/v1';
       }
+      
+      const res = await app.request({
+        url: '/admin/stats',
+        method: 'GET'
+      });
+      
+      // app.request 已经处理了响应格式，直接使用 res 数据
+      console.log('📊 [DEBUG] 管理员统计数据:', res);
+      console.log('📊 [DEBUG] total_tasks值:', res.total_tasks);
+      console.log('📊 [DEBUG] 完整响应结构:', JSON.stringify(res, null, 2));
+      
+      this.setData({
+        stats: {
+          totalTasks: res.total_tasks || 0,
+          pendingGrade: res.pending_grade || 0,
+          totalStudents: res.total_students || 0,
+          recentTasks: res.recent_tasks || 0,
+          activeStudents: res.active_students || 0
+        },
+        isEmpty: (res.total_tasks || 0) === 0,
+        loading: false
+      })
     } catch (error) {
       console.error('加载统计数据失败:', error)
       this.setData({ loading: false })
@@ -94,42 +114,6 @@ Page({
     }
   },
 
-  /**
-   * 网络请求封装
-   */
-  request(url, data = {}, method = 'GET') {
-    return new Promise((resolve, reject) => {
-      const token = wx.getStorageSync('token')
-      
-      wx.request({
-        url: `${getApp().globalData.apiBase}${url}`,
-        data: data,
-        method: method,
-        header: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
-        },
-        success: (res) => {
-          if (res.statusCode === 200) {
-            resolve(res.data)
-          } else if (res.statusCode === 401) {
-            // token失效，跳转登录
-            wx.removeStorageSync('token')
-            wx.removeStorageSync('userInfo')
-            wx.redirectTo({
-              url: '/pages/login/login'
-            })
-            reject(new Error('登录已过期'))
-          } else {
-            reject(new Error(`请求失败: ${res.statusCode}`))
-          }
-        },
-        fail: (error) => {
-          reject(error)
-        }
-      })
-    })
-  },
 
   /**
    * 跳转到课程作业管理
