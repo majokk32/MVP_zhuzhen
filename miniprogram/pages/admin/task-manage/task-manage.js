@@ -29,8 +29,12 @@ Page({
    * 生命周期函数--监听页面加载
    */
   onLoad(options) {
+    console.log('📋 [DEBUG] task-manage页面onLoad开始')
     this.checkPermission()
-    this.loadTaskList()
+    console.log('📋 [DEBUG] 权限检查完成，准备加载任务列表')
+    // 首次加载时重置状态并强制加载
+    this.loadTaskList(true)
+    console.log('📋 [DEBUG] task-manage页面onLoad完成')
   },
 
   /**
@@ -49,7 +53,10 @@ Page({
    */
   checkPermission() {
     const userInfo = wx.getStorageSync('userInfo')
-    if (!userInfo || !userInfo.isTeacher) {
+    console.log('🔐 [DEBUG] 课程作业管理权限检查 - userInfo:', userInfo);
+    
+    if (!userInfo || userInfo.role !== 'teacher') {
+      console.log('🔐 [ERROR] 权限不足 - role:', userInfo?.role, '预期: teacher');
       wx.showModal({
         title: '权限不足',
         content: '您没有访问此页面的权限',
@@ -60,6 +67,8 @@ Page({
       })
       return false
     }
+    
+    console.log('🔐 [DEBUG] 权限验证通过');
     return true
   },
 
@@ -67,7 +76,12 @@ Page({
    * 加载任务列表
    */
   async loadTaskList(reset = false) {
-    if (!reset && (this.data.loading || this.data.loadingMore)) return
+    console.log('📋 [DEBUG] loadTaskList被调用, reset:', reset)
+    console.log('📋 [DEBUG] 当前状态 - loading:', this.data.loading, 'loadingMore:', this.data.loadingMore)
+    if (!reset && (this.data.loading || this.data.loadingMore)) {
+      console.log('📋 [DEBUG] 因loading状态返回，不执行加载')
+      return
+    }
 
     try {
       if (reset) {
@@ -88,14 +102,31 @@ Page({
       const params = {
         page: reset ? 1 : this.data.page,
         page_size: this.data.pageSize,
-        status: this.data.currentFilter === 'all' ? '' : this.data.currentFilter,
         keyword: this.data.searchKeyword.trim()
       }
-
-      const res = await this.request('/api/admin/tasks', params)
       
-      if (res.code === 0) {
-        const { tasks, total, has_more } = res.data
+      // 只有非'all'状态才添加status参数，避免后端422错误
+      if (this.data.currentFilter !== 'all') {
+        params.status = this.data.currentFilter
+      }
+
+      const app = getApp();
+      const res = await app.request({
+        url: '/tasks',
+        method: 'GET',
+        data: params
+      });
+      
+      console.log('📋 [DEBUG] 任务列表响应:', res);
+      console.log('📋 [DEBUG] 响应数据类型:', typeof res, Object.keys(res || {}));
+      console.log('📋 [DEBUG] 任务数量:', res?.tasks?.length || 0);
+      console.log('📋 [DEBUG] 任务总数:', res?.total || 0);
+      console.log('📋 [DEBUG] 当前筛选条件:', this.data.currentFilter);
+      console.log('📋 [DEBUG] 请求参数:', params);
+      
+      if (res && res.tasks) {
+        const { tasks, total } = res
+        const has_more = (this.data.page * this.data.pageSize) < total
         
         // 处理任务数据
         const processedTasks = tasks.map(task => ({
@@ -124,6 +155,8 @@ Page({
       }
     } catch (error) {
       console.error('加载任务列表失败:', error)
+      console.log('📋 [ERROR] 错误详情:', error)
+      console.log('📋 [ERROR] 当前状态 - loading:', this.data.loading, 'loadingMore:', this.data.loadingMore)
       this.setData({ 
         loading: false, 
         loadingMore: false, 
@@ -253,7 +286,11 @@ Page({
           try {
             wx.showLoading({ title: '删除中...' })
             
-            const result = await this.request(`/api/admin/tasks/${task.id}`, {}, 'DELETE')
+            const app = getApp();
+            const result = await app.request({
+              url: `/tasks/${task.id}`,
+              method: 'DELETE'
+            })
             
             if (result.code === 0) {
               wx.showToast({
@@ -343,41 +380,6 @@ Page({
     }
   },
 
-  /**
-   * 网络请求封装
-   */
-  request(url, data = {}, method = 'GET') {
-    return new Promise((resolve, reject) => {
-      const token = wx.getStorageSync('token')
-      
-      wx.request({
-        url: `${getApp().globalData.apiBase}${url}`,
-        data: data,
-        method: method,
-        header: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
-        },
-        success: (res) => {
-          if (res.statusCode === 200) {
-            resolve(res.data)
-          } else if (res.statusCode === 401) {
-            wx.removeStorageSync('token')
-            wx.removeStorageSync('userInfo')
-            wx.redirectTo({
-              url: '/pages/login/login'
-            })
-            reject(new Error('登录已过期'))
-          } else {
-            reject(new Error(`请求失败: ${res.statusCode}`))
-          }
-        },
-        fail: (error) => {
-          reject(error)
-        }
-      })
-    })
-  },
 
   /**
    * 日期格式化

@@ -166,6 +166,7 @@ class StudentStats(BaseModel):
     student_id: int
     nickname: str
     avatar: Optional[str]
+    subscription_type: str = Field(..., description="订阅类型: trial, premium, expired")
     total_submissions: int
     total_tasks: int
     completion_rate: float

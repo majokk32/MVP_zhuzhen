@@ -69,7 +69,7 @@ Page({
    */
   checkPermission() {
     const userInfo = wx.getStorageSync('userInfo')
-    if (!userInfo || !userInfo.isTeacher) {
+    if (!userInfo || userInfo.role !== 'teacher') {
       wx.showModal({
         title: '权限不足',
         content: '您没有访问此页面的权限',
@@ -442,7 +442,7 @@ Page({
       const token = wx.getStorageSync('token')
       
       wx.request({
-        url: `${getApp().globalData.apiBase}${url}`,
+        url: `${getApp().globalData.baseUrl}${url}`,
         data: data,
         method: method,
         header: {
