@@ -243,6 +243,14 @@ Page({
       });
     } catch (error) {
       console.error('加载提交记录失败:', error);
+      // 当没有提交记录时，设置默认状态
+      this.setData({
+        currentSubmission: null,
+        historySubmissions: [],
+        submissionCount: 0,
+        hasReviewReset: false,
+        viewType: 'toSubmit'
+      });
     }
   },
 

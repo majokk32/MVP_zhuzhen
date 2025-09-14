@@ -10,13 +10,13 @@ class SubmissionModule {
   async getMySubmissions(taskId) {
     try {
       const res = await app.request({
-        url: '/api/v1/submissions/my-submissions',
+        url: '/submissions/my-submissions',
         method: 'GET',
         data: taskId ? { task_id: taskId } : {}
       });
 
-      if (res.data.code === 200) {
-        const submissions = res.data.data || [];
+      if (res.code === 0) {
+        const submissions = res.data || [];
         
         // 处理提交记录
         return submissions.map(submission => ({
@@ -29,7 +29,7 @@ class SubmissionModule {
         }));
       }
       
-      throw new Error(res.data.message || '获取提交记录失败');
+      throw new Error(res.msg || '获取提交记录失败');
     } catch (error) {
       console.error('获取提交记录失败:', error);
       throw error;
@@ -40,7 +40,7 @@ class SubmissionModule {
   async submitHomework(data) {
     try {
       const res = await app.request({
-        url: '/api/v1/submissions/submit',
+        url: '/submissions/submit',
         method: 'POST',
         data: {
           task_id: data.taskId,
@@ -49,11 +49,11 @@ class SubmissionModule {
         }
       });
 
-      if (res.data.code === 200) {
-        return res.data.data;
+      if (res.code === 0) {
+        return res.data;
       }
       
-      throw new Error(res.data.message || '提交失败');
+      throw new Error(res.msg || '提交失败');
     } catch (error) {
       console.error('提交作业失败:', error);
       throw error;
@@ -66,7 +66,7 @@ class SubmissionModule {
       const app = getApp();
       
       app.uploadFile({
-        url: '/api/v1/submissions/upload-image',
+        url: '/submissions/upload-image',
         filePath: filePath,
         name: 'file',
         showError: options.showError !== false,
@@ -97,7 +97,7 @@ class SubmissionModule {
       // 为每张图片创建上传任务
       const uploadIds = imagePaths.map((path, index) => {
         return uploadManager.addUpload({
-          url: '/api/v1/submissions/upload-image',
+          url: '/submissions/upload-image',
           filePath: path,
           name: `image_${index + 1}.jpg`,
           type: 'image',
@@ -170,7 +170,7 @@ class SubmissionModule {
       try {
         const app = getApp();
         const result = await app.uploadFile({
-          url: '/api/v1/submissions/upload-image',
+          url: '/submissions/upload-image',
           filePath: path,
           name: 'file'
         });

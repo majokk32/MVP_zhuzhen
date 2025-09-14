@@ -87,7 +87,7 @@ Page({
    */
   async loadStudentInfo() {
     try {
-      const res = await this.request(`/api/admin/students/${this.data.studentInfo.id}`)
+      const res = await this.request(`/admin/students/${this.data.studentInfo.id}`)
       
       if (res.code === 0) {
         const studentData = res.data
@@ -132,7 +132,7 @@ Page({
         page_size: this.data.pageSize
       }
 
-      const res = await this.request(`/api/admin/students/${this.data.studentInfo.id}/archive`, params)
+      const res = await this.request(`/admin/students/${this.data.studentInfo.id}/archive`, params)
       
       if (res.code === 0) {
         const { archive_list, has_more } = res.data
@@ -235,7 +235,7 @@ Page({
           try {
             wx.showLoading({ title: '导出中...' })
             
-            const result = await this.request(`/api/admin/students/${this.data.studentInfo.id}/export-archive`, {}, 'POST')
+            const result = await this.request(`/admin/students/${this.data.studentInfo.id}/export-archive`, {}, 'POST')
             
             if (result.code === 0) {
               wx.showModal({

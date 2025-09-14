@@ -20,8 +20,7 @@ Page({
     // 状态文本映射
     statusTextMap: {
       'ongoing': '进行中',
-      'ended': '已结束',
-      'draft': '草稿'
+      'ended': '已结束'
     }
   },
 
@@ -105,9 +104,9 @@ Page({
         keyword: this.data.searchKeyword.trim()
       }
       
-      // 只有非'all'状态才添加status参数，避免后端422错误
-      if (this.data.currentFilter !== 'all') {
-        params.status = this.data.currentFilter
+      // 只有支持的状态才添加status参数，需要传task_status参数
+      if (this.data.currentFilter === 'ongoing' || this.data.currentFilter === 'ended') {
+        params.task_status = this.data.currentFilter
       }
 
       const app = getApp();
@@ -332,8 +331,7 @@ Page({
     const filterMap = {
       'all': '暂无任务',
       'ongoing': '暂无进行中的任务',
-      'ended': '暂无已结束的任务',
-      'draft': '暂无草稿任务'
+      'ended': '暂无已结束的任务'
     }
     return filterMap[this.data.currentFilter] || '暂无任务'
   },
@@ -349,8 +347,7 @@ Page({
     const hintMap = {
       'all': '创建第一个任务开始管理课程',
       'ongoing': '没有正在进行的任务',
-      'ended': '没有已结束的任务',
-      'draft': '没有保存的草稿任务'
+      'ended': '没有已结束的任务'
     }
     return hintMap[this.data.currentFilter] || ''
   },

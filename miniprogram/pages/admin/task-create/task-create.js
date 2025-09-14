@@ -9,6 +9,7 @@ Page({
     isSubmitting: false,
     submitMode: '', // 'draft' | 'publish'
     showAdvanced: false,
+    canSubmit: false, // 初始化提交按钮状态
     
     // 表单数据
     formData: {
@@ -42,6 +43,7 @@ Page({
   onLoad(options) {
     this.initPage(options)
     this.setMinDate()
+    this.updateCanSubmit() // 初始化按钮状态
   },
 
   /**
@@ -122,6 +124,9 @@ Page({
             publishImmediately: task.status !== 'draft'
           }
         })
+        
+        // 更新按钮状态
+        this.updateCanSubmit()
       } else {
         throw new Error(res.msg || '加载失败')
       }
@@ -270,7 +275,8 @@ Page({
     
     // 日期时间组合验证
     if (formData.date && formData.time) {
-      const selectedDateTime = new Date(`${formData.date} ${formData.time}`)
+      // 使用ISO格式确保兼容性
+      const selectedDateTime = new Date(`${formData.date}T${formData.time}:00`)
       const now = new Date()
       
       if (selectedDateTime <= now) {
@@ -281,8 +287,8 @@ Page({
     // 题目详情验证
     if (!formData.requirements.trim()) {
       errors.requirements = '请输入题目详情'
-    } else if (formData.requirements.trim().length < 10) {
-      errors.requirements = '题目详情至少需要10个字符'
+    } else if (formData.requirements.trim().length < 2) {
+      errors.requirements = '题目详情至少需要2个字符'
     }
     
     this.setData({ errors })
@@ -297,7 +303,7 @@ Page({
     const canSubmit = formData.title.trim() && 
                      formData.date && 
                      formData.time && 
-                     formData.requirements.trim().length >= 10
+                     formData.requirements.trim()  // 只需要有内容即可，不限制最小长度
     
     this.setData({ canSubmit })
   },
@@ -355,7 +361,7 @@ Page({
         course: this.data.taskTypes[formData.typeIndex].name, // 使用课程类型名称
         desc: formData.requirements.trim(),
         total_score: parseFloat(formData.totalScore) || 100,
-        deadline: formData.date && formData.time ? new Date(`${formData.date} ${formData.time}:00`).toISOString() : null
+        deadline: formData.date && formData.time ? `${formData.date}T${formData.time}:00` : null
       }
 
       console.log('📝 [DEBUG] 提交任务数据:', submitData);
