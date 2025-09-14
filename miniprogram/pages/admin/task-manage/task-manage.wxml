@@ -37,13 +37,6 @@
           >
             已结束
           </view>
-          <view 
-            class="filter-tab {{currentFilter === 'draft' ? 'active' : ''}}"
-            data-filter="draft"
-            bindtap="onFilterChange"
-          >
-            草稿
-          </view>
         </view>
       </scroll-view>
     </view>
@@ -109,7 +102,7 @@
           <text class="action-icon">📤</text>
           <text class="action-text">分享</text>
         </view>
-        <view class="action-btn danger" data-action="delete" data-task="{{item}}" bindtap="onActionClick" wx:if="{{item.status === 'draft'}}">
+        <view class="action-btn danger" data-action="delete" data-task="{{item}}" bindtap="onActionClick">
           <text class="action-icon">🗑️</text>
           <text class="action-text">删除</text>
         </view>

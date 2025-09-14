@@ -87,11 +87,17 @@ Page({
    * 加载数据
    */
   async loadData() {
-    await Promise.all([
-      this.loadTaskInfo(),
-      this.loadStatistics(),
-      this.loadSubmissions()
-    ])
+    try {
+      await Promise.all([
+        this.loadTaskInfo(),
+        this.loadStatistics(),
+        this.loadSubmissions()
+      ])
+    } catch (error) {
+      console.error('加载数据失败:', error)
+    } finally {
+      this.setData({ loading: false })
+    }
   },
 
   /**
@@ -99,7 +105,7 @@ Page({
    */
   async loadTaskInfo() {
     try {
-      const res = await this.request(`/api/admin/tasks/${this.data.taskInfo.id}`)
+      const res = await this.request(`/admin/tasks/${this.data.taskInfo.id}`)
       
       if (res.code === 0) {
         const taskData = res.data
@@ -130,7 +136,7 @@ Page({
    */
   async loadStatistics() {
     try {
-      const res = await this.request(`/api/admin/tasks/${this.data.taskInfo.id}/statistics`)
+      const res = await this.request(`/admin/tasks/${this.data.taskInfo.id}/statistics`)
       
       if (res.code === 0) {
         const stats = res.data
@@ -176,7 +182,7 @@ Page({
         filter: this.data.currentFilter === 'all' ? '' : this.data.currentFilter
       }
 
-      const res = await this.request(`/api/admin/tasks/${this.data.taskInfo.id}/submissions`, params)
+      const res = await this.request(`/admin/tasks/${this.data.taskInfo.id}/submissions`, params)
       
       if (res.code === 0) {
         const { submissions, has_more } = res.data
@@ -291,7 +297,7 @@ Page({
           try {
             wx.showLoading({ title: '删除中...' })
             
-            const result = await this.request(`/api/admin/tasks/${this.data.taskInfo.id}`, {}, 'DELETE')
+            const result = await this.request(`/admin/tasks/${this.data.taskInfo.id}`, {}, 'DELETE')
             
             if (result.code === 0) {
               wx.showToast({
@@ -330,7 +336,7 @@ Page({
           try {
             wx.showLoading({ title: '导出中...' })
             
-            const result = await this.request(`/api/admin/tasks/${this.data.taskInfo.id}/export`, {}, 'POST')
+            const result = await this.request(`/admin/tasks/${this.data.taskInfo.id}/export`, {}, 'POST')
             
             if (result.code === 0) {
               wx.showModal({
@@ -367,7 +373,7 @@ Page({
           try {
             wx.showLoading({ title: '发送中...' })
             
-            const result = await this.request(`/api/admin/tasks/${this.data.taskInfo.id}/send-reminder`, {}, 'POST')
+            const result = await this.request(`/admin/tasks/${this.data.taskInfo.id}/send-reminder`, {}, 'POST')
             
             if (result.code === 0) {
               wx.showToast({

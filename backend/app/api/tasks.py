@@ -2,10 +2,11 @@
 Task management API endpoints
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, and_
-from typing import Optional, List
+from sqlalchemy import select, desc, and_, func, case
+from typing import Optional, List, Dict
 from datetime import datetime
 
 from app.database import get_db
@@ -52,81 +53,109 @@ async def create_task(
 
 @router.get("/", response_model=ResponseBase)
 async def list_tasks(
-    status: Optional[TaskStatus] = Query(None, description="任务状态筛选"),
+    task_status: Optional[str] = Query(None, description="任务状态筛选: ongoing, ended"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
+    keyword: str = Query("", description="搜索关键词"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
     List all tasks with submission status for current user
+    Fixed: status parameter conflict, proper count query, optimized N+1
     """
-    # Build query
-    query = select(Task).order_by(desc(Task.created_at))
-    
-    if status:
-        query = query.where(Task.status == status)
-    
-    # Execute query with pagination
-    offset = (page - 1) * page_size
-    result = await db.execute(query.offset(offset).limit(page_size))
-    tasks = result.scalars().all()
-    
-    # Get total count
-    count_query = select(Task)
-    if status:
-        count_query = count_query.where(Task.status == status)
-    count_result = await db.execute(count_query)
-    total = len(count_result.scalars().all())
-    
-    # For each task, get submission status for current user
-    task_list = []
-    for task in tasks:
-        task_info = TaskInfo.from_orm(task)
+    try:
+        # 1) Build unified filters
+        filters = []
+        if task_status in ("ongoing", "ended"):
+            if task_status == "ongoing":
+                filters.append(Task.status == TaskStatus.ONGOING)
+            else:
+                filters.append(Task.status == TaskStatus.ENDED)
         
-        # Get submission for this task by current user
-        sub_result = await db.execute(
-            select(Submission).where(
-                and_(
-                    Submission.task_id == task.id,
-                    Submission.student_id == current_user.id
+        if keyword:
+            filters.append(Task.title.ilike(f"%{keyword}%"))
+        
+        # 2) Base query for pagination
+        base_query = (
+            select(Task)
+            .where(*filters) if filters else select(Task)
+        ).order_by(desc(Task.created_at))
+        
+        # 3) Count query using same filters
+        count_subq = (
+            select(Task.id)
+            .where(*filters) if filters else select(Task.id)
+        ).subquery()
+        count_query = select(func.count()).select_from(count_subq)
+        
+        # 4) Execute queries
+        offset = (page - 1) * page_size
+        result = await db.execute(base_query.offset(offset).limit(page_size))
+        tasks = result.scalars().all()
+        
+        total_result = await db.execute(count_query)
+        total = int(total_result.scalar() or 0)
+    
+        # 5) Get submissions in batch to avoid N+1
+        submissions_by_task: Dict[int, object] = {}
+        if tasks:
+            task_ids = [t.id for t in tasks]
+            sub_result = await db.execute(
+                select(Submission).where(
+                    and_(
+                        Submission.task_id.in_(task_ids),
+                        Submission.student_id == current_user.id
+                    )
                 )
             )
+            for sub in sub_result.scalars():
+                submissions_by_task[sub.task_id] = sub
+        
+        # 6) Process tasks
+        task_list = []
+        for task in tasks:
+            task_info = TaskInfo.from_orm(task)
+            submission = submissions_by_task.get(task.id)
+            
+            if submission:
+                task_info.submission_status = submission.status.value
+                task_info.submission_grade = submission.grade.value if submission.grade else None
+                task_info.submission_score = submission.score
+            else:
+                task_info.submission_status = "未提交"
+            
+            # 使用新的状态计算工具
+            display_status = calculate_display_status(task, submission)
+            
+            # 将状态信息添加到任务信息中
+            task_data = task_info.dict()
+            task_data.update({
+                "display_right_status": display_status["right_status"],
+                "display_left_status": display_status["left_status"],
+                "display_card_style": display_status["card_style"],
+                "sort_priority": get_task_priority(task, submission)
+            })
+            
+            task_list.append(task_data)
+    
+        # 根据优先级和创建时间排序
+        task_list.sort(key=lambda x: (x["sort_priority"], -x.get("created_at", 0) if isinstance(x.get("created_at"), (int, float)) else 0))
+        
+        return ResponseBase(
+            data={
+                "tasks": task_list,
+                "total": total,
+                "page": page,
+                "page_size": page_size
+            }
         )
-        submission = sub_result.scalar_one_or_none()
-        
-        if submission:
-            task_info.submission_status = submission.status.value
-            task_info.submission_grade = submission.grade.value if submission.grade else None
-            task_info.submission_score = submission.score
-        else:
-            task_info.submission_status = "未提交"
-        
-        # 使用新的状态计算工具
-        display_status = calculate_display_status(task, submission)
-        
-        # 将状态信息添加到任务信息中
-        task_data = task_info.dict()
-        task_data.update({
-            "display_right_status": display_status["right_status"],
-            "display_left_status": display_status["left_status"],
-            "display_card_style": display_status["card_style"],
-            "sort_priority": get_task_priority(task, submission)
-        })
-        
-        task_list.append(task_data)
-    
-    # 根据优先级和创建时间排序
-    task_list.sort(key=lambda x: (x["sort_priority"], -x.get("created_at", 0) if isinstance(x.get("created_at"), (int, float)) else 0))
-    
-    return ResponseBase(
-        data={
-            "tasks": task_list,
-            "total": total,
-            "page": page,
-            "page_size": page_size
-        }
-    )
+    except Exception as e:
+        print(f"Tasks list error: {e}")
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get tasks: {str(e)}"
+        )
 
 
 @router.get("/{task_id}", response_model=ResponseBase)

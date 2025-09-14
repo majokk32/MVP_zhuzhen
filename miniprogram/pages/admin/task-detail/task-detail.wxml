@@ -13,15 +13,15 @@
       <view class="card-header">
         <view class="task-title">{{taskInfo.title}}</view>
         <view class="task-status {{taskInfo.status}}">
-          {{taskInfo.status === 'published' ? '已发布' : (taskInfo.status === 'draft' ? '草稿' : '已结束')}}
+          {{taskInfo.status === 'ongoing' ? '进行中' : (taskInfo.status === 'ended' ? '已结束' : '草稿')}}
         </view>
       </view>
       
       <view class="task-meta">
         <view class="meta-item">
           <text class="meta-label">课程类型：</text>
-          <text class="meta-value course-type {{taskInfo.course_type}}">
-            {{taskInfo.course_type === 'essay' ? '申论' : '面试'}}
+          <text class="meta-value course-type">
+            {{taskInfo.course}}
           </text>
         </view>
         <view class="meta-item">

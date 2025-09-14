@@ -16,9 +16,9 @@ class UserRole(str, enum.Enum):
 
 
 class SubscriptionType(str, enum.Enum):
-    TRIAL = "trial"        # 试用用户 (7天试用期)
-    PREMIUM = "premium"    # 付费用户
-    EXPIRED = "expired"    # 过期用户
+    TRIAL = "TRIAL"        # 试用用户 (7天试用期)
+    PREMIUM = "PREMIUM"    # 付费用户
+    EXPIRED = "EXPIRED"    # 过期用户
 
 
 class TaskStatus(str, enum.Enum):
