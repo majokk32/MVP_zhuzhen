@@ -15,21 +15,24 @@ class SubmissionModule {
         data: taskId ? { task_id: taskId } : {}
       });
 
-      if (res.code === 0) {
-        const submissions = res.data || [];
-        
-        // 处理提交记录
-        return submissions.map(submission => ({
-          ...submission,
-          submitted_at: this.formatDate(submission.submitted_at),
-          graded_at: submission.graded_at ? this.formatDate(submission.graded_at) : null,
-          statusText: this.getStatusText(submission.status),
-          gradeText: this.getGradeText(submission.grade),
-          images: submission.images || []
-        }));
-      }
+      // app.request 成功时直接返回 data 部分，失败时会抛出异常
+      const submissions = res || [];
       
-      throw new Error(res.msg || '获取提交记录失败');
+      // 处理提交记录
+      return submissions.map(submission => ({
+        ...submission,
+        submitted_at: this.formatDate(submission.created_at || submission.submitted_at),
+        graded_at: submission.graded_at ? this.formatDate(submission.graded_at) : null,
+        statusText: this.getStatusText(submission.status),
+        gradeText: this.getGradeText(submission.grade),
+        images: (submission.images || []).map(img => {
+          if (img && !img.startsWith('http')) {
+            const baseUrl = app.globalData.baseUrl.replace('/api/v1', '');
+            return `${baseUrl}${img}`;
+          }
+          return img;
+        })
+      }));
     } catch (error) {
       console.error('获取提交记录失败:', error);
       throw error;
@@ -49,11 +52,9 @@ class SubmissionModule {
         }
       });
 
-      if (res.code === 0) {
-        return res.data;
-      }
-      
-      throw new Error(res.msg || '提交失败');
+      // app.request 成功时直接返回 data 部分，失败时会抛出异常
+      // 所以这里 res 就是提交成功的数据
+      return res;
     } catch (error) {
       console.error('提交作业失败:', error);
       throw error;
@@ -94,12 +95,17 @@ class SubmissionModule {
         return this._legacyUploadImages(imagePaths).then(resolve).catch(reject);
       }
       
+      // 临时: 强制使用legacy方法避免422错误，直到uploadManager完全修复
+      console.log('🔄 [DEBUG] 暂时使用legacy上传方法避免字段名问题');
+      return this._legacyUploadImages(imagePaths).then(resolve).catch(reject);
+      
       // 为每张图片创建上传任务
       const uploadIds = imagePaths.map((path, index) => {
         return uploadManager.addUpload({
           url: '/submissions/upload-image',
           filePath: path,
-          name: `image_${index + 1}.jpg`,
+          name: 'file', // ✅ 修复：使用正确的表单字段名
+          filename: `image_${index + 1}.jpg`, // 📝 原始文件名作为元数据
           type: 'image',
           size: 1024 * 1024, // 估算1MB
           onSuccess: (result) => {
@@ -213,9 +219,11 @@ class SubmissionModule {
   // 获取状态文本
   getStatusText(status) {
     const statusMap = {
+      'submitted': '待批改',
+      'graded': '已评分',
+      // 兼容旧的状态映射
       'pending': '待批改',
-      'reviewed': '已批改',
-      'graded': '已评分'
+      'reviewed': '已批改'
     };
     return statusMap[status] || status;
   }
@@ -223,6 +231,10 @@ class SubmissionModule {
   // 获取评价文本
   getGradeText(grade) {
     const gradeMap = {
+      '极佳': '极佳',
+      '优秀': '优秀', 
+      '待复盘': '待复盘',
+      // 兼容英文映射
       'excellent': '极佳',
       'good': '优秀',
       'review': '待复盘'

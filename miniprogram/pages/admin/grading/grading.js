@@ -91,11 +91,11 @@ Page({
       console.log('📊 [DEBUG] 批改统计响应:', res)
       
       // app.request已经提取了data，直接使用res
-      if (res && res.total_pending !== undefined) {
+      if (res) {
         this.setData({
-          totalPending: res.total_pending || 0,
-          todayReviewed: res.today_reviewed || 0,
-          urgentCount: res.urgent_count || 0
+          totalPending: res.total_pending ?? res.pendingCount ?? 0,
+          todayReviewed: res.today_reviewed ?? res.todayReviewed ?? 0,
+          urgentCount: res.urgent_count ?? res.urgentCount ?? 0
         })
       }
     } catch (error) {
@@ -138,14 +138,20 @@ Page({
         filter: this.data.currentFilter
       }
 
-      console.log('📋 [DEBUG] 开始加载批改任务列表, params:', params)
       const app = getApp();
       const res = await app.request({
         url: '/admin/grading/tasks',
         method: 'GET',
         data: params
       });
+      
       console.log('📋 [DEBUG] 批改任务响应:', res)
+      console.log('📋 [DEBUG] 任务数量:', res?.tasks?.length)
+      
+      // 调试每个任务的数据结构
+      res?.tasks?.forEach((task, index) => {
+        console.log(`📋 [DEBUG] Task ${index}:`, task.title, task.stats)
+      })
       
       // app.request已经提取了data，直接使用res
       if (res && res.tasks) {
@@ -184,21 +190,21 @@ Page({
    * 处理任务数据
    */
   processTaskData(task) {
-    const stats = task.stats || {
-      submitted: 0,
-      pending: 0,
-      reviewed: 0
-    }
-    
-    // 计算进度百分比
-    const total = stats.submitted
-    const reviewed = stats.reviewed
-    const progressPercent = total > 0 ? Math.round((reviewed / total) * 100) : 0
+    const s = task.stats || {};
+    // 统一别名（后端有时返回 total / 有时 total_students）
+    const submitted = Number(s.submitted ?? 0);
+    const reviewed = Number(s.reviewed ?? 0);
+    const totalStudents = Number(s.total_students ?? s.total ?? Math.max(submitted + reviewed, 1));
+    // 后端未给 pending 时，自己算：已提交总数(或 total)-已批改
+    const pending = Number(s.pending ?? Math.max((s.total ?? submitted + reviewed) - reviewed, 0));
+    const progressPercent = totalStudents > 0 ? Math.round((reviewed / totalStudents) * 100) : 0;
+
+    const stats = { submitted, reviewed, pending, total_students: totalStudents };
     
     // 判断是否紧急（进行中的直播课且有待批改作业）
     const isUrgent = task.status === 'ongoing' && 
                     task.task_type === 'live_course' && 
-                    stats.pending > 0
+                    pending > 0
     
     return {
       ...task,
@@ -295,7 +301,7 @@ Page({
           try {
             wx.showLoading({ title: '导出中...' })
             
-            const result = await this.request(`/api/admin/tasks/${task.id}/export`, {}, 'POST')
+            const result = await this.request(`/admin/tasks/${task.id}/export`, {}, 'POST')
             
             if (result.code === 0) {
               wx.showToast({
@@ -342,7 +348,7 @@ Page({
             wx.showLoading({ title: '批量导出中...' })
             
             const taskIds = pendingTasks.map(task => task.id)
-            const result = await this.request('/api/admin/batch/export', { task_ids: taskIds }, 'POST')
+            const result = await this.request('/admin/batch/export', { task_ids: taskIds }, 'POST')
             
             if (result.code === 0) {
               wx.showToast({
@@ -391,7 +397,7 @@ Page({
             wx.showLoading({ title: '发送通知中...' })
             
             const taskIds = unfinishedTasks.map(task => task.id)
-            const result = await this.request('/api/admin/batch/notify', { task_ids: taskIds }, 'POST')
+            const result = await this.request('/admin/batch/notify', { task_ids: taskIds }, 'POST')
             
             if (result.code === 0) {
               wx.showToast({

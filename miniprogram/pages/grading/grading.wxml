@@ -279,9 +279,9 @@
 <!-- 批改历史组件 -->
 <grading-history 
   show="{{showGradingHistory}}"
-  studentName="{{currentSubmission.user.nickname}}"
+  studentName="{{currentSubmission.user.nickname || ''}}"
   taskId="{{taskId}}"
-  studentId="{{currentSubmission.user.id}}"
+  studentId="{{currentSubmission.user.id || ''}}"
   allowExport="{{isTeacher}}"
   bind:close="onGradingHistoryClose"
 />

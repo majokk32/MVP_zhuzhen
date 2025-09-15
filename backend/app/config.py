@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"
     MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
-    ALLOWED_IMAGE_TYPES: List[str] = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    ALLOWED_IMAGE_TYPES: List[str] = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp", "application/octet-stream"]
     MAX_IMAGES_PER_SUBMISSION: int = 6
     
     # API settings

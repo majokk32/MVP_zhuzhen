@@ -205,10 +205,7 @@ Component({
       }
 
       this.setData({
-        progressReminderText: reminderText
-      });
-
-      this.setProperties({
+        progressReminderText: reminderText,
         showProgressReminder: showReminder
       });
     },
@@ -346,7 +343,7 @@ Component({
     startGestureHintTimer() {
       if (this.properties.showGestureHint) {
         setTimeout(() => {
-          this.setProperties({
+          this.setData({
             showGestureHint: false
           });
         }, 5000); // 5秒后隐藏手势提示
