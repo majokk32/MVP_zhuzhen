@@ -35,8 +35,13 @@ async def upload_image(
     """
     Upload a single image file
     """
+    print(f"[DEBUG] Upload request received - filename: {file.filename}, content_type: {file.content_type}")
+    print(f"[DEBUG] Current user: {current_user.id if current_user else 'None'}")
+    print(f"[DEBUG] Allowed types: {settings.ALLOWED_IMAGE_TYPES}")
+    
     # Validate file type
     if file.content_type not in settings.ALLOWED_IMAGE_TYPES:
+        print(f"[ERROR] Invalid content type: {file.content_type}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"不支持的文件类型: {file.content_type}"
@@ -44,7 +49,10 @@ async def upload_image(
     
     # Validate file size
     contents = await file.read()
+    print(f"[DEBUG] File size: {len(contents)} bytes, max allowed: {settings.MAX_UPLOAD_SIZE} bytes")
+    
     if len(contents) > settings.MAX_UPLOAD_SIZE:
+        print(f"[ERROR] File too large: {len(contents)} > {settings.MAX_UPLOAD_SIZE}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"文件太大，最大允许 {settings.MAX_UPLOAD_SIZE / 1024 / 1024}MB"

@@ -63,7 +63,8 @@ Page({
   },
 
   onLoad(options) {
-    const taskId = options.task_id;
+    // 兼容两种参数名：taskId 和 task_id
+    const taskId = options.taskId || options.task_id;
     if (!taskId) {
       wx.showToast({
         title: '参数错误',
@@ -116,15 +117,14 @@ Page({
   async loadTaskInfo() {
     try {
       const res = await app.request({
-        url: `/api/v1/tasks/${this.data.taskId}`,
+        url: `/tasks/${this.data.taskId}`,
         method: 'GET'
       });
       
-      if (res.data.code === 200) {
-        this.setData({
-          task: res.data.data
-        });
-      }
+      // app.request 成功时直接返回 data 部分，失败时会抛出异常
+      this.setData({
+        task: res
+      });
     } catch (error) {
       console.error('加载任务信息失败:', error);
     }
@@ -136,40 +136,46 @@ Page({
     
     try {
       const res = await app.request({
-        url: '/api/v1/admin/submissions',
+        url: `/admin/tasks/${this.data.taskId}/submissions`,
         method: 'GET',
         data: {
-          task_id: this.data.taskId,
           status: this.data.filterStatus === 'all' ? undefined : this.data.filterStatus
         }
       });
       
-      if (res.data.code === 200) {
-        const submissions = res.data.data || [];
-        
-        // 处理提交数据
-        const processedSubmissions = submissions.map((item, index) => ({
-          ...item,
-          submitted_at: this.formatDate(item.submitted_at),
-          graded_at: item.graded_at ? this.formatDate(item.graded_at) : null,
-          gradeText: this.getGradeText(item.grade),
-          attemptNumber: item.attempt_number || 1,
-          images: item.images || []
-        }));
-        
-        // 统计数量
-        const pendingCount = submissions.filter(s => s.status === 'pending').length;
-        const reviewedCount = submissions.filter(s => s.status === 'reviewed' || s.status === 'graded').length;
-        
-        // 更新统计数据
-        this.updateGradingStats(processedSubmissions);
+      // app.request 成功时直接返回 data 部分，失败时会抛出异常
+      const submissions = res?.submissions || [];
+      
+      // 处理提交数据
+      const processedSubmissions = submissions.map((item) => ({
+        ...item,
+        submitted_at: this.formatDate(item.submitted_at),
+        graded_at: item.graded_at ? this.formatDate(item.graded_at) : null,
+        gradeText: this.getGradeText(item.grade),
+        attemptNumber: item.attempt_number || 1,
+        images: (item.images || []).map(img => {
+          // 确保图片路径是完整的URL
+          if (img && !img.startsWith('http')) {
+            // 移除 baseUrl 中的 /api/v1 部分，直接拼接域名和端口
+            const baseUrl = getApp().globalData.baseUrl.replace('/api/v1', '');
+            return `${baseUrl}${img}`;
+          }
+          return img;
+        })
+      }));
+      
+      // 统计数量 - 修正状态映射
+      const pendingCount = submissions.filter(s => s.status === 'submitted').length;
+      const reviewedCount = submissions.filter(s => s.status === 'graded').length;
+      
+      // 更新统计数据
+      this.updateGradingStats(processedSubmissions);
 
-        this.setData({
-          submissions: processedSubmissions,
-          pendingCount,
-          reviewedCount
-        });
-      }
+      this.setData({
+        submissions: processedSubmissions,
+        pendingCount,
+        reviewedCount
+      });
     } catch (error) {
       console.error('加载提交列表失败:', error);
       wx.showToast({
@@ -217,7 +223,17 @@ Page({
       currentSubmission: submission,
       currentIndex: index,
       gradeData,
-      canSubmitGrade: this.checkCanSubmit(gradeData)
+      canSubmitGrade: this.checkCanSubmit(gradeData),
+      // 确保组件需要的数据存在
+      currentStudent: submission.student_info ? {
+        id: submission.student_info.id,
+        nickname: submission.student_info.nickname || '学生',
+        avatar_url: submission.student_info.avatar_url || ''
+      } : {
+        id: submission.student_id || 0,
+        nickname: '学生',
+        avatar_url: ''
+      }
     });
   },
 
@@ -431,64 +447,68 @@ Page({
     wx.showLoading({ title: '提交中...' });
     
     try {
+      // 映射英文评级到中文
+      const gradeMapping = {
+        'excellent': '极佳',
+        'good': '优秀', 
+        'review': '待复盘'
+      };
+      
       const res = await app.request({
-        url: '/api/v1/submissions/grade',
+        url: '/submissions/grade',
         method: 'POST',
         data: {
           submission_id: this.data.currentSubmission.id,
-          grade: this.data.gradeData.grade,
+          grade: gradeMapping[this.data.gradeData.grade] || this.data.gradeData.grade,
           score: this.data.gradeData.score || null,
           feedback: this.data.gradeData.feedback.trim()
         }
       });
       
-      if (res.data.code === 200) {
-        wx.showToast({
-          title: '批改成功',
-          icon: 'success'
-        });
-        
-        // 更新当前提交的状态
-        const submissions = [...this.data.submissions];
-        submissions[this.data.currentIndex] = {
-          ...submissions[this.data.currentIndex],
-          status: 'reviewed',
-          grade: this.data.gradeData.grade,
-          score: this.data.gradeData.score,
-          feedback: this.data.gradeData.feedback,
-          gradeText: this.getGradeText(this.data.gradeData.grade)
-        };
-        
-        // 更新统计
-        const pendingCount = submissions.filter(s => s.status === 'pending').length;
-        const reviewedCount = submissions.filter(s => s.status === 'reviewed' || s.status === 'graded').length;
-        
-        this.setData({
-          submissions,
-          pendingCount,
-          reviewedCount
-        });
-        
-        // 自动跳转到下一份（如果有）
-        setTimeout(() => {
-          if (this.data.currentIndex < this.data.submissions.length - 1) {
-            this.nextSubmission();
-          } else {
-            // 没有更多作业了，返回列表
-            this.setData({
-              currentSubmission: null,
-              gradeData: {
-                grade: '',
-                score: '',
-                feedback: ''
-              },
-              canSubmitGrade: false
-            });
-          }
-        }, 1500);
-      } else {
-        throw new Error(res.data.message || '批改失败');
-      }
+      // app.request 成功时直接返回 data 部分，失败时会抛出异常
+      wx.showToast({
+        title: '批改成功',
+        icon: 'success'
+      });
+      
+      // 更新当前提交的状态
+      const submissions = [...this.data.submissions];
+      submissions[this.data.currentIndex] = {
+        ...submissions[this.data.currentIndex],
+        status: 'reviewed',
+        grade: this.data.gradeData.grade,
+        score: this.data.gradeData.score,
+        feedback: this.data.gradeData.feedback,
+        gradeText: this.getGradeText(this.data.gradeData.grade)
+      };
+      
+      // 更新统计
+      const pendingCount = submissions.filter(s => s.status === 'pending').length;
+      const reviewedCount = submissions.filter(s => s.status === 'reviewed' || s.status === 'graded').length;
+      
+      this.setData({
+        submissions,
+        pendingCount,
+        reviewedCount
+      });
+      
+      // 自动跳转到下一份（如果有）
+      setTimeout(() => {
+        if (this.data.currentIndex < this.data.submissions.length - 1) {
+          this.nextSubmission();
+        } else {
+          // 没有更多作业了，返回列表
+          this.setData({
+            currentSubmission: null,
+            gradeData: {
+              grade: '',
+              score: '',
+              feedback: ''
+            },
+            canSubmitGrade: false
+          });
+        }
+      }, 1500);
     } catch (error) {
       console.error('提交批改失败:', error);
       wx.showToast({
@@ -696,7 +716,7 @@ Page({
       
       const app = getApp();
       await app.request({
-        url: '/api/v1/statistics/input-methods',
+        url: '/statistics/input-methods',
         method: 'POST',
         data: {
           textCount: stats.text,

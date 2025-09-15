@@ -508,68 +508,112 @@ async def get_grading_stats(
 async def get_grading_tasks(
     filter: str = Query("all", description="筛选条件: all, pending, urgent"),
     page: int = Query(1, ge=1, description="页码"),  
-    page_size: int = Query(10, ge=1, le=50, description="每页数量")
+    page_size: int = Query(10, ge=1, le=50, description="每页数量"),
+    current_user: User = Depends(get_current_teacher),
+    db: AsyncSession = Depends(get_db)
 ):
     """
-    获取批改任务列表 - 显示需要批改的学生提交
-    简化版本，移除数据库依赖和用户验证以避免datetime错误
+    获取批改任务列表 - 从数据库获取真实数据
     """
-    # 由于目前数据库中没有提交数据，返回模拟数据供用户测试
-    # 根据用户需求显示2个作业
-    mock_tasks = []
-    
-    # 第一个作业 - 紧急
-    task1 = {
-        "submission_id": 4,
-        "task_id": 4,
-        "task_title": "数量关系突破训练",
-        "student_name": "李小红",
-        "student_avatar": "https://example.com/avatar2.jpg",
-        "submission_count": 1,
-        "images": [
-            "https://example.com/sub3_1.jpg",
-            "https://example.com/sub3_2.jpg"
-        ],
-        "text": "工程问题步骤：1.设总量为1，2.列方程…",
-        "created_at": "2025-09-12T01:57:55.784261",
-        "deadline": "2025-09-14T04:57:55.784261",
-        "is_urgent": True
-    }
-    
-    # 第二个作业 - 普通  
-    task2 = {
-        "submission_id": 5,
-        "task_id": 5,
-        "task_title": "言语理解专项练习",
-        "student_name": "王小明",
-        "student_avatar": "https://example.com/avatar3.jpg",
-        "submission_count": 1,
-        "images": [
-            "https://example.com/sub4_1.jpg"
-        ],
-        "text": "词汇积累：1.同义词辨析 2.语境理解 3.词根记忆法…",
-        "created_at": "2025-09-13T08:30:20.123456",
-        "deadline": "2025-09-15T12:00:00.000000",
-        "is_urgent": False
-    }
-    
-    # 根据筛选条件返回数据
-    if filter == "urgent":
-        mock_tasks = [task1]  # 只返回紧急的
-    elif filter == "pending":
-        mock_tasks = [task1, task2]  # 返回所有未批改的
-    elif filter == "all":
-        mock_tasks = [task1, task2]  # 返回所有
-    else:
-        mock_tasks = []  # 其他筛选条件返回空
-    
-    return ResponseBase(
-        data={
-            "tasks": mock_tasks,
-            "has_more": False,
-            "total": len(mock_tasks)
-        }
-    )
+    try:
+        # Debug: 检查数据库中的任务和提交总数
+        all_tasks_result = await db.execute(select(func.count(Task.id)))
+        all_tasks_count = all_tasks_result.scalar() or 0
+        all_submissions_result = await db.execute(select(func.count(Submission.id)))
+        all_submissions_count = all_submissions_result.scalar() or 0
+        print(f"[DEBUG] Total tasks in DB: {all_tasks_count}, total submissions: {all_submissions_count}")
+        
+        # 获取所有有提交记录的任务
+        tasks_with_submissions = await db.execute(
+            select(Task)
+            .join(Submission, Task.id == Submission.task_id)
+            .where(Task.status.in_([TaskStatus.ONGOING, TaskStatus.ENDED]))
+            .group_by(Task.id)
+            .order_by(desc(Task.created_at))
+        )
+        tasks = tasks_with_submissions.scalars().all()
+        print(f"[DEBUG] Found {len(tasks)} tasks with submissions")
+        
+        result_tasks = []
+        
+        for task in tasks:
+            # 获取该任务的提交统计 - 使用简单的分别查询避免SQLAlchemy语法问题
+            total_submitted_result = await db.execute(
+                select(func.count(Submission.id))
+                .where(Submission.task_id == task.id)
+            )
+            total_submitted = int(total_submitted_result.scalar() or 0)
+            
+            pending_result = await db.execute(
+                select(func.count(Submission.id))
+                .where(Submission.task_id == task.id, Submission.status == 'SUBMITTED')
+            )
+            pending = int(pending_result.scalar() or 0)
+            
+            reviewed_result = await db.execute(
+                select(func.count(Submission.id))
+                .where(Submission.task_id == task.id, Submission.status == 'GRADED')
+            )
+            reviewed = int(reviewed_result.scalar() or 0)
+            
+            # 判断是否紧急（临近截止时间且有待批改）
+            from datetime import datetime, timedelta
+            is_urgent = (
+                task.deadline and 
+                task.deadline <= datetime.utcnow() + timedelta(hours=24) and
+                pending > 0
+            )
+            
+            # 根据筛选条件过滤
+            if filter == "urgent" and not is_urgent:
+                continue
+            elif filter == "ongoing" and task.status != TaskStatus.ONGOING:
+                continue  
+            elif filter == "completed" and (task.status != TaskStatus.ENDED or pending > 0):
+                continue
+                
+            task_data = {
+                "id": task.id,
+                "title": task.title,
+                "status": task.status.value.lower(),
+                "course_date": task.created_at.isoformat() if task.created_at else None,
+                "deadline": task.deadline.isoformat() if task.deadline else None,
+                "task_type": "homework",
+                "stats": {
+                    "submitted": total_submitted,
+                    "pending": pending,
+                    "reviewed": reviewed,
+                    "total_students": total_submitted  # 假设每个学生只提交一次
+                },
+                "is_urgent": is_urgent
+            }
+            
+            result_tasks.append(task_data)
+        
+        # 分页
+        start = (page - 1) * page_size
+        end = start + page_size
+        paginated_tasks = result_tasks[start:end]
+        has_more = end < len(result_tasks)
+        
+        return ResponseBase(
+            data={
+                "tasks": paginated_tasks,
+                "has_more": has_more,
+                "total": len(result_tasks)
+            }
+        )
+        
+    except Exception as e:
+        print(f"[ERROR] 获取批改任务失败: {e}")
+        # 如果数据库查询失败，返回空结果而不是错误
+        return ResponseBase(
+            data={
+                "tasks": [],
+                "has_more": False,
+                "total": 0
+            }
+        )
 
 
 @router.get("/grading/tasks-fixed", response_model=ResponseBase)
@@ -900,4 +944,52 @@ async def list_admin_tasks(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get admin tasks: {str(e)}"
+        )
+
+
+from pydantic import BaseModel
+
+class InputStatsRequest(BaseModel):
+    textCount: int
+    voiceCount: int = 0
+    mixedCount: int = 0
+    reportTime: Optional[int] = None
+
+@router.post("/statistics/input-methods", response_model=ResponseBase)
+async def record_input_statistics(
+    request: InputStatsRequest,
+    current_user: User = Depends(get_current_teacher),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Record input method statistics for grading (teacher only)
+    """
+    try:
+        # 记录输入统计（目前简单记录到日志，后续可以存储到数据库）
+        timestamp = datetime.fromtimestamp(request.reportTime / 1000) if request.reportTime else datetime.now()
+        
+        print(f"[INPUT_STATS] Teacher {current_user.id} - Text: {request.textCount}, Voice: {request.voiceCount}, Mixed: {request.mixedCount} at {timestamp}")
+        
+        # TODO: 后续可以添加数据库存储逻辑
+        # input_stats = InputStatistics(
+        #     user_id=current_user.id,
+        #     text_count=text_count,
+        #     voice_count=voice_count,
+        #     mixed_count=mixed_count,
+        #     recorded_at=timestamp
+        # )
+        # db.add(input_stats)
+        # await db.commit()
+        
+        return ResponseBase(
+            code=0,
+            msg="输入统计记录成功",
+            data={"recorded": True}
+        )
+        
+    except Exception as e:
+        print(f"Input statistics error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to record input statistics: {str(e)}"
         )

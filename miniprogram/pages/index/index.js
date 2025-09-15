@@ -117,16 +117,20 @@ Page({
       // 阶段3: 异步加载任务列表（不阻塞首屏渲染）
       setTimeout(async () => {
         console.log('🎯 [DEBUG] 开始异步加载任务列表...');
-        console.log('🎯 [DEBUG] 重置loading状态以允许任务加载');
-        // 重置loading状态，允许loadTaskList执行
-        this.setData({ loading: false });
+        console.log('🎯 [DEBUG] 强制重置所有loading状态以允许任务加载');
+        // 强制重置所有loading状态，允许loadTaskList执行
+        this.setData({ 
+          loading: false, 
+          loadingMore: false, 
+          refreshing: false 
+        });
         try {
           console.log('🎯 [DEBUG] 调用 this.loadTaskList()...');
           await this.loadTaskList();
           console.log('🎯 [DEBUG] 任务列表加载完成');
         } catch (error) {
           console.error('🎯 [DEBUG] 任务列表加载失败:', error);
-          this.setData({ loading: false });
+          this.setData({ loading: false, loadingMore: false, refreshing: false });
         }
       }, 50); // 很短的延迟，让首屏先渲染
       
@@ -203,6 +207,12 @@ Page({
   async loadTaskList(loadMore = false) {
     console.log('🎯 [DEBUG] loadTaskList 函数开始执行, loadMore:', loadMore);
     console.log('🎯 [DEBUG] 当前loading状态:', this.data.loading, this.data.loadingMore);
+    console.log('🎯 [DEBUG] 当前data对象:', JSON.stringify({
+      loading: this.data.loading,
+      loadingMore: this.data.loadingMore,
+      page: this.data.page,
+      currentFilter: this.data.currentFilter
+    }));
     
     if (this.data.loading || this.data.loadingMore) {
       console.log('🎯 [DEBUG] 已在加载中，跳过请求');

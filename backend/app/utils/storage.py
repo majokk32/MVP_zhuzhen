@@ -20,16 +20,35 @@ class OSSStorage:
     
     def __init__(self):
         """Initialize OSS client"""
-        if not all([settings.OSS_ACCESS_KEY, settings.OSS_SECRET_KEY, 
-                   settings.OSS_ENDPOINT, settings.OSS_BUCKET]):
-            # For development, we'll use local storage
+        # Check if OSS credentials are properly configured (not placeholder values)
+        oss_configured = (
+            settings.OSS_ACCESS_KEY and 
+            settings.OSS_SECRET_KEY and 
+            settings.OSS_ENDPOINT and 
+            settings.OSS_BUCKET and
+            settings.OSS_ACCESS_KEY != "your-oss-access-key" and
+            settings.OSS_SECRET_KEY != "your-oss-secret-key" and
+            not settings.OSS_ACCESS_KEY.startswith("your-") and
+            not settings.OSS_SECRET_KEY.startswith("your-")
+        )
+        
+        if not oss_configured or settings.ENVIRONMENT == "development":
+            # For development or missing credentials, use local storage
+            print(f"[STORAGE] 使用本地存储 (开发环境或OSS未配置)")
             self.use_local = True
             self.local_dir = "uploads"
             os.makedirs(self.local_dir, exist_ok=True)
         else:
+            print(f"[STORAGE] 使用阿里云OSS存储")
             self.use_local = False
-            self.auth = oss2.Auth(settings.OSS_ACCESS_KEY, settings.OSS_SECRET_KEY)
-            self.bucket = oss2.Bucket(self.auth, settings.OSS_ENDPOINT, settings.OSS_BUCKET)
+            try:
+                self.auth = oss2.Auth(settings.OSS_ACCESS_KEY, settings.OSS_SECRET_KEY)
+                self.bucket = oss2.Bucket(self.auth, settings.OSS_ENDPOINT, settings.OSS_BUCKET)
+            except Exception as e:
+                print(f"[STORAGE] OSS初始化失败，回退到本地存储: {e}")
+                self.use_local = True
+                self.local_dir = "uploads"
+                os.makedirs(self.local_dir, exist_ok=True)
     
     async def upload_image(self, file_content: bytes, filename: str, 
                           content_type: str = "image/jpeg") -> str:
