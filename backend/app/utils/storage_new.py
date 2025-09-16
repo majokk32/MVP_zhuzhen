@@ -247,45 +247,6 @@ class EnhancedStorage:
             'submission_time': submission_time.isoformat()
         }
 
-    async def upload_image(self, file_content: bytes, filename: str, 
-                          content_type: str = "image/jpeg") -> str:
-        """
-        Upload image to storage (legacy method for backward compatibility)
-        """
-        try:
-            # Generate unique filename
-            ext = filename.split('.')[-1] if '.' in filename else 'jpg'
-            date_path = datetime.now().strftime("%Y%m%d")
-            unique_filename = f"{uuid.uuid4().hex}.{ext}"
-            object_name = f"submissions/{date_path}/{unique_filename}"
-            
-            if self.use_local:
-                # Local storage for development
-                local_path = os.path.join(self.local_dir, object_name)
-                os.makedirs(os.path.dirname(local_path), exist_ok=True)
-                
-                with open(local_path, 'wb') as f:
-                    f.write(file_content)
-                
-                # Return a local URL
-                return f"/uploads/{object_name}"
-            else:
-                # Upload to OSS
-                result = self.bucket.put_object(
-                    object_name, 
-                    file_content,
-                    headers={'Content-Type': content_type}
-                )
-                
-                if result.status != 200:
-                    raise StorageError(f"OSS upload failed with status {result.status}")
-                
-                # Return public URL
-                return f"https://{settings.OSS_BUCKET}.{settings.OSS_ENDPOINT}/{object_name}"
-                
-        except Exception as e:
-            raise StorageError(f"Failed to upload file: {str(e)}")
-
     async def delete_file(self, file_url: str) -> bool:
         """Delete file from storage"""
         try:
@@ -305,11 +266,6 @@ class EnhancedStorage:
         except Exception:
             return False
 
-    async def get_upload_token(self) -> Optional[dict]:
-        """Get STS token for direct upload (placeholder for future)"""
-        return None
 
-
-# Global instances for backward compatibility
-storage = EnhancedStorage()
-enhanced_storage = storage
+# Global enhanced storage instance
+enhanced_storage = EnhancedStorage()

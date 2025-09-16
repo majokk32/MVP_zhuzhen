@@ -3,6 +3,7 @@ const app = getApp();
 const authModule = require('../../modules/auth/auth');
 const taskModule = require('../../modules/task/task');
 const submissionModule = require('../../modules/submission/submission');
+const { formatDateTime } = require('../../utils/time-formatter');
 
 Page({
   data: {
@@ -12,6 +13,10 @@ Page({
     isTeacher: false,
     isOverdue: false,
     remainingTime: '',
+    
+    // 格式化时间显示
+    formattedCreatedAt: '',
+    formattedDeadline: '',
     
     // 提交相关
     uploadedImages: [],
@@ -173,7 +178,9 @@ Page({
         task,
         taskTypeText: typeMap[task.type] || '任务',
         isOverdue,
-        remainingTime
+        remainingTime,
+        formattedCreatedAt: formatDateTime(task.created_at),
+        formattedDeadline: task.deadline ? formatDateTime(task.deadline) : '无截止时间'
       });
       
       // 如果是教师，加载统计数据
@@ -354,7 +361,13 @@ Page({
 
   // 提交作业
   async submitHomework() {
-    if (!this.data.canSubmit || this.data.isSubmitting) {
+    if (!this.data.canSubmit || this.data.isSubmitting || this.data.isOverdue) {
+      if (this.data.isOverdue) {
+        wx.showToast({
+          title: '作业已截止，无法提交',
+          icon: 'none'
+        });
+      }
       return;
     }
     

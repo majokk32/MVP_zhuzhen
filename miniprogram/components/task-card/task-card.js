@@ -1,6 +1,7 @@
 
 // components/task-card/task-card.js
 const authModule = require('../../modules/auth/auth');
+const { formatDateTime } = require('../../utils/time-formatter');
 
 Component({
   /**
@@ -31,7 +32,9 @@ Component({
     cardStyle: "normal",
     // 权限状态
     userPermission: null,
-    showPermissionBadge: false
+    showPermissionBadge: false,
+    // 格式化时间
+    formattedTime: ""
   },
 
   /**
@@ -43,6 +46,8 @@ Component({
       this.calculateDisplayStatus()
       // 检查用户权限
       this.checkUserPermission()
+      // 格式化时间显示
+      this.formatTimeDisplay()
       // 创建渐入动画
       const animation = wx.createAnimation({
         duration: 300,
@@ -195,6 +200,20 @@ Component({
         rightStatus,
         leftStatus,
         cardStyle
+      })
+    },
+
+    // 格式化时间显示
+    formatTimeDisplay() {
+      const task = this.properties.task
+      if (!task) return
+
+      // 优先显示截止时间，其次是创建时间
+      const timeToFormat = task.deadline || task.created_at
+      const formattedTime = formatDateTime(timeToFormat)
+      
+      this.setData({
+        formattedTime
       })
     }
   }
