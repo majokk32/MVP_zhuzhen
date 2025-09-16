@@ -9,7 +9,7 @@
       <view class="task-title">{{task.title}}</view>
       <view class="task-meta">
         <text class="task-type {{task.type}}">{{taskTypeText}}</text>
-        <text class="task-date">{{task.created_at}}</text>
+        <text class="task-date">{{formattedCreatedAt}}</text>
       </view>
     </view>
     
@@ -26,7 +26,7 @@
     <view class="deadline-info">
       <view class="deadline-label">截止时间：</view>
       <view class="deadline-time {{isOverdue ? 'overdue' : ''}}">
-        {{task.deadline || '无截止时间'}}
+        {{formattedDeadline}}
         <text wx:if="{{remainingTime}}" class="remaining-time">（{{remainingTime}}）</text>
       </view>
     </view>
@@ -102,11 +102,11 @@
 
       <!-- 提交按钮 -->
       <button 
-        class="submit-btn {{canSubmit ? '' : 'disabled'}}" 
-        disabled="{{!canSubmit || isSubmitting}}"
+        class="submit-btn {{canSubmit && !isOverdue ? '' : 'disabled'}}" 
+        disabled="{{!canSubmit || isSubmitting || isOverdue}}"
         bindtap="submitHomework"
       >
-        {{isSubmitting ? '提交中...' : '提交作业'}}
+        {{isOverdue ? '作业已截止' : (isSubmitting ? '提交中...' : '提交作业')}}
       </button>
     </view>
 

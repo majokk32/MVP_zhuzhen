@@ -24,7 +24,12 @@ def calculate_display_status(task: Task, submission: Optional[Submission] = None
     Returns:
         包含显示状态的字典
     """
-    now = datetime.utcnow()
+    # Use Chinese time (UTC+8) as standard time for the app
+    from datetime import timezone, timedelta
+    china_tz = timezone(timedelta(hours=8))
+    now_china = datetime.now(china_tz)
+    # Convert to naive datetime for comparison with database
+    now = now_china.replace(tzinfo=None)
     
     # 计算右上角状态
     if not submission:

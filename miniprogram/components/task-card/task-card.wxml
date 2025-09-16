@@ -43,9 +43,9 @@
         </view>
       </view>
       
-      <!-- 右下角：课程日期 -->
+      <!-- 右下角：任务截止时间 -->
       <view class="card-date">
-        <text class="date-text">{{task.course_date || task.created_at}}</text>
+        <text class="date-text">{{formattedTime}}</text>
       </view>
     </view>
   </view>

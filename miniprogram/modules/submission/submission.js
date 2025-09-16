@@ -172,18 +172,35 @@ class SubmissionModule {
 
   // 降级上传方式（原有逻辑）
   async _legacyUploadImages(imagePaths) {
+    console.log('🚀 [DEBUG] 开始上传图片', { count: imagePaths.length, paths: imagePaths });
+    
     const uploadPromises = imagePaths.map(async (path, index) => {
       try {
         const app = getApp();
+        console.log(`📤 [DEBUG] 上传第${index + 1}张图片:`, {
+          path: path,
+          url: '/submissions/upload-image',
+          baseUrl: app.globalData.baseUrl,
+          token: app.globalData.token ? 'EXISTS' : 'MISSING'
+        });
+        
         const result = await app.uploadFile({
           url: '/submissions/upload-image',
           filePath: path,
           name: 'file'
         });
+        
+        console.log(`✅ [DEBUG] 第${index + 1}张图片上传成功:`, result);
         return { success: true, url: result.url || result, index, error: null };
       } catch (error) {
-        console.error(`图片${index + 1}上传失败:`, error);
-        return { success: false, url: null, index, error: error.message };
+        console.error(`❌ [ERROR] 图片${index + 1}上传失败:`, {
+          path: path,
+          error: error,
+          message: error.message,
+          statusCode: error.statusCode,
+          errMsg: error.errMsg
+        });
+        return { success: false, url: null, index, error: error.message || error.errMsg || '上传失败' };
       }
     });
     

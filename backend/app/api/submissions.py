@@ -19,12 +19,29 @@ from app.schemas import (
     SubmissionInfo, FileUploadResponse
 )
 from app.auth import get_current_user, get_current_teacher
-from app.utils.storage import storage, StorageError
+from app.utils.storage import storage, StorageError, enhanced_storage
 from app.config import settings
 from app.services.async_learning_data import trigger_checkin_async, trigger_submission_score_async, trigger_grading_score_async
 from app.utils.notification import notification_service
 
 router = APIRouter(prefix="/submissions")
+
+# Supported file types with their max sizes (in bytes)
+SUPPORTED_FILE_TYPES = {
+    # Images
+    'image/jpeg': 10 * 1024 * 1024,
+    'image/jpg': 10 * 1024 * 1024,
+    'image/png': 10 * 1024 * 1024,
+    'image/gif': 10 * 1024 * 1024,
+    'image/webp': 10 * 1024 * 1024,
+    
+    # Documents
+    'application/pdf': 10 * 1024 * 1024,
+    'application/msword': 10 * 1024 * 1024,
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 10 * 1024 * 1024,
+    'text/plain': 10 * 1024 * 1024,
+    'application/rtf': 10 * 1024 * 1024,
+}
 
 
 @router.post("/upload-image", response_model=ResponseBase)
@@ -77,6 +94,137 @@ async def upload_image(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
+        )
+
+
+@router.post("/upload-files", response_model=ResponseBase)
+async def upload_multiple_files(
+    task_id: int = Form(...),
+    files: List[UploadFile] = File(...),
+    text_content: str = Form(""),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Upload multiple files (images, documents, text) for a submission
+    支持图片、文件、文字上传，统一10MB限制
+    """
+    # Validate task exists
+    task_result = await db.execute(select(Task).where(Task.id == task_id))
+    task = task_result.scalar_one_or_none()
+    
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="任务不存在"
+        )
+    
+    # Check submission count limit
+    current_count = await enhanced_storage.get_submission_count(task_id, current_user.id)
+    if current_count >= 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="已达到最大提交次数（3次）"
+        )
+    
+    # Prepare files data for upload
+    files_data = []
+    
+    # Process uploaded files
+    for file in files:
+        # Validate file type
+        if file.content_type not in SUPPORTED_FILE_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"不支持的文件类型: {file.content_type}"
+            )
+        
+        # Validate file size
+        contents = await file.read()
+        max_size = SUPPORTED_FILE_TYPES[file.content_type]
+        
+        if len(contents) > max_size:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"文件 {file.filename} 超过大小限制 10MB"
+            )
+        
+        files_data.append({
+            'content': contents,
+            'filename': file.filename,
+            'content_type': file.content_type
+        })
+    
+    # Add text content as a file if provided
+    if text_content.strip():
+        text_bytes = text_content.encode('utf-8')
+        if len(text_bytes) > 10 * 1024 * 1024:  # 10MB limit for text too
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="文字内容超过10MB限制"
+            )
+        
+        files_data.append({
+            'content': text_bytes,
+            'filename': 'submission_text.txt',
+            'content_type': 'text/plain'
+        })
+    
+    try:
+        # Upload all files to organized folder structure
+        upload_result = await enhanced_storage.upload_files_to_submission(
+            files_data, task_id, current_user.id
+        )
+        
+        if not upload_result['success']:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"部分文件上传失败: {upload_result['failed_files']}"
+            )
+        
+        return ResponseBase(
+            data={
+                'submission_count': upload_result['submission_count'],
+                'uploaded_files': upload_result['uploaded_files'],
+                'folder_path': upload_result['folder_path'],
+                'submission_time': upload_result['submission_time'],
+                'remaining_attempts': 3 - upload_result['submission_count']
+            },
+            msg=f"文件上传成功！第 {upload_result['submission_count']} 次提交"
+        )
+        
+    except StorageError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get("/submission-count/{task_id}", response_model=ResponseBase)
+async def get_submission_count(
+    task_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get current submission count for a student's task
+    获取学生某个任务的提交次数
+    """
+    try:
+        count = await enhanced_storage.get_submission_count(task_id, current_user.id)
+        
+        return ResponseBase(
+            data={
+                'task_id': task_id,
+                'submission_count': count,
+                'remaining_attempts': 3 - count,
+                'can_submit': count < 3
+            }
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"获取提交次数失败: {str(e)}"
         )
 
 

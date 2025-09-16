@@ -53,7 +53,7 @@ async def create_task(
 
 @router.get("/", response_model=ResponseBase)
 async def list_tasks(
-    task_status: Optional[str] = Query(None, description="任务状态筛选: ongoing, ended"),
+    status: Optional[str] = Query(None, description="任务状态筛选: ongoing, ended"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     keyword: str = Query("", description="搜索关键词"),
@@ -65,37 +65,83 @@ async def list_tasks(
     Fixed: status parameter conflict, proper count query, optimized N+1
     """
     try:
-        # 1) Build unified filters
+        # 1) Build unified filters - consider deadline-based status
         filters = []
-        if task_status in ("ongoing", "ended"):
-            if task_status == "ongoing":
-                filters.append(Task.status == TaskStatus.ONGOING)
-            else:
-                filters.append(Task.status == TaskStatus.ENDED)
+        # Use Chinese time (UTC+8) as standard time for the app
+        from datetime import timezone, timedelta
+        china_tz = timezone(timedelta(hours=8))
+        now_china = datetime.now(china_tz)
+        # Convert to naive datetime for comparison with database
+        now = now_china.replace(tzinfo=None)
+        
+        if status in ("ongoing", "ended"):
+            if status == "ongoing":
+                # Ongoing: status is ONGOING and deadline not passed (or no deadline)
+                filters.append(
+                    and_(
+                        Task.status == TaskStatus.ONGOING,
+                        case(
+                            (Task.deadline.is_(None), True),  # No deadline = ongoing
+                            else_=Task.deadline > now  # Has deadline and not passed
+                        )
+                    )
+                )
+            else:  # ended
+                # Ended: status is ENDED or (status is ONGOING but deadline passed)
+                filters.append(
+                    case(
+                        (Task.status == TaskStatus.ENDED, True),
+                        (
+                            and_(
+                                Task.status == TaskStatus.ONGOING,
+                                Task.deadline.is_not(None),
+                                Task.deadline <= now
+                            ), 
+                            True
+                        ),
+                        else_=False
+                    )
+                )
         
         if keyword:
             filters.append(Task.title.ilike(f"%{keyword}%"))
         
-        # 2) Base query for pagination
-        base_query = (
-            select(Task)
-            .where(*filters) if filters else select(Task)
-        ).order_by(desc(Task.created_at))
+        # 2) Get all tasks first, then filter in memory for deadline-based status
+        # This is necessary because SQL case expressions in WHERE clauses are complex
+        all_tasks_query = select(Task)
+        if keyword:
+            all_tasks_query = all_tasks_query.where(Task.title.ilike(f"%{keyword}%"))
+        all_tasks_query = all_tasks_query.order_by(desc(Task.created_at))
         
-        # 3) Count query using same filters
-        count_subq = (
-            select(Task.id)
-            .where(*filters) if filters else select(Task.id)
-        ).subquery()
-        count_query = select(func.count()).select_from(count_subq)
+        all_tasks_result = await db.execute(all_tasks_query)
+        all_tasks = all_tasks_result.scalars().all()
         
-        # 4) Execute queries
+        # Filter tasks based on deadline-aware status
+        filtered_tasks = []
+        print(f"[DEBUG] Filtering by status: {status}, Chinese time: {now_china}, naive time: {now}")
+        
+        if status == "ongoing":
+            for task in all_tasks:
+                is_ongoing = task.status == TaskStatus.ONGOING and (task.deadline is None or task.deadline > now)
+                print(f"[DEBUG] Task {task.id} ({task.title}): status={task.status}, deadline={task.deadline}, is_ongoing={is_ongoing}")
+                if is_ongoing:
+                    filtered_tasks.append(task)
+        elif status == "ended":
+            for task in all_tasks:
+                is_ended = (task.status == TaskStatus.ENDED or 
+                          (task.status == TaskStatus.ONGOING and task.deadline and task.deadline <= now))
+                print(f"[DEBUG] Task {task.id} ({task.title}): status={task.status}, deadline={task.deadline}, is_ended={is_ended}")
+                if is_ended:
+                    filtered_tasks.append(task)
+        else:
+            filtered_tasks = all_tasks
+            
+        print(f"[DEBUG] Filtered {len(filtered_tasks)} tasks from {len(all_tasks)} total tasks")
+        
+        # Apply pagination to filtered results
+        total = len(filtered_tasks)
         offset = (page - 1) * page_size
-        result = await db.execute(base_query.offset(offset).limit(page_size))
-        tasks = result.scalars().all()
-        
-        total_result = await db.execute(count_query)
-        total = int(total_result.scalar() or 0)
+        tasks = filtered_tasks[offset:offset + page_size]
     
         # 5) Get submissions in batch to avoid N+1
         submissions_by_task: Dict[int, object] = {}
