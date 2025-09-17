@@ -127,32 +127,119 @@
     <view class="submission-content">
       <view class="section-title">
         <text class="icon">📝</text>
-        <text>作业内容</text>
+        <text>学生提交内容</text>
       </view>
       
-      <!-- 图片展示 -->
-      <view wx:if="{{currentSubmission.images && currentSubmission.images.length > 0}}" class="content-images">
-        <scroll-view scroll-x class="image-scroll">
-          <view class="image-list">
-            <image 
-              wx:for="{{currentSubmission.images}}" 
-              wx:key="index"
-              src="{{item}}" 
-              mode="aspectFill"
-              class="content-image"
-              bindtap="previewImage"
-              data-url="{{item}}"
-              lazy-load="true"
-              show-menu-by-longpress="false"
-              binderror="onImageError"
-            />
+      <!-- 提交统计信息 -->
+      <view class="submission-meta">
+        <view class="meta-item">
+          <text class="meta-label">提交时间：</text>
+          <text class="meta-value">{{currentSubmission.submitted_at || '未知'}}</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">提交次数：</text>
+          <text class="meta-value">第{{currentSubmission.attemptNumber || 1}}次</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-label">内容统计：</text>
+          <text class="meta-value">
+            {{currentSubmission.images && currentSubmission.images.length > 0 ? currentSubmission.images.length + '张图片' : ''}}
+            {{currentSubmission.documents && currentSubmission.documents.length > 0 ? (currentSubmission.images && currentSubmission.images.length > 0 ? ' + ' : '') + currentSubmission.documents.length + '个文档' : ''}}
+            {{currentSubmission.text && currentSubmission.text.trim() ? (currentSubmission.images && currentSubmission.images.length > 0 || currentSubmission.documents && currentSubmission.documents.length > 0 ? ' + ' : '') + '文字说明' : ''}}
+            {{(!currentSubmission.images || currentSubmission.images.length === 0) && (!currentSubmission.documents || currentSubmission.documents.length === 0) && (!currentSubmission.text || !currentSubmission.text.trim()) ? '无内容' : ''}}
+          </text>
+        </view>
+      </view>
+      
+      <!-- 内容区域分块展示 -->
+      <view class="submission-content-sections">
+        
+        <!-- 文字内容区域 -->
+        <view wx:if="{{currentSubmission.text && currentSubmission.text.trim()}}" class="content-section text-section">
+          <view class="content-header">
+            <text class="content-icon">💬</text>
+            <text class="content-title">文字说明</text>
+            <text class="content-count">({{currentSubmission.text.length}}字)</text>
           </view>
-        </scroll-view>
+          <view class="content-text">
+            <text user-select="true">{{currentSubmission.text}}</text>
+          </view>
+        </view>
+        
+        <!-- 图片内容区域 -->
+        <view wx:if="{{currentSubmission.images && currentSubmission.images.length > 0}}" class="content-section image-section">
+          <view class="content-header">
+            <text class="content-icon">🖼️</text>
+            <text class="content-title">提交图片</text>
+            <text class="content-count">({{currentSubmission.images.length}}张)</text>
+          </view>
+          <view class="content-images">
+            <scroll-view scroll-x class="image-scroll" show-scrollbar="false">
+              <view class="image-list">
+                <view wx:for="{{currentSubmission.images}}" wx:key="index" class="image-item">
+                  <image 
+                    src="{{item}}" 
+                    mode="aspectFill"
+                    class="content-image"
+                    bindtap="previewImage"
+                    data-url="{{item}}"
+                    lazy-load="true"
+                    show-menu-by-longpress="false"
+                    binderror="onImageError"
+                  />
+                  <view class="image-index">{{index + 1}}</view>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+          
+          <!-- 图片操作提示 -->
+          <view class="image-hint">
+            <text>点击图片可放大查看</text>
+          </view>
+        </view>
+        
+        <!-- 文档内容区域 -->
+        <view wx:if="{{currentSubmission.documents && currentSubmission.documents.length > 0}}" class="content-section document-section">
+          <view class="content-header">
+            <text class="content-icon">📄</text>
+            <text class="content-title">提交文档</text>
+            <text class="content-count">({{currentSubmission.documents.length}}个)</text>
+          </view>
+          <view class="content-documents">
+            <view wx:for="{{currentSubmission.documents}}" wx:key="index" class="document-item">
+              <view class="document-icon">
+                <text wx:if="{{item.type === 'pdf'}}">📖</text>
+                <text wx:elif="{{item.type === 'word'}}">📝</text>
+                <text wx:else>📄</text>
+              </view>
+              <view class="document-info">
+                <text class="document-name">{{item.name}}</text>
+                <text class="document-type">{{item.type === 'pdf' ? 'PDF文档' : item.type === 'word' ? 'Word文档' : '文档文件'}}</text>
+              </view>
+              <view class="document-actions">
+                <button class="action-btn download-btn" bindtap="downloadDocument" data-url="{{item.url}}" data-name="{{item.name}}">
+                  下载
+                </button>
+              </view>
+            </view>
+          </view>
+          
+          <!-- 文档操作提示 -->
+          <view class="document-hint">
+            <text>点击下载按钮可保存文档到本地</text>
+          </view>
+        </view>
+        
       </view>
 
-      <!-- 文字内容 -->
-      <view wx:if="{{currentSubmission.text}}" class="content-text">
-        <text>{{currentSubmission.text}}</text>
+      <!-- 空状态提示 -->
+      <view wx:if="{{(!currentSubmission.images || currentSubmission.images.length === 0) && (!currentSubmission.documents || currentSubmission.documents.length === 0) && (!currentSubmission.text || !currentSubmission.text.trim())}}" class="content-section empty-section">
+        <view class="empty-content">
+          <text class="empty-icon">📄</text>
+          <text class="empty-text">学生未提交任何内容</text>
+          <text class="empty-hint">请联系学生重新提交作业</text>
+        </view>
       </view>
     </view>
 
@@ -213,9 +300,9 @@
 
       <!-- 混合输入评语区域 -->
       <view class="feedback-input-section">
-        <view class="input-label">批改评语</view>
+        <view class="input-label">批改评语（选填）</view>
         <mixed-input 
-          placeholder="请输入批改评语，给学生一些建议和鼓励..."
+          placeholder="请输入批改评语（选填），给学生一些建议和鼓励..."
           maxLength="500"
           value="{{gradeData.feedback}}"
           bind:input="onMixedInput"

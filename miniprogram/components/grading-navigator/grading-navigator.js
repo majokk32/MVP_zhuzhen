@@ -68,13 +68,19 @@ Component({
     progressActionText: '继续批改',
     // 手势识别
     touchStartX: 0,
-    touchStartY: 0
+    touchStartY: 0,
+    // 计算属性缓存
+    progressPercent: 0,
+    completedCount: 0,
+    pendingCount: 0,
+    avgGradingTime: '0min'
   },
 
   observers: {
     'currentIndex, totalCount, submissionList': function(currentIndex, totalCount, submissionList) {
       this.updateSmartRecommendations();
       this.updateProgressReminder();
+      this.updateDisplayData();
     },
     'gradingStats': function(stats) {
       this.updateEfficiencyDisplay();
@@ -92,8 +98,29 @@ Component({
     initComponent() {
       this.updateSmartRecommendations();
       this.updateProgressReminder();
+      this.updateDisplayData();
       this.bindKeyboardEvents();
       this.startGestureHintTimer();
+    },
+
+    // 更新显示数据
+    updateDisplayData() {
+      const { currentIndex, totalCount, gradingStats } = this.properties;
+      
+      // 计算进度百分比
+      const progressPercent = totalCount > 0 ? Math.round(((currentIndex + 1) / totalCount) * 100) : 0;
+      
+      // 更新统计数据
+      const completedCount = gradingStats.completedCount || 0;
+      const pendingCount = gradingStats.pendingCount || 0;
+      const avgGradingTime = gradingStats.avgGradingTime || '0min';
+      
+      this.setData({
+        progressPercent,
+        completedCount,
+        pendingCount,
+        avgGradingTime
+      });
     },
 
     // 计算进度百分比
@@ -230,11 +257,16 @@ Component({
     // 下一份作业
     nextSubmission() {
       const { currentIndex, totalCount } = this.properties;
+      console.log('nextSubmission clicked:', { currentIndex, totalCount });
+      
       if (currentIndex < totalCount - 1) {
+        console.log('Triggering navigate event to index:', currentIndex + 1);
         this.triggerEvent('navigate', {
           action: 'next',
           targetIndex: currentIndex + 1
         });
+      } else {
+        console.log('Already at last submission, cannot go next');
       }
     },
 

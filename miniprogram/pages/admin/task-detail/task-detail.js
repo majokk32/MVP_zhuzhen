@@ -1,4 +1,6 @@
 // 任务详情管理页
+const { getChinaTime } = require('../../../utils/time-formatter');
+
 Page({
   /**
    * 页面的初始数据
@@ -109,7 +111,7 @@ Page({
       
       if (res.code === 0) {
         const taskData = res.data
-        const isOverdue = taskData.deadline && new Date(taskData.deadline) < new Date()
+        const isOverdue = taskData.deadline && new Date(taskData.deadline) < getChinaTime()
         
         this.setData({
           taskInfo: {

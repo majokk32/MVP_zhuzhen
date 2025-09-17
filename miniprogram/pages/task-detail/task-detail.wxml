@@ -34,7 +34,7 @@
     <!-- 提交限制提示 -->
     <view class="submit-limit-tip" wx:if="{{!isTeacher}}">
       <text class="icon">💡</text>
-      <text>每个任务最多可提交3次，当前已提交 {{submissionCount}}/3 次</text>
+      <text>每个任务最多可提交3次，当前已提交 {{submissionCount}}/3 次，剩余 {{3 - submissionCount}} 次</text>
     </view>
 
     <!-- 待复盘重置提示 -->
@@ -54,37 +54,67 @@
         <text>提交作业</text>
       </view>
       
-      <!-- 图片上传区域 -->
+      <!-- 多文件上传区域 -->
       <view class="upload-area">
-        <view class="upload-grid">
-          <!-- 已上传的图片 -->
-          <view wx:for="{{uploadedImages}}" wx:key="index" class="upload-item">
+        <!-- 文件类型选择器 -->
+        <view class="file-type-selector">
+          <view class="selector-item {{selectedFileType === 'image' ? 'active' : ''}}" bindtap="selectFileType" data-type="image">
+            <text class="type-icon">🖼️</text>
+            <text class="type-name">图片</text>
+          </view>
+          <view class="selector-item {{selectedFileType === 'document' ? 'active' : ''}}" bindtap="selectFileType" data-type="document">
+            <text class="type-icon">📄</text>
+            <text class="type-name">文档</text>
+          </view>
+        </view>
+
+        <!-- 已上传文件列表 -->
+        <view class="uploaded-files">
+          <!-- 图片显示为缩略图 -->
+          <view wx:if="{{item.type === 'image'}}" wx:for="{{uploadedFiles}}" wx:key="index" class="image-item">
             <image 
-              src="{{item}}" 
-              mode="aspectFill" 
-              bindtap="previewImage" 
-              data-url="{{item}}"
-              lazy-load="true"
-              show-menu-by-longpress="false"
-              binderror="onImageError"
+              src="{{item.path}}" 
+              class="preview-image" 
+              mode="aspectFill"
+              bindtap="previewFile" 
+              data-index="{{index}}"
             />
-            <view class="delete-btn" bindtap="deleteImage" data-index="{{index}}">
-              <text>×</text>
-            </view>
+            <view class="image-delete-btn" bindtap="deleteFile" data-index="{{index}}">×</view>
+            <text class="image-name">{{item.shortName || item.name}}</text>
           </view>
           
-          <!-- 上传按钮 -->
-          <view wx:if="{{uploadedImages.length < maxImages}}" class="upload-btn" bindtap="chooseImage">
-            <text class="upload-icon">+</text>
-            <text class="upload-text">上传图片</text>
-            <text class="upload-tip">{{uploadedImages.length}}/{{maxImages}}</text>
+          <!-- 文档显示为列表 -->
+          <view wx:if="{{item.type === 'document'}}" wx:for="{{uploadedFiles}}" wx:key="index" class="file-item">
+            <view class="file-info">
+              <text class="file-icon">{{item.icon}}</text>
+              <view class="file-details">
+                <text class="file-name">{{item.shortName || item.name}}</text>
+                <text class="file-size">{{item.size}}</text>
+              </view>
+            </view>
+            <view class="file-actions">
+              <text class="action-btn delete" bindtap="deleteFile" data-index="{{index}}">删除</text>
+            </view>
           </view>
         </view>
         
+        <!-- 上传按钮区域 -->
+        <view class="upload-buttons">
+          <button wx:if="{{selectedFileType === 'image'}}" class="upload-btn" bindtap="chooseImages">
+            <text class="upload-icon">+</text>
+            <text class="upload-text">选择图片</text>
+          </button>
+          <button wx:if="{{selectedFileType === 'document'}}" class="upload-btn" bindtap="chooseDocuments">
+            <text class="upload-icon">+</text>
+            <text class="upload-text">选择文档</text>
+          </button>
+        </view>
+        
         <view class="upload-tips">
-          <text>• 最多上传9张图片</text>
-          <text>• 支持jpg、png格式</text>
-          <text>• 单张图片不超过10MB</text>
+          <text wx:if="{{selectedFileType === 'image'}}">• 支持 jpg、png、gif、webp、bmp 格式</text>
+          <text wx:elif="{{selectedFileType === 'document'}}">• 支持 pdf、doc、docx、txt、rtf 格式</text>
+          <text>• 单个文件不超过10MB</text>
+          <text>• 总共已上传 {{uploadedFiles.length}} 个文件</text>
         </view>
       </view>
 
@@ -183,7 +213,7 @@
       <!-- 操作按钮 -->
       <view class="action-buttons">
         <button wx:if="{{submissionCount < 3}}" class="resubmit-btn" bindtap="resubmit">
-          重新提交（{{submissionCount}}/3）
+          重新提交（剩余{{3 - submissionCount}}次机会）
         </button>
       </view>
     </view>
@@ -259,7 +289,7 @@
       <!-- 操作按钮 -->
       <view class="action-buttons">
         <button wx:if="{{submissionCount < 3 && !task.is_ended}}" class="resubmit-btn outline" bindtap="resubmit">
-          重新提交（{{submissionCount}}/3）
+          重新提交（剩余{{3 - submissionCount}}次机会）
         </button>
         <button class="history-btn outline" bindtap="showMyGradingHistory">
           查看批改历史

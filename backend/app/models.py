@@ -22,7 +22,8 @@ class SubscriptionType(str, enum.Enum):
 
 
 class TaskStatus(str, enum.Enum):
-    ONGOING = "ongoing"
+    DRAFT = "draft"
+    ONGOING = "ongoing" 
     ENDED = "ended"
 
 
@@ -123,13 +124,13 @@ class Submission(Base):
     # Submission content
     images = Column(JSON, nullable=False)  # JSON array of image URLs
     text = Column(Text, nullable=True)  # Optional text content
-    submission_count = Column(Integer, default=1, nullable=False)  # 第几次提交 (max 3)
+    submit_count = Column(Integer, default=1, nullable=False)  # 第几次提交 (max 3)
     
     # Grading information
     status = Column(SQLEnum(SubmissionStatus), default=SubmissionStatus.SUBMITTED, nullable=False)
     score = Column(Float, nullable=True)  # 实际得分
     grade = Column(SQLEnum(Grade), nullable=True)  # 评价档位
-    feedback = Column(Text, nullable=True)  # 老师评语
+    comment = Column(Text, nullable=True)  # 老师评语
     graded_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     graded_at = Column(DateTime, nullable=True)
     

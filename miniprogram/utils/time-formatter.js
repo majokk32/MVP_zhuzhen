@@ -1,7 +1,20 @@
 /**
  * 时间格式化工具
  * 将各种时间格式转换为统一的显示格式：YYYY-MM-DD HH:mm
+ * 使用中国时间 (UTC+8) 作为标准时间
  */
+
+/**
+ * 获取中国时间 (UTC+8)
+ * @returns {Date} 中国时区的当前时间
+ */
+function getChinaTime() {
+  const now = new Date()
+  // 获取UTC时间，然后加上8小时得到中国时间
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000)
+  const chinaTime = new Date(utc + (8 * 3600000))
+  return chinaTime
+}
 
 /**
  * 格式化时间为 YYYY-MM-DD HH:mm 格式
@@ -84,7 +97,7 @@ function getRelativeTime(deadlineInput) {
     return ''
   }
   
-  const now = new Date()
+  const now = getChinaTime()
   const diffMs = deadline.getTime() - now.getTime()
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
   const diffHours = Math.ceil(diffMs / (1000 * 60 * 60))
@@ -111,5 +124,6 @@ function getRelativeTime(deadlineInput) {
 module.exports = {
   formatDateTime,
   formatDate,
-  getRelativeTime
+  getRelativeTime,
+  getChinaTime
 }

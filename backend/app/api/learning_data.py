@@ -103,20 +103,133 @@ async def get_learning_overview(
     包含连续天数、积分、提交次数等核心数据
     """
     try:
-        # Temporary fix: return mock data until async database migration is complete
+        # Get real data for current user
+        from app.models import Submission, SubmissionStatus
+        from sqlalchemy import select, func, and_
+        from datetime import datetime, timedelta, timezone
+        
+        # 1. Get total submission count
+        submission_count_result = await db.execute(
+            select(func.count(Submission.id)).where(
+                Submission.student_id == current_user.id
+            )
+        )
+        total_submissions = submission_count_result.scalar() or 0
+        
+        # 2. Calculate total score from graded submissions
+        score_result = await db.execute(
+            select(func.sum(Submission.score)).where(
+                and_(
+                    Submission.student_id == current_user.id,
+                    Submission.status == SubmissionStatus.GRADED,
+                    Submission.score.is_not(None)
+                )
+            )
+        )
+        total_score = int(score_result.scalar() or 0)
+        
+        # 3. Calculate monthly score (last 30 days)
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        monthly_score_result = await db.execute(
+            select(func.sum(Submission.score)).where(
+                and_(
+                    Submission.student_id == current_user.id,
+                    Submission.status == SubmissionStatus.GRADED,
+                    Submission.score.is_not(None),
+                    Submission.created_at >= thirty_days_ago
+                )
+            )
+        )
+        monthly_score = int(monthly_score_result.scalar() or 0)
+        
+        # 4. Calculate quarterly score (last 90 days)
+        ninety_days_ago = datetime.now() - timedelta(days=90)
+        quarterly_score_result = await db.execute(
+            select(func.sum(Submission.score)).where(
+                and_(
+                    Submission.student_id == current_user.id,
+                    Submission.status == SubmissionStatus.GRADED,
+                    Submission.score.is_not(None),
+                    Submission.created_at >= ninety_days_ago
+                )
+            )
+        )
+        quarterly_score = int(quarterly_score_result.scalar() or 0)
+        
+        # 5. Calculate this week's submissions (as proxy for checkins)
+        week_start = datetime.now() - timedelta(days=datetime.now().weekday())
+        week_checkins_result = await db.execute(
+            select(func.count(func.distinct(func.date(Submission.created_at)))).where(
+                and_(
+                    Submission.student_id == current_user.id,
+                    Submission.created_at >= week_start
+                )
+            )
+        )
+        week_checkins = int(week_checkins_result.scalar() or 0)
+        
+        # 6. Calculate streak data (consecutive days with submissions)
+        # Get all submission dates for this user, ordered by date
+        streak_result = await db.execute(
+            select(func.date(Submission.created_at)).where(
+                Submission.student_id == current_user.id
+            ).distinct().order_by(func.date(Submission.created_at).desc())
+        )
+        submission_dates = [row[0] for row in streak_result.fetchall()]
+        
+        current_streak = 0
+        best_streak = 0
+        temp_streak = 0
+        
+        if submission_dates:
+            # Calculate current streak
+            today = datetime.now().date()
+            current_date = today
+            for date in submission_dates:
+                if date == current_date or date == current_date - timedelta(days=1):
+                    current_streak += 1
+                    current_date = date - timedelta(days=1)
+                else:
+                    break
+            
+            # Calculate best streak
+            if len(submission_dates) > 1:
+                for i in range(len(submission_dates)):
+                    temp_streak = 1
+                    current_check_date = submission_dates[i]
+                    
+                    for j in range(i + 1, len(submission_dates)):
+                        expected_date = current_check_date - timedelta(days=1)
+                        if submission_dates[j] == expected_date:
+                            temp_streak += 1
+                            current_check_date = expected_date
+                        else:
+                            break
+                    
+                    best_streak = max(best_streak, temp_streak)
+            else:
+                best_streak = len(submission_dates)
+        
+        # 7. Get last submission date as last checkin date
+        last_submission_result = await db.execute(
+            select(func.max(Submission.created_at)).where(
+                Submission.student_id == current_user.id
+            )
+        )
+        last_submission = last_submission_result.scalar()
+        last_checkin_date = last_submission.strftime("%Y-%m-%d") if last_submission else None
+        
         data = {
             "user_id": current_user.id,
-            "current_streak": 2,
-            "best_streak": 1,
-            "total_score": 42,
-            "monthly_score": 10,
-            "quarterly_score": 15,
-            "total_submissions": 5,
-            "week_checkins": 2,
-            "last_checkin_date": datetime.now().strftime("%Y-%m-%d")
+            "current_streak": current_streak,
+            "best_streak": best_streak,
+            "total_score": total_score,
+            "monthly_score": monthly_score,
+            "quarterly_score": quarterly_score,
+            "total_submissions": total_submissions,
+            "week_checkins": week_checkins,
+            "last_checkin_date": last_checkin_date or datetime.now().strftime("%Y-%m-%d")
         }
-        # service = get_learning_service(db)
-        # data = service.get_user_learning_data(current_user.id)
         
         return BaseResponse(
             code=0, 
@@ -138,18 +251,32 @@ async def get_checkin_chart(
     返回包含今天在内的过去14天打卡状态
     """
     try:
-        # Temporary fix: return mock 14-day checkin chart data
+        # Get real checkin data based on submission dates
         from datetime import date, timedelta
+        from app.models import Submission
+        from sqlalchemy import select, func, and_
         
         chart_data = []
         today = date.today()
         
-        # Generate 14 days of mock data
+        # Get submission dates for last 14 days
+        fourteen_days_ago = today - timedelta(days=13)
+        submission_dates_result = await db.execute(
+            select(func.date(Submission.created_at)).where(
+                and_(
+                    Submission.student_id == current_user.id,
+                    func.date(Submission.created_at) >= fourteen_days_ago
+                )
+            ).distinct()
+        )
+        submission_dates = {row[0] for row in submission_dates_result.fetchall()}
+        
+        # Generate 14 days of real data
         for i in range(14):
             current_date = today - timedelta(days=13-i)
             chart_data.append({
                 "date": current_date.isoformat(),
-                "checked": False,  # All false for now
+                "checked": current_date in submission_dates,
                 "weekday": current_date.weekday(),
                 "is_today": current_date == today
             })
@@ -184,19 +311,97 @@ async def get_monthly_leaderboard(
             year = year or today.year
             month = month or today.month
         
-        # Temporary fix: return mock leaderboard data
-        leaderboard_data = [
-            {
-                "rank": 1,
-                "user_id": current_user.id,
-                "nickname": current_user.nickname or "我",
-                "avatar": current_user.avatar,
-                "score": 0,
-                "is_current_user": True
-            }
-        ]
+        # Get real leaderboard data based on submissions in the given month
+        from app.models import Submission, User, SubmissionStatus
+        from sqlalchemy import select, func, desc, and_
+        from datetime import datetime
         
-        current_user_rank = 1
+        # Calculate month start and end dates
+        month_start = datetime(year, month, 1)
+        if month == 12:
+            month_end = datetime(year + 1, 1, 1)
+        else:
+            month_end = datetime(year, month + 1, 1)
+        
+        # Query to get user scores for the month
+        leaderboard_query = await db.execute(
+            select(
+                User.id,
+                User.nickname,
+                User.avatar,
+                func.coalesce(func.sum(Submission.score), 0).label('total_score')
+            ).select_from(User)
+            .outerjoin(
+                Submission,
+                and_(
+                    User.id == Submission.student_id,
+                    Submission.status == SubmissionStatus.GRADED,
+                    Submission.score.is_not(None),
+                    Submission.created_at >= month_start,
+                    Submission.created_at < month_end
+                )
+            )
+            .where(User.role == "student")  # Only students in leaderboard
+            .group_by(User.id, User.nickname, User.avatar)
+            .order_by(desc('total_score'))
+            .limit(limit)
+        )
+        
+        leaderboard_results = leaderboard_query.fetchall()
+        leaderboard_data = []
+        current_user_rank = None
+        
+        for rank, result in enumerate(leaderboard_results, 1):
+            is_current_user = result.id == current_user.id
+            if is_current_user:
+                current_user_rank = rank
+                
+            leaderboard_data.append({
+                "rank": rank,
+                "user_id": result.id,
+                "nickname": result.nickname or f"用户{result.id}",
+                "avatar": result.avatar or "",
+                "score": int(result.total_score),
+                "is_current_user": is_current_user
+            })
+        
+        # If current user not in top results, find their rank
+        if current_user_rank is None:
+            # Get current user's score for the month
+            user_score_query = await db.execute(
+                select(func.coalesce(func.sum(Submission.score), 0))
+                .where(
+                    and_(
+                        Submission.student_id == current_user.id,
+                        Submission.status == SubmissionStatus.GRADED,
+                        Submission.score.is_not(None),
+                        Submission.created_at >= month_start,
+                        Submission.created_at < month_end
+                    )
+                )
+            )
+            current_user_score = user_score_query.scalar() or 0
+            
+            # Count users with higher scores
+            rank_query = await db.execute(
+                select(func.count(func.distinct(User.id)))
+                .select_from(User)
+                .join(
+                    Submission,
+                    and_(
+                        User.id == Submission.student_id,
+                        Submission.status == SubmissionStatus.GRADED,
+                        Submission.score.is_not(None),
+                        Submission.created_at >= month_start,
+                        Submission.created_at < month_end
+                    )
+                )
+                .where(User.role == "student")
+                .group_by(User.id)
+                .having(func.sum(Submission.score) > current_user_score)
+            )
+            higher_ranked_users = rank_query.scalar() or 0
+            current_user_rank = higher_ranked_users + 1
         
         leaderboard_items = [LeaderboardItem(**item) for item in leaderboard_data]
         
@@ -320,12 +525,121 @@ async def get_learning_insights_api(
     提供个性化学习建议和趋势分析
     """
     try:
-        # Temporary mock data until Docker volume issue is resolved
+        # Get real insights based on user's submission data
+        from app.models import Submission, SubmissionStatus
+        from sqlalchemy import select, func, and_
+        from datetime import datetime, timedelta
+        
+        # Get user's recent activity
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        seven_days_ago = datetime.now() - timedelta(days=7)
+        
+        # Get submission stats
+        recent_submissions = await db.execute(
+            select(func.count(Submission.id)).where(
+                and_(
+                    Submission.student_id == current_user.id,
+                    Submission.created_at >= thirty_days_ago
+                )
+            )
+        )
+        recent_count = recent_submissions.scalar() or 0
+        
+        # Get average score
+        avg_score_result = await db.execute(
+            select(func.avg(Submission.score)).where(
+                and_(
+                    Submission.student_id == current_user.id,
+                    Submission.status == SubmissionStatus.GRADED,
+                    Submission.score.is_not(None)
+                )
+            )
+        )
+        avg_score = avg_score_result.scalar() or 0
+        
+        # Generate insights based on real data
+        insights = []
+        suggestions = []
+        
+        # Activity level insight
+        if recent_count >= 10:
+            insights.append({
+                "type": "success", 
+                "title": "学习积极性很高", 
+                "description": f"最近30天提交了{recent_count}次作业，保持得很好！", 
+                "level": "high"
+            })
+        elif recent_count >= 5:
+            insights.append({
+                "type": "info", 
+                "title": "学习状态良好", 
+                "description": f"最近30天提交了{recent_count}次作业，继续保持", 
+                "level": "medium"
+            })
+        else:
+            insights.append({
+                "type": "warning", 
+                "title": "可以更积极一些", 
+                "description": f"最近30天只提交了{recent_count}次作业，建议增加练习频率", 
+                "level": "low"
+            })
+        
+        # Score performance insight
+        if avg_score >= 85:
+            insights.append({
+                "type": "success", 
+                "title": "成绩表现优秀", 
+                "description": f"平均分{avg_score:.1f}分，超过大部分同学", 
+                "level": "high"
+            })
+            suggestions.append({
+                "type": "maintain", 
+                "title": "保持当前水平", 
+                "description": "继续保持优秀的学习状态，可以挑战更难的题目", 
+                "priority": "medium"
+            })
+        elif avg_score >= 70:
+            insights.append({
+                "type": "info", 
+                "title": "成绩稳步提升", 
+                "description": f"平均分{avg_score:.1f}分，还有进步空间", 
+                "level": "medium"
+            })
+            suggestions.append({
+                "type": "improve", 
+                "title": "加强练习", 
+                "description": "建议多做题目，巩固知识点", 
+                "priority": "high"
+            })
+        else:
+            suggestions.append({
+                "type": "focus", 
+                "title": "重点提升", 
+                "description": "建议重点复习基础知识，多与老师交流", 
+                "priority": "high"
+            })
+        
+        # Default helpful suggestions
+        suggestions.append({
+            "type": "general", 
+            "title": "定期复习", 
+            "description": "建议每天安排固定时间学习，养成良好习惯", 
+            "priority": "medium"
+        })
+        
         insights_data = {
-            "insights": [{"type": "info", "title": "功能开发中", "description": "学习洞察功能正在完善中", "level": "info"}],
-            "suggestions": [{"type": "info", "title": "敬请期待", "description": "更多个性化建议即将推出", "priority": "low"}], 
-            "trends": {"streak_trend": "stable", "score_trend": "stable", "consistency": "medium"},
-            "summary": {"current_streak": 0, "best_streak": 0, "total_score": 0, "monthly_score": 0, "week_checkins": 0}
+            "insights": insights,
+            "suggestions": suggestions,
+            "trends": {
+                "streak_trend": "improving" if recent_count > 5 else "stable",
+                "score_trend": "improving" if avg_score >= 75 else "stable", 
+                "consistency": "high" if recent_count >= 10 else "medium" if recent_count >= 5 else "low"
+            },
+            "summary": {
+                "recent_submissions": recent_count,
+                "average_score": round(avg_score, 1),
+                "performance_level": "优秀" if avg_score >= 85 else "良好" if avg_score >= 70 else "需要提升"
+            }
         }
         return BaseResponse(code=0, msg="获取成功", data=insights_data)
         

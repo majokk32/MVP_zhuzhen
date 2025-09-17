@@ -38,6 +38,7 @@ async def create_task(
         desc=task_data.desc,
         total_score=task_data.total_score,
         deadline=task_data.deadline,
+        status=TaskStatus(task_data.status.value) if task_data.status else TaskStatus.ONGOING,
         created_by=current_user.id
     )
     
@@ -111,6 +112,11 @@ async def list_tasks(
         all_tasks_query = select(Task)
         if keyword:
             all_tasks_query = all_tasks_query.where(Task.title.ilike(f"%{keyword}%"))
+        
+        # Filter out draft tasks for students (only teachers can see drafts)
+        if current_user.role.value != 'teacher':
+            all_tasks_query = all_tasks_query.where(Task.status != TaskStatus.DRAFT)
+            
         all_tasks_query = all_tasks_query.order_by(desc(Task.created_at))
         
         all_tasks_result = await db.execute(all_tasks_query)
@@ -223,6 +229,13 @@ async def get_task(
             detail="任务不存在"
         )
     
+    # Students cannot access draft tasks (only teachers and task creators can)
+    if task.status == TaskStatus.DRAFT and current_user.role.value != 'teacher' and task.created_by != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="任务不存在"
+        )
+    
     task_info = TaskInfo.from_orm(task)
     
     # Get submission status for current user
@@ -232,9 +245,9 @@ async def get_task(
                 Submission.task_id == task_id,
                 Submission.student_id == current_user.id
             )
-        )
+        ).order_by(Submission.created_at.desc())
     )
-    submission = sub_result.scalar_one_or_none()
+    submission = sub_result.scalars().first()
     
     if submission:
         task_info.submission_status = submission.status.value

@@ -24,6 +24,13 @@
             全部
           </view>
           <view 
+            class="filter-tab {{currentFilter === 'draft' ? 'active' : ''}}"
+            data-filter="draft"
+            bindtap="onFilterChange"
+          >
+            草稿
+          </view>
+          <view 
             class="filter-tab {{currentFilter === 'ongoing' ? 'active' : ''}}"
             data-filter="ongoing"
             bindtap="onFilterChange"
@@ -94,11 +101,15 @@
           <text class="action-icon">✏️</text>
           <text class="action-text">编辑</text>
         </view>
-        <view class="action-btn" data-action="view" data-task="{{item}}" bindtap="onActionClick">
+        <view wx:if="{{item.status === 'draft'}}" class="action-btn primary" data-action="publish" data-task="{{item}}" bindtap="onActionClick">
+          <text class="action-icon">🚀</text>
+          <text class="action-text">发布</text>
+        </view>
+        <view wx:else class="action-btn" data-action="view" data-task="{{item}}" bindtap="onActionClick">
           <text class="action-icon">👁️</text>
           <text class="action-text">查看</text>
         </view>
-        <view class="action-btn" data-action="share" data-task="{{item}}" bindtap="onActionClick">
+        <view wx:if="{{item.status !== 'draft'}}" class="action-btn" data-action="share" data-task="{{item}}" bindtap="onActionClick">
           <text class="action-icon">📤</text>
           <text class="action-text">分享</text>
         </view>

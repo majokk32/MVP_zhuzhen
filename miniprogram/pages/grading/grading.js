@@ -146,6 +146,22 @@ Page({
       // app.request 成功时直接返回 data 部分，失败时会抛出异常
       const submissions = res?.submissions || [];
       
+      console.log('🔍 [DEBUG] Raw submissions from backend:', submissions);
+      console.log('🔍 [DEBUG] Total submissions count:', submissions.length);
+      
+      // 检查每个提交的图片数据
+      submissions.forEach((submission, index) => {
+        console.log(`🔍 [DEBUG] Submission ${index + 1}:`, {
+          id: submission.id,
+          student_id: submission.student_id,
+          images_raw: submission.images,
+          images_type: typeof submission.images,
+          images_length: Array.isArray(submission.images) ? submission.images.length : 'not array',
+          text: submission.text,
+          student_info: submission.student_info
+        });
+      });
+      
       // 处理提交数据
       const processedSubmissions = submissions.map((item) => ({
         ...item,
@@ -207,10 +223,41 @@ Page({
     this.loadSubmissions();
   },
 
-  // 选择要批改的作业
-  selectSubmission(e) {
+  // 选择要批改的作业 - 获取完整submission数据
+  async selectSubmission(e) {
     const index = e.currentTarget.dataset.index;
     const submission = this.data.submissions[index];
+    
+    console.log('🔍 [DEBUG] 选择提交作业，获取完整数据:', submission);
+    
+    // 直接从API获取完整的submission详情，确保包含所有文件
+    try {
+      const fullSubmission = await app.request({
+        url: `/submissions/${submission.id}`,
+        method: 'GET'
+      });
+      
+      console.log('🔍 [DEBUG] 完整submission数据:', fullSubmission);
+      console.log('🔍 [DEBUG] 完整submission.images:', fullSubmission.images);
+      console.log('🔍 [DEBUG] 完整submission.text:', fullSubmission.text);
+      
+      // 使用完整的submission数据
+      this.processSubmissionData(fullSubmission, index);
+      
+    } catch (error) {
+      console.error('获取submission详情失败:', error);
+      // 降级使用原有数据
+      this.processSubmissionData(submission, index);
+    }
+  },
+
+  // 处理submission数据的独立方法
+  processSubmissionData(submission, index) {
+    console.log('🔍 [DEBUG] 处理submission数据:', submission);
+    console.log('🔍 [DEBUG] 提交图片原始数据:', submission.images);
+    console.log('🔍 [DEBUG] 图片数组类型:', typeof submission.images);
+    console.log('🔍 [DEBUG] 图片数组长度:', Array.isArray(submission.images) ? submission.images.length : 'not array');
+    console.log('🔍 [DEBUG] 提交文本:', submission.text);
     
     // 如果已批改，加载已有的批改数据
     let gradeData = {
@@ -219,8 +266,76 @@ Page({
       feedback: submission.feedback || ''
     };
     
+    // 处理submission中的所有内容：确保显示所有文件、图片和文本
+    const allFiles = submission.images || [];
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+    const documentExtensions = ['.pdf', '.doc', '.docx', '.txt', '.rtf'];
+    
+    console.log('🔍 [CRITICAL] 原始submission.images:', allFiles);
+    console.log('🔍 [CRITICAL] 文件总数:', allFiles.length);
+    console.log('🔍 [CRITICAL] submission.text:', submission.text);
+    
+    // 处理所有文件，确保完整URL
+    const processedFiles = allFiles.map(file => {
+      if (file && !file.startsWith('http')) {
+        const baseUrl = getApp().globalData.baseUrl.replace('/api/v1', '');
+        return `${baseUrl}${file}`;
+      }
+      return file;
+    });
+    
+    console.log('🔍 [CRITICAL] 处理后的完整文件列表:', processedFiles);
+    
+    // 分离图片和文档文件
+    const images = [];
+    const documents = [];
+    
+    processedFiles.forEach((file, index) => {
+      console.log(`🔍 [CRITICAL] 处理文件 ${index + 1}: ${file}`);
+      
+      const fileName = file.toLowerCase();
+      const isImage = imageExtensions.some(ext => fileName.endsWith(ext));
+      const isDocument = documentExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (isImage) {
+        images.push(file);
+        console.log(`✅ [CRITICAL] 图片: ${file}`);
+      } else if (isDocument) {
+        documents.push({
+          url: file,
+          name: file.split('/').pop(),
+          type: fileName.endsWith('.pdf') ? 'pdf' : 
+                fileName.endsWith('.doc') || fileName.endsWith('.docx') ? 'word' : 'document'
+        });
+        console.log(`📄 [CRITICAL] 文档: ${file}`);
+      } else {
+        // 未知类型，作为普通文件处理
+        documents.push({
+          url: file,
+          name: file.split('/').pop(),
+          type: 'unknown'
+        });
+        console.log(`📁 [CRITICAL] 未知文件: ${file}`);
+      }
+    });
+    
+    console.log('🔍 [CRITICAL] 最终图片数量:', images.length, images);
+    console.log('🔍 [CRITICAL] 最终文档数量:', documents.length, documents);
+    console.log('🔍 [CRITICAL] 文本内容存在:', !!submission.text, submission.text);
+    
+    const processedSubmission = {
+      ...submission,
+      images: images, // 只包含图片
+      documents: documents, // 文档文件单独处理
+      text: submission.text || '',
+      submitted_at: submission.submitted_at || submission.created_at,
+      attemptNumber: submission.attempt_number || submission.submission_count || 1
+    };
+    
+    console.log('🔍 [DEBUG] 处理后的提交数据:', processedSubmission);
+    
     this.setData({
-      currentSubmission: submission,
+      currentSubmission: processedSubmission,
       currentIndex: index,
       gradeData,
       canSubmitGrade: this.checkCanSubmit(gradeData),
@@ -404,16 +519,16 @@ Page({
   checkCanSubmit(gradeData) {
     const hasGrade = gradeData.grade;
     const hasFeedback = gradeData.feedback && gradeData.feedback.trim().length > 0;
-    const feedbackMinLength = gradeData.feedback && gradeData.feedback.trim().length >= 10;
+    const feedbackMinLength = gradeData.feedback && gradeData.feedback.trim().length >= 5;
     
     // 设置验证状态
     this.setData({
       gradeError: !hasGrade ? '请选择评价档位' : '',
-      feedbackError: !hasFeedback ? '请输入批改评语' : 
-                    (!feedbackMinLength ? '评语至少需要10个字符' : '')
+      feedbackError: hasFeedback && !feedbackMinLength ? '评语至少需要5个字符' : ''
     });
     
-    return hasGrade && hasFeedback && feedbackMinLength;
+    // Only require grade selection, feedback is optional
+    return hasGrade && (!hasFeedback || feedbackMinLength);
   },
 
   // 取消批改
@@ -461,7 +576,7 @@ Page({
           submission_id: this.data.currentSubmission.id,
           grade: gradeMapping[this.data.gradeData.grade] || this.data.gradeData.grade,
           score: this.data.gradeData.score || null,
-          feedback: this.data.gradeData.feedback.trim()
+          feedback: this.data.gradeData.feedback ? this.data.gradeData.feedback.trim() : ''
         }
       });
       
@@ -714,17 +829,13 @@ Page({
         return;
       }
       
-      const app = getApp();
-      await app.request({
-        url: '/statistics/input-methods',
-        method: 'POST',
-        data: {
-          textCount: stats.text,
-          voiceCount: stats.voice,
-          mixedCount: stats.mixed,
-          reportTime: now
-        },
-        showError: false // 静默上报
+      // TODO: Implement statistics endpoint later
+      // For now, just store locally to avoid 404 errors
+      console.log('Input statistics (stored locally):', {
+        textCount: stats.text,
+        voiceCount: stats.voice,
+        mixedCount: stats.mixed,
+        reportTime: now
       });
       
       wx.setStorageSync('lastInputStatsReport', now);
@@ -762,13 +873,16 @@ Page({
 
   // 处理导航组件的导航事件
   onNavigatorNavigate(e) {
+    console.log('onNavigatorNavigate called with:', e.detail);
     const { action, targetIndex } = e.detail;
     
     if (targetIndex < 0 || targetIndex >= this.data.submissions.length) {
+      console.log('Invalid targetIndex:', targetIndex, 'submissions length:', this.data.submissions.length);
       return;
     }
     
     const submission = this.data.submissions[targetIndex];
+    console.log('Navigating to submission:', submission);
     
     // 加载批改数据
     let gradeData = {
@@ -784,13 +898,15 @@ Page({
       currentSubmission: {
         ...submission,
         attemptNumber: submission.attempt_number || 1,
-        timeAgo: this.formatTimeAgo(submission.submitted_at)
+        timeAgo: this.formatDate(submission.submitted_at)
       },
       currentIndex: targetIndex,
       gradeData,
-      canSubmitGrade: this.validateGradeData(gradeData),
+      canSubmitGrade: this.checkCanSubmit(gradeData),
       gradingStartTime
     });
+    
+    console.log('Navigation completed, new currentIndex:', targetIndex);
   },
 
   // 处理导航组件的操作事件
@@ -1090,6 +1206,124 @@ Page({
     wx.showToast({
       title: `已安排${studentNames}的辅导`,
       icon: 'success'
+    });
+  },
+
+  // 下载文档
+  downloadDocument(e) {
+    const { url, name } = e.currentTarget.dataset;
+    
+    if (!url) {
+      wx.showToast({
+        title: '文档链接无效',
+        icon: 'none'
+      });
+      return;
+    }
+
+    console.log('🔍 [DEBUG] 尝试下载文档:', { url, name });
+
+    // 对于docx等不支持的文件，提供其他方式处理
+    const fileName = (name || '').toLowerCase();
+    if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+      wx.showModal({
+        title: '文档预览',
+        content: '微信小程序不支持直接打开Word文档，您可以：\n\n1. 复制链接到浏览器下载\n2. 使用其他应用打开',
+        confirmText: '复制链接',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.setClipboardData({
+              data: url,
+              success: () => {
+                wx.showToast({
+                  title: '链接已复制',
+                  icon: 'success'
+                });
+              }
+            });
+          }
+        }
+      });
+      return;
+    }
+
+    wx.showLoading({ title: '准备下载...' });
+
+    // 微信小程序下载文件
+    wx.downloadFile({
+      url: url,
+      success: (res) => {
+        wx.hideLoading();
+        
+        if (res.statusCode === 200) {
+          // 保存到相册或者打开文件
+          const filePath = res.tempFilePath;
+          
+          console.log('🔍 [DEBUG] 文件下载成功，临时路径:', filePath);
+          
+          // 显示文件信息
+          wx.showModal({
+            title: '文件下载成功',
+            content: `文件已下载到临时目录：\n${filePath}\n\n是否尝试打开？`,
+            confirmText: '打开',
+            cancelText: '复制路径',
+            success: (modalRes) => {
+              if (modalRes.confirm) {
+                // 尝试打开文件
+                wx.openDocument({
+                  filePath: filePath,
+                  showMenu: true,
+                  success: () => {
+                    console.log('文档打开成功');
+                    wx.showToast({
+                      title: '打开成功',
+                      icon: 'success'
+                    });
+                  },
+                  fail: (error) => {
+                    console.error('打开文档失败:', error);
+                    // 复制文件路径到剪贴板
+                    wx.setClipboardData({
+                      data: filePath,
+                      success: () => {
+                        wx.showToast({
+                          title: '文件路径已复制',
+                          icon: 'success'
+                        });
+                      }
+                    });
+                  }
+                });
+              } else {
+                // 复制文件路径到剪贴板
+                wx.setClipboardData({
+                  data: filePath,
+                  success: () => {
+                    wx.showToast({
+                      title: '文件路径已复制',
+                      icon: 'success'
+                    });
+                  }
+                });
+              }
+            }
+          });
+        } else {
+          wx.showToast({
+            title: '下载失败',
+            icon: 'none'
+          });
+        }
+      },
+      fail: (error) => {
+        wx.hideLoading();
+        console.error('下载文件失败:', error);
+        wx.showToast({
+          title: '下载失败，请稍后重试',
+          icon: 'none'
+        });
+      }
     });
   }
 });
