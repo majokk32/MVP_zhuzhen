@@ -1,12 +1,13 @@
 """
 Enhanced file storage utilities with organized structure
 支持图片、文件、文字上传，按任务-学生-时间组织文件
+For Docker development: Using local storage only
 """
 
 import os
 import re
 import uuid
-import oss2
+# import oss2  # Commented for Docker development
 from typing import BinaryIO, Optional, List, Dict
 from datetime import datetime
 from app.config import settings
@@ -21,36 +22,41 @@ class EnhancedStorage:
     """增强的文件存储管理器，支持多文件类型和组织化结构"""
     
     def __init__(self):
-        """Initialize storage with OSS or local fallback"""
-        # Check if OSS credentials are properly configured
-        oss_configured = (
-            settings.OSS_ACCESS_KEY and 
-            settings.OSS_SECRET_KEY and 
-            settings.OSS_ENDPOINT and 
-            settings.OSS_BUCKET and
-            settings.OSS_ACCESS_KEY != "your-oss-access-key" and
-            settings.OSS_SECRET_KEY != "your-oss-secret-key" and
-            not settings.OSS_ACCESS_KEY.startswith("your-") and
-            not settings.OSS_SECRET_KEY.startswith("your-")
-        )
+        """Initialize storage with local fallback (Docker mode)"""
+        # For Docker development, always use local storage
+        print(f"[STORAGE] 使用本地存储 (Docker开发环境)")
+        self.use_local = True
+        self.local_dir = "uploads"
+        os.makedirs(self.local_dir, exist_ok=True)
         
-        if not oss_configured or settings.ENVIRONMENT == "development":
-            # Use local storage for development
-            print(f"[STORAGE] 使用本地存储 (开发环境或OSS未配置)")
-            self.use_local = True
-            self.local_dir = "uploads"
-            os.makedirs(self.local_dir, exist_ok=True)
-        else:
-            print(f"[STORAGE] 使用阿里云OSS存储")
-            self.use_local = False
-            try:
-                self.auth = oss2.Auth(settings.OSS_ACCESS_KEY, settings.OSS_SECRET_KEY)
-                self.bucket = oss2.Bucket(self.auth, settings.OSS_ENDPOINT, settings.OSS_BUCKET)
-            except Exception as e:
-                print(f"[STORAGE] OSS初始化失败，回退到本地存储: {e}")
-                self.use_local = True
-                self.local_dir = "uploads"
-                os.makedirs(self.local_dir, exist_ok=True)
+        # OSS configuration commented out for Docker development
+        # oss_configured = (
+        #     settings.OSS_ACCESS_KEY and 
+        #     settings.OSS_SECRET_KEY and 
+        #     settings.OSS_ENDPOINT and 
+        #     settings.OSS_BUCKET and
+        #     settings.OSS_ACCESS_KEY != "your-oss-access-key" and
+        #     settings.OSS_SECRET_KEY != "your-oss-secret-key" and
+        #     not settings.OSS_ACCESS_KEY.startswith("your-") and
+        #     not settings.OSS_SECRET_KEY.startswith("your-")
+        # )
+        
+        # if not oss_configured or settings.ENVIRONMENT == "development":
+        #     print(f"[STORAGE] 使用本地存储 (开发环境或OSS未配置)")
+        #     self.use_local = True
+        #     self.local_dir = "uploads"
+        #     os.makedirs(self.local_dir, exist_ok=True)
+        # else:
+        #     print(f"[STORAGE] 使用阿里云OSS存储")
+        #     self.use_local = False
+        #     try:
+        #         self.auth = oss2.Auth(settings.OSS_ACCESS_KEY, settings.OSS_SECRET_KEY)
+        #         self.bucket = oss2.Bucket(self.auth, settings.OSS_ENDPOINT, settings.OSS_BUCKET)
+        #     except Exception as e:
+        #         print(f"[STORAGE] OSS初始化失败，回退到本地存储: {e}")
+        #         self.use_local = True
+        #         self.local_dir = "uploads"
+        #         os.makedirs(self.local_dir, exist_ok=True)
     
     def _sanitize_filename(self, filename: str) -> str:
         """Make filename safe for storage"""
@@ -67,7 +73,16 @@ class EnhancedStorage:
         
         # Image files
         if ext in ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp']:
-            return 'image', content_type or f'image/{ext}', 10
+            # 正确的MIME类型映射
+            image_types = {
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg',
+                'png': 'image/png',
+                'gif': 'image/gif',
+                'webp': 'image/webp',
+                'bmp': 'image/bmp'
+            }
+            return 'image', content_type or image_types.get(ext, 'image/jpeg'), 10
         
         # Document files  
         elif ext in ['pdf', 'doc', 'docx', 'txt', 'rtf']:
@@ -99,14 +114,11 @@ class EnhancedStorage:
         Get the number of submissions a student has made for a task
         """
         try:
-            if self.use_local:
-                import glob
-                pattern = f"{self.local_dir}/task_{task_id}/student_{student_id}/*"
-                submission_dirs = glob.glob(pattern)
-                return len([d for d in submission_dirs if os.path.isdir(d)])
-            else:
-                # OSS implementation would scan object keys
-                return 0
+            # Always use local storage in Docker mode
+            import glob
+            pattern = f"{self.local_dir}/task_{task_id}/student_{student_id}/*"
+            submission_dirs = glob.glob(pattern)
+            return len([d for d in submission_dirs if os.path.isdir(d)])
             
         except Exception as e:
             print(f"Failed to get submission count: {e}")
@@ -126,9 +138,9 @@ class EnhancedStorage:
         time_folder = submission_time.strftime("%Y-%m-%d_%H-%M-%S")
         folder_path = f"task_{task_id}/student_{student_id}/{time_folder}"
         
-        if self.use_local:
-            full_path = os.path.join(self.local_dir, folder_path)
-            os.makedirs(full_path, exist_ok=True)
+        # Always use local storage in Docker mode
+        full_path = os.path.join(self.local_dir, folder_path)
+        os.makedirs(full_path, exist_ok=True)
         
         # Get updated count after creating folder
         count = await self.get_submission_count(task_id, student_id)
@@ -162,29 +174,30 @@ class EnhancedStorage:
             # Generate organized path
             object_name = self._generate_submission_path(task_id, student_id, submission_time, filename)
             
-            if self.use_local:
-                # Local storage for development
-                local_path = os.path.join(self.local_dir, object_name)
-                os.makedirs(os.path.dirname(local_path), exist_ok=True)
-                
-                with open(local_path, 'wb') as f:
-                    f.write(file_content)
-                
-                # Return a local URL
-                return f"/uploads/{object_name}"
-            else:
-                # Upload to OSS
-                result = self.bucket.put_object(
-                    object_name, 
-                    file_content,
-                    headers={'Content-Type': detected_content_type}
-                )
-                
-                if result.status != 200:
-                    raise StorageError(f"OSS upload failed with status {result.status}")
-                
-                # Return public URL
-                return f"https://{settings.OSS_BUCKET}.{settings.OSS_ENDPOINT}/{object_name}"
+            # Always use local storage in Docker mode
+            local_path = os.path.join(self.local_dir, object_name)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            
+            with open(local_path, 'wb') as f:
+                f.write(file_content)
+            
+            # Return a local URL
+            return f"/uploads/{object_name}"
+            
+            # OSS upload code commented out for Docker development
+            # else:
+            #     # Upload to OSS
+            #     result = self.bucket.put_object(
+            #         object_name, 
+            #         file_content,
+            #         headers={'Content-Type': detected_content_type}
+            #     )
+            #     
+            #     if result.status != 200:
+            #         raise StorageError(f"OSS upload failed with status {result.status}")
+            #     
+            #     # Return public URL
+            #     return f"https://{settings.OSS_BUCKET}.{settings.OSS_ENDPOINT}/{object_name}"
                 
         except Exception as e:
             raise StorageError(f"Failed to upload file: {str(e)}")
@@ -259,29 +272,30 @@ class EnhancedStorage:
             unique_filename = f"{uuid.uuid4().hex}.{ext}"
             object_name = f"submissions/{date_path}/{unique_filename}"
             
-            if self.use_local:
-                # Local storage for development
-                local_path = os.path.join(self.local_dir, object_name)
-                os.makedirs(os.path.dirname(local_path), exist_ok=True)
-                
-                with open(local_path, 'wb') as f:
-                    f.write(file_content)
-                
-                # Return a local URL
-                return f"/uploads/{object_name}"
-            else:
-                # Upload to OSS
-                result = self.bucket.put_object(
-                    object_name, 
-                    file_content,
-                    headers={'Content-Type': content_type}
-                )
-                
-                if result.status != 200:
-                    raise StorageError(f"OSS upload failed with status {result.status}")
-                
-                # Return public URL
-                return f"https://{settings.OSS_BUCKET}.{settings.OSS_ENDPOINT}/{object_name}"
+            # Always use local storage in Docker mode
+            local_path = os.path.join(self.local_dir, object_name)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            
+            with open(local_path, 'wb') as f:
+                f.write(file_content)
+            
+            # Return a local URL
+            return f"/uploads/{object_name}"
+            
+            # OSS upload code commented out for Docker development
+            # else:
+            #     # Upload to OSS
+            #     result = self.bucket.put_object(
+            #         object_name, 
+            #         file_content,
+            #         headers={'Content-Type': content_type}
+            #     )
+            #     
+            #     if result.status != 200:
+            #         raise StorageError(f"OSS upload failed with status {result.status}")
+            #     
+            #     # Return public URL
+            #     return f"https://{settings.OSS_BUCKET}.{settings.OSS_ENDPOINT}/{object_name}"
                 
         except Exception as e:
             raise StorageError(f"Failed to upload file: {str(e)}")
@@ -289,18 +303,20 @@ class EnhancedStorage:
     async def delete_file(self, file_url: str) -> bool:
         """Delete file from storage"""
         try:
-            if self.use_local:
-                if file_url.startswith("/uploads/"):
-                    local_path = file_url.replace("/uploads/", "")
-                    full_path = os.path.join(self.local_dir, local_path)
-                    if os.path.exists(full_path):
-                        os.remove(full_path)
-                    return True
-            else:
-                # Extract object name from URL
-                object_name = file_url.split(f"{settings.OSS_BUCKET}.{settings.OSS_ENDPOINT}/")[-1]
-                self.bucket.delete_object(object_name)
+            # Always use local storage in Docker mode
+            if file_url.startswith("/uploads/"):
+                local_path = file_url.replace("/uploads/", "")
+                full_path = os.path.join(self.local_dir, local_path)
+                if os.path.exists(full_path):
+                    os.remove(full_path)
                 return True
+                
+            # OSS delete code commented out for Docker development
+            # else:
+            #     # Extract object name from URL
+            #     object_name = file_url.split(f"{settings.OSS_BUCKET}.{settings.OSS_ENDPOINT}/")[-1]
+            #     self.bucket.delete_object(object_name)
+            #     return True
                 
         except Exception:
             return False

@@ -3,7 +3,7 @@ const app = getApp();
 const authModule = require('../../modules/auth/auth');
 const taskModule = require('../../modules/task/task');
 const submissionModule = require('../../modules/submission/submission');
-const { formatDateTime } = require('../../utils/time-formatter');
+const { formatDateTime, getChinaTime } = require('../../utils/time-formatter');
 
 Page({
   data: {
@@ -18,9 +18,9 @@ Page({
     formattedCreatedAt: '',
     formattedDeadline: '',
     
-    // 提交相关
-    uploadedImages: [],
-    maxImages: 6,
+    // 提交相关 - 多文件上传
+    selectedFileType: 'image', // image | document
+    uploadedFiles: [],
     submissionText: '',
     canSubmit: false,
     isSubmitting: false,
@@ -153,7 +153,7 @@ Page({
       let isOverdue = false;
       if (task.deadline) {
         const deadline = new Date(task.deadline);
-        const now = new Date();
+        const now = getChinaTime();
         const diff = deadline - now;
         
         if (diff > 0) {
@@ -295,34 +295,167 @@ Page({
     });
   },
 
+  // 文件类型选择
+  selectFileType(e) {
+    const fileType = e.currentTarget.dataset.type;
+    this.setData({
+      selectedFileType: fileType
+    });
+  },
+
   // 选择图片
-  chooseImage() {
-    const remaining = this.data.maxImages - this.data.uploadedImages.length;
-    
+  chooseImages() {
     wx.chooseMedia({
-      count: remaining,
+      count: 9,
       mediaType: ['image'],
       sourceType: ['album', 'camera'],
       success: (res) => {
-        const newImages = res.tempFiles.map(file => file.tempFilePath);
-        this.setData({
-          uploadedImages: [...this.data.uploadedImages, ...newImages],
-          canSubmit: true
+        // 验证文件大小
+        const validFiles = res.tempFiles.filter(file => {
+          // 检查文件大小（10MB限制）
+          if (file.size > 10 * 1024 * 1024) {
+            wx.showToast({
+              title: '图片超过10MB限制',
+              icon: 'none'
+            });
+            return false;
+          }
+          return true;
+        });
+
+        const newFiles = validFiles.map(file => {
+          const fileName = file.tempFilePath.split('/').pop();
+          return {
+            type: 'image',
+            name: fileName,
+            shortName: this.generateShortName(fileName, 12),
+            path: file.tempFilePath,
+            size: this.formatFileSize(file.size),
+            icon: '🖼️'
+          };
+        });
+        
+        if (newFiles.length > 0) {
+          this.setData({
+            uploadedFiles: [...this.data.uploadedFiles, ...newFiles],
+            canSubmit: true
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('选择图片失败:', err);
+        wx.showToast({
+          title: '选择图片失败，请重试',
+          icon: 'none'
         });
       }
     });
   },
 
-  // 删除图片
-  deleteImage(e) {
+  // 选择文档
+  chooseDocuments() {
+    // 使用 wx.chooseMessageFile 选择文档文件
+    wx.chooseMessageFile({
+      count: 5,
+      type: 'file',
+      extension: ['pdf', 'doc', 'docx', 'txt', 'rtf'],
+      success: (res) => {
+        // 验证文件大小和类型
+        const validFiles = res.tempFiles.filter(file => {
+          // 检查文件大小（10MB限制）
+          if (file.size > 10 * 1024 * 1024) {
+            wx.showToast({
+              title: `文件 ${file.name} 超过10MB限制`,
+              icon: 'none'
+            });
+            return false;
+          }
+          return true;
+        });
+
+        const newFiles = validFiles.map(file => ({
+          type: 'document',
+          name: file.name,
+          shortName: this.generateShortName(file.name, 20),
+          path: file.path,
+          size: this.formatFileSize(file.size),
+          icon: this.getDocumentIcon(file.name)
+        }));
+        
+        if (newFiles.length > 0) {
+          this.setData({
+            uploadedFiles: [...this.data.uploadedFiles, ...newFiles],
+            canSubmit: true
+          });
+        }
+      },
+      fail: (err) => {
+        console.error('选择文档失败:', err);
+        wx.showToast({
+          title: '选择文档失败，请重试',
+          icon: 'none'
+        });
+      }
+    });
+  },
+
+
+  // 删除文件
+  deleteFile(e) {
     const index = e.currentTarget.dataset.index;
-    const uploadedImages = [...this.data.uploadedImages];
-    uploadedImages.splice(index, 1);
+    const uploadedFiles = [...this.data.uploadedFiles];
+    uploadedFiles.splice(index, 1);
     
     this.setData({
-      uploadedImages,
-      canSubmit: uploadedImages.length > 0 || this.data.submissionText.trim().length > 0
+      uploadedFiles,
+      canSubmit: uploadedFiles.length > 0 || this.data.submissionText.trim().length > 0
     });
+  },
+
+  // 预览文件
+  previewFile(e) {
+    const index = e.currentTarget.dataset.index;
+    const file = this.data.uploadedFiles[index];
+    
+    if (file.type === 'image') {
+      wx.previewImage({
+        current: file.path,
+        urls: this.data.uploadedFiles.filter(f => f.type === 'image').map(f => f.path)
+      });
+    }
+  },
+
+  // 工具方法：格式化文件大小
+  formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  },
+
+  // 生成短文件名（防止超出屏幕宽度）
+  generateShortName(fileName, maxLength = 15) {
+    if (fileName.length <= maxLength) return fileName;
+    
+    const extension = fileName.split('.').pop();
+    const nameWithoutExt = fileName.slice(0, fileName.lastIndexOf('.'));
+    const shortName = nameWithoutExt.slice(0, maxLength - extension.length - 4) + '...';
+    
+    return shortName + '.' + extension;
+  },
+
+  // 工具方法：获取文档图标
+  getDocumentIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const iconMap = {
+      'pdf': '📕',
+      'doc': '📘',
+      'docx': '📘',
+      'txt': '📄',
+      'rtf': '📝'
+    };
+    return iconMap[ext] || '📄';
   },
 
   // 预览图片
@@ -355,7 +488,7 @@ Page({
     const text = e.detail.value;
     this.setData({
       submissionText: text,
-      canSubmit: text.trim().length > 0 || this.data.uploadedImages.length > 0
+      canSubmit: text.trim().length > 0 || this.data.uploadedFiles.length > 0
     });
   },
 
@@ -379,12 +512,13 @@ Page({
       return;
     }
     
-    const remainingAttempts = 3 - this.data.submissionCount - 1;
+    const currentUsed = this.data.submissionCount;
+    const remainingAfterSubmit = 3 - currentUsed - 1; // 提交后剩余次数
     const resetMessage = this.data.hasReviewReset ? '(因"待复盘"评价已重置提交次数) ' : '';
     
     wx.showModal({
       title: '确认提交',
-      content: `确定要提交作业吗？${resetMessage}您还有 ${remainingAttempts} 次提交机会`,
+      content: `确定要提交作业吗？${resetMessage}提交后您还剩 ${remainingAfterSubmit} 次提交机会`,
       success: async (res) => {
         if (res.confirm) {
           await this.doSubmit();
@@ -398,43 +532,138 @@ Page({
     this.setData({ isSubmitting: true });
     
     try {
-      // 压缩图片
-      const compressedImages = await submissionModule.compressImages(this.data.uploadedImages);
+      wx.showLoading({ title: '上传文件中...' });
       
-      // 显示上传进度
-      if (compressedImages.length > 0) {
-        this.setData({ 
-          showSimpleProgress: true,
-          uploadProgressData: { completed: 0, total: compressedImages.length, progress: 0 }
+      // 准备多文件上传数据
+      const files = this.data.uploadedFiles;
+      const hasText = this.data.submissionText.trim().length > 0;
+      
+      // 至少需要文件或文字说明其中之一
+      if (files.length === 0 && !hasText) {
+        wx.hideLoading();
+        wx.showToast({
+          title: '请上传文件或添加文字说明',
+          icon: 'none'
         });
+        this.setData({ isSubmitting: false });
+        return;
       }
       
-      // 上传图片（使用增强的上传系统）
-      const imageUrls = await submissionModule.uploadImages(compressedImages, {
-        showProgress: true,
-        showPartialError: true,
-        onProgress: (data) => {
-          this.setData({
-            uploadProgressData: {
-              completed: data.completedCount,
-              total: data.totalCount,
-              progress: data.progress
-            }
+      let uploadResult;
+      
+      if (files.length > 0) {
+        // 有文件：使用单次请求上传所有文件
+        console.log('📤 [DEBUG] 准备上传多个文件:', files.length);
+        
+        try {
+          // 如果只有一个文件，使用wx.uploadFile
+          if (files.length === 1) {
+            const file = files[0];
+            const token = app.globalData.token || wx.getStorageSync('token');
+            const uploadUrl = `${app.globalData.baseUrl}/submissions/upload-files`;
+            
+            const uploadResult = await new Promise((resolve, reject) => {
+              wx.uploadFile({
+                url: uploadUrl,
+                filePath: file.path,
+                name: 'files',
+                formData: {
+                  task_id: this.data.taskId,
+                  text_content: this.data.submissionText.trim()
+                },
+                header: {
+                  'Authorization': token ? `Bearer ${token}` : ''
+                },
+                success: (res) => {
+                  try {
+                    const result = JSON.parse(res.data);
+                    if (result.code === 0) {
+                      resolve(result.data);
+                    } else {
+                      reject(new Error(result.msg || '上传失败'));
+                    }
+                  } catch (e) {
+                    reject(new Error('上传响应解析失败'));
+                  }
+                },
+                fail: (err) => {
+                  reject(new Error(err.errMsg || '上传失败'));
+                }
+              });
+            });
+            
+            uploadResult = [uploadResult];
+          } else {
+            // 多文件情况：使用一个创新的解决方案
+            // 我们将所有文件信息先收集，然后通过一个特殊的批处理接口处理
+            console.log('📤 [DEBUG] 多文件上传，开始依次处理...');
+            
+            // 生成唯一的批次ID
+            const batchId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+            const token = app.globalData.token || wx.getStorageSync('token');
+            const uploadUrl = `${app.globalData.baseUrl}/submissions/upload-files`;
+            
+            // 所有文件使用相同的批次ID，后端根据批次ID合并
+            const uploadPromises = files.map((file, index) => {
+              return new Promise((resolve, reject) => {
+                wx.uploadFile({
+                  url: uploadUrl,
+                  filePath: file.path,
+                  name: 'files',
+                  formData: {
+                    task_id: this.data.taskId,
+                    text_content: index === 0 ? this.data.submissionText.trim() : '', // 只在第一个文件包含文本
+                    batch_id: batchId,
+                    file_index: index,
+                    total_files: files.length,
+                    is_batch_upload: 'true'
+                  },
+                  header: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                  },
+                  success: (res) => {
+                    try {
+                      const result = JSON.parse(res.data);
+                      if (result.code === 0) {
+                        resolve(result.data);
+                      } else {
+                        reject(new Error(result.msg || '上传失败'));
+                      }
+                    } catch (e) {
+                      reject(new Error('上传响应解析失败'));
+                    }
+                  },
+                  fail: (err) => {
+                    reject(new Error(err.errMsg || '上传失败'));
+                  }
+                });
+              });
+            });
+            
+            uploadResult = await Promise.all(uploadPromises);
+          }
+        } catch (error) {
+          wx.hideLoading();
+          wx.showModal({
+            title: '上传失败',
+            content: error.message || '文件上传失败，请重试',
+            showCancel: false
           });
+          this.setData({ isSubmitting: false });
+          return;
         }
-      });
-      
-      // 隐藏上传进度
-      this.setData({ showSimpleProgress: false });
-      
-      wx.showLoading({ title: '提交中...' });
-      
-      // 提交作业
-      await submissionModule.submitHomework({
-        taskId: this.data.taskId,
-        images: imageUrls,
-        text: this.data.submissionText.trim()
-      });
+      } else {
+        // 纯文字提交：使用普通POST请求
+        const res = await app.request({
+          url: '/submissions/upload-files',
+          method: 'POST',
+          data: {
+            task_id: this.data.taskId,
+            description: this.data.submissionText.trim()
+          }
+        });
+        uploadResult = [res.data];
+      }
       
       wx.hideLoading();
       wx.showToast({
@@ -444,7 +673,7 @@ Page({
       
       // 清空表单
       this.setData({
-        uploadedImages: [],
+        uploadedFiles: [],
         submissionText: '',
         canSubmit: false
       });

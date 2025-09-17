@@ -314,11 +314,11 @@ async def get_student_submissions(
             "id": sub.id,
             "task_id": sub.task_id,
             "task_title": task.title if task else "Unknown",
-            "submission_count": sub.submission_count,
+            "submission_count": sub.submit_count,
             "status": sub.status.value,
             "score": sub.score,
             "grade": sub.grade.value if sub.grade else None,
-            "feedback": sub.feedback,
+            "feedback": sub.comment,
             "created_at": sub.created_at.isoformat(),
             "graded_at": sub.graded_at.isoformat() if sub.graded_at else None
         }
@@ -811,11 +811,11 @@ async def get_task_submissions(
             submission_data = {
                 "id": submission.id,
                 "student_id": submission.student_id,
-                "submission_count": submission.submission_count,
+                "submission_count": submission.submit_count,
                 "status": submission.status.value,
                 "score": submission.score,
                 "grade": submission.grade.value if submission.grade else None,
-                "feedback": submission.feedback,
+                "feedback": submission.comment,
                 "images": submission.images or [],
                 "text": submission.text,
                 "submitted_at": submission.created_at.isoformat(),
@@ -825,7 +825,7 @@ async def get_task_submissions(
                     "nickname": student.nickname if student else "未知用户",
                     "avatar_url": student.avatar if student else None
                 },
-                "teacher_evaluation": submission.feedback  # 兼容前端字段名
+                "teacher_evaluation": submission.comment  # 兼容前端字段名
             }
             formatted_submissions.append(submission_data)
         

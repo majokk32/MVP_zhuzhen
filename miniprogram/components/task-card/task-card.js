@@ -1,7 +1,7 @@
 
 // components/task-card/task-card.js
 const authModule = require('../../modules/auth/auth');
-const { formatDateTime } = require('../../utils/time-formatter');
+const { formatDateTime, getChinaTime } = require('../../utils/time-formatter');
 
 Component({
   /**
@@ -173,7 +173,7 @@ Component({
       }
 
       // 计算左下角状态（PRD要求：正在进行中/课后加餐/已结束/已完成）
-      const now = new Date()
+      const now = getChinaTime()
       const deadline = task.deadline ? new Date(task.deadline) : null
 
       if (task.task_type === 'extra') {

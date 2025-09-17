@@ -1,5 +1,5 @@
 <!-- 沉浸式批改导航组件 -->
-<view class="grading-navigator-container">
+<view class="grading-navigator-container" bindtouchstart="onTouchStart" bindtouchend="onTouchEnd">
   
   <!-- 顶部进度指示器 -->
   <view class="progress-header">

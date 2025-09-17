@@ -17,6 +17,7 @@ class UserRoleEnum(str, Enum):
 
 
 class TaskStatusEnum(str, Enum):
+    draft = "draft"
     ongoing = "ongoing"
     ended = "ended"
 
@@ -69,6 +70,7 @@ class TaskCreate(BaseModel):
     desc: str = Field(..., description="题目详情")
     total_score: float = Field(default=40, gt=0, description="总分")
     deadline: Optional[datetime] = Field(None, description="截止时间")
+    status: Optional[TaskStatusEnum] = Field(default=TaskStatusEnum.ongoing, description="任务状态")
 
 
 class TaskUpdate(BaseModel):
@@ -134,11 +136,11 @@ class SubmissionInfo(BaseModel):
     student_id: int
     images: List[str]
     text: Optional[str]
-    submission_count: int
+    submit_count: int
     status: str
     score: Optional[float]
     grade: Optional[GradeEnum]
-    feedback: Optional[str]
+    comment: Optional[str]
     graded_by: Optional[int]
     graded_at: Optional[datetime]
     created_at: datetime

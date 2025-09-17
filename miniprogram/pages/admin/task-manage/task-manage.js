@@ -19,6 +19,7 @@ Page({
     
     // 状态文本映射
     statusTextMap: {
+      'draft': '草稿',
       'ongoing': '进行中',
       'ended': '已结束'
     }
@@ -225,6 +226,9 @@ Page({
       case 'share':
         this.shareTask(task)
         break
+      case 'publish':
+        this.publishTask(task)
+        break
       case 'delete':
         this.deleteTask(task)
         break
@@ -237,6 +241,49 @@ Page({
   editTask(task) {
     wx.navigateTo({
       url: `/pages/admin/task-create/task-create?id=${task.id}&mode=edit`
+    })
+  },
+
+  /**
+   * 发布草稿任务
+   */
+  async publishTask(task) {
+    wx.showModal({
+      title: '确认发布',
+      content: `确定要发布任务"${task.title}"吗？发布后学生将可以看到并提交作业。`,
+      success: async (res) => {
+        if (res.confirm) {
+          try {
+            wx.showLoading({ title: '发布中...' })
+            
+            const app = getApp()
+            await app.request({
+              url: `/tasks/${task.id}`,
+              method: 'PUT',
+              data: {
+                status: 'ongoing'
+              }
+            })
+            
+            wx.showToast({
+              title: '发布成功',
+              icon: 'success'
+            })
+            
+            // 刷新任务列表
+            this.onRefresh()
+            
+          } catch (error) {
+            console.error('发布任务失败:', error)
+            wx.showToast({
+              title: '发布失败',
+              icon: 'error'
+            })
+          } finally {
+            wx.hideLoading()
+          }
+        }
+      }
     })
   },
 

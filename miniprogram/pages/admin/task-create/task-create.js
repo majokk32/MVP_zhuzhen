@@ -361,7 +361,8 @@ Page({
         course: this.data.taskTypes[formData.typeIndex].name, // 使用课程类型名称
         desc: formData.requirements.trim(),
         total_score: parseFloat(formData.totalScore) || 100,
-        deadline: formData.date && formData.time ? `${formData.date}T${formData.time}:00` : null
+        deadline: formData.date && formData.time ? `${formData.date}T${formData.time}:00` : null,
+        status: mode === 'draft' ? 'draft' : 'ongoing'
       }
 
       console.log('📝 [DEBUG] 提交任务数据:', submitData);

@@ -1138,7 +1138,7 @@ App({
     launchScene: null,
     // API基础地址
     // baseUrl: 'http://120.77.57.53:8000/api/v1',  // 开发环境
-    baseUrl: 'http://192.168.1.139:8000/api/v1',
+    baseUrl: 'http://localhost:8000/api/v1',
     // baseUrl: 'https://api.zhuzhen.com/api/v1',  // 生产环境
   }
 })

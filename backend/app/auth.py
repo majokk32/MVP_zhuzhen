@@ -39,9 +39,12 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 def verify_token(token: str) -> dict:
     """Verify JWT token and return payload"""
     try:
+        print(f"[AUTH] 开始验证token: {token[:20] if token and len(token) > 20 else token}")
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        print(f"[AUTH] Token验证成功, payload: {payload}")
         return payload
-    except JWTError:
+    except JWTError as e:
+        print(f"[AUTH] Token验证失败: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -54,7 +57,9 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db)
 ) -> User:
     """Get current user from JWT token"""
+    print(f"[AUTH] 收到认证请求, credentials: {credentials}")
     token = credentials.credentials
+    print(f"[AUTH] 提取token: {token[:20]}..." if token and len(token) > 20 else f"[AUTH] Token: {token}")
     payload = verify_token(token)
     
     user_id_str = payload.get("sub")

@@ -26,28 +26,42 @@ from app.utils.notification import notification_service
 
 router = APIRouter(prefix="/submissions")
 
+# Test endpoint to manually trigger auto-merge
+@router.post("/test-merge/{task_id}")
+async def test_auto_merge(
+    task_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Test endpoint to manually trigger auto-merge for debugging"""
+    await auto_merge_recent_uploads(task_id, current_user.id, db)
+    return {"code": 0, "msg": "Auto-merge attempted", "data": None}
+
 # Supported file types with their max sizes (in bytes)
 SUPPORTED_FILE_TYPES = {
-    # Images
+    # Images - 支持前端显示的所有格式
     'image/jpeg': 10 * 1024 * 1024,
-    'image/jpg': 10 * 1024 * 1024,
     'image/png': 10 * 1024 * 1024,
     'image/gif': 10 * 1024 * 1024,
     'image/webp': 10 * 1024 * 1024,
+    'image/bmp': 10 * 1024 * 1024,
     
-    # Documents
+    # Documents - 支持前端显示的所有文档格式
     'application/pdf': 10 * 1024 * 1024,
-    'application/msword': 10 * 1024 * 1024,
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 10 * 1024 * 1024,
-    'text/plain': 10 * 1024 * 1024,
-    'application/rtf': 10 * 1024 * 1024,
+    'application/msword': 10 * 1024 * 1024,  # .doc
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 10 * 1024 * 1024,  # .docx
+    'text/plain': 10 * 1024 * 1024,  # .txt
+    'application/rtf': 10 * 1024 * 1024,  # .rtf
 }
 
 
 @router.post("/upload-image", response_model=ResponseBase)
 async def upload_image(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user)
+    task_id: int = Form(None),
+    text_content: str = Form(""),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Upload a single image file
@@ -83,6 +97,46 @@ async def upload_image(
             file.content_type
         )
         
+        # If task_id is provided, create a submission record
+        if task_id:
+            print(f"🚀 [DEBUG] Creating submission for task {task_id}")
+            
+            # Validate task exists
+            task_result = await db.execute(select(Task).where(Task.id == task_id))
+            task = task_result.scalar_one_or_none()
+            
+            if task:
+                # Check submission count limit
+                existing_submissions = await db.execute(
+                    select(Submission).where(
+                        and_(Submission.task_id == task_id, Submission.student_id == current_user.id)
+                    )
+                )
+                current_count = len(existing_submissions.scalars().all())
+                print(f"📊 [DEBUG] Current submission count: {current_count}/3")
+                
+                if current_count < 3:
+                    # Create submission record
+                    submission = Submission(
+                        task_id=task_id,
+                        student_id=current_user.id,
+                        images=[url],
+                        text=text_content.strip() if text_content.strip() else None,
+                        submit_count=current_count + 1,
+                        status=SubmissionStatus.SUBMITTED
+                    )
+                    
+                    db.add(submission)
+                    await db.commit()
+                    await db.refresh(submission)
+                    
+                    print(f"🔍 [DEBUG] Submission created with ID: {submission.id}")
+                    
+                    # Auto-merge logic: temporarily disabled for debugging
+                    # await auto_merge_recent_uploads(task_id, current_user.id, db)
+                else:
+                    print(f"❌ [DEBUG] Submission limit reached!")
+        
         return ResponseBase(
             data=FileUploadResponse(
                 url=url,
@@ -102,6 +156,10 @@ async def upload_multiple_files(
     task_id: int = Form(...),
     files: List[UploadFile] = File(...),
     text_content: str = Form(""),
+    batch_id: str = Form(""),
+    file_index: int = Form(0),
+    total_files: int = Form(1),
+    is_batch_upload: str = Form("false"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -109,6 +167,8 @@ async def upload_multiple_files(
     Upload multiple files (images, documents, text) for a submission
     支持图片、文件、文字上传，统一10MB限制
     """
+    print(f"🚀 [DEBUG] Upload started - task_id: {task_id}, files: {len(files)}, text: '{text_content}', batch: {is_batch_upload}")
+    
     # Validate task exists
     task_result = await db.execute(select(Task).where(Task.id == task_id))
     task = task_result.scalar_one_or_none()
@@ -119,9 +179,25 @@ async def upload_multiple_files(
             detail="任务不存在"
         )
     
-    # Check submission count limit
-    current_count = await enhanced_storage.get_submission_count(task_id, current_user.id)
+    # Handle batch upload logic (new method)
+    if is_batch_upload.lower() == "true" and batch_id:
+        return await handle_batch_upload(
+            task_id, current_user.id, files, text_content, 
+            batch_id, file_index, total_files, db
+        )
+    
+    # Auto-merge will be called AFTER submission creation
+    
+    # Check submission count limit using database
+    existing_submissions = await db.execute(
+        select(Submission).where(
+            and_(Submission.task_id == task_id, Submission.student_id == current_user.id)
+        )
+    )
+    current_count = len(existing_submissions.scalars().all())
+    print(f"📊 [DEBUG] Current submission count: {current_count}/3")
     if current_count >= 3:
+        print(f"❌ [DEBUG] Submission limit reached!")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="已达到最大提交次数（3次）"
@@ -155,42 +231,64 @@ async def upload_multiple_files(
             'content_type': file.content_type
         })
     
-    # Add text content as a file if provided
-    if text_content.strip():
-        text_bytes = text_content.encode('utf-8')
-        if len(text_bytes) > 10 * 1024 * 1024:  # 10MB limit for text too
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="文字内容超过10MB限制"
-            )
-        
-        files_data.append({
-            'content': text_bytes,
-            'filename': 'submission_text.txt',
-            'content_type': 'text/plain'
-        })
-    
     try:
-        # Upload all files to organized folder structure
-        upload_result = await enhanced_storage.upload_files_to_submission(
-            files_data, task_id, current_user.id
+        # Handle file upload or text-only submission
+        if files_data:
+            # Upload files if any
+            upload_result = await enhanced_storage.upload_files_to_submission(
+                files_data, task_id, current_user.id
+            )
+            
+            if not upload_result['success']:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"部分文件上传失败: {upload_result['failed_files']}"
+                )
+            
+            file_urls = [file['url'] for file in upload_result['uploaded_files']]
+            # Use database count for consistency (current_count + 1)
+            submission_count = current_count + 1
+        else:
+            # Text-only submission
+            if not text_content.strip():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="请至少上传文件或添加文字说明"
+                )
+            
+            # Use same count calculation for text-only
+            submission_count = current_count + 1
+            file_urls = []
+        
+        # Create submission record in database
+        submission = Submission(
+            task_id=task_id,
+            student_id=current_user.id,
+            images=file_urls,  # Store file URLs (empty list if text-only)
+            text=text_content.strip() if text_content.strip() else None,  # Store text description
+            submit_count=submission_count,
+            status=SubmissionStatus.SUBMITTED
         )
         
-        if not upload_result['success']:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"部分文件上传失败: {upload_result['failed_files']}"
-            )
+        db.add(submission)
+        await db.commit()
+        await db.refresh(submission)
+        
+        # Auto-merge logic: temporarily disabled for debugging
+        # await auto_merge_recent_uploads(task_id, current_user.id, db)
+        print(f"🔍 [DEBUG] Submission created with ID: {submission.id}")
         
         return ResponseBase(
             data={
-                'submission_count': upload_result['submission_count'],
-                'uploaded_files': upload_result['uploaded_files'],
-                'folder_path': upload_result['folder_path'],
-                'submission_time': upload_result['submission_time'],
-                'remaining_attempts': 3 - upload_result['submission_count']
+                'submission_id': submission.id,
+                'submission_count': submission_count,
+                'uploaded_files': upload_result.get('uploaded_files', []) if files_data else [],
+                'folder_path': upload_result.get('folder_path', '') if files_data else '',
+                'submission_time': upload_result.get('submission_time', submission.created_at.isoformat()) if files_data else submission.created_at.isoformat(),
+                'text_description': text_content.strip(),
+                'remaining_attempts': 3 - submission_count
             },
-            msg=f"文件上传成功！第 {upload_result['submission_count']} 次提交"
+            msg=f"作业提交成功！第 {submission_count} 次提交"
         )
         
     except StorageError as e:
@@ -267,7 +365,7 @@ async def submit_homework(
     
     if existing:
         # Check submission count
-        if existing.submission_count >= 3:
+        if existing.submit_count >= 3:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="已达到最大提交次数（3次）"
@@ -276,10 +374,10 @@ async def submit_homework(
         # Update existing submission
         existing.images = submission_data.images
         existing.text = submission_data.text
-        existing.submission_count += 1
+        existing.submit_count += 1
         existing.status = SubmissionStatus.SUBMITTED
         existing.grade = None  # Reset grade
-        existing.feedback = None
+        existing.comment = None
         existing.score = None
         existing.graded_by = None
         existing.graded_at = None
@@ -294,7 +392,7 @@ async def submit_homework(
             student_id=current_user.id,
             images=submission_data.images,
             text=submission_data.text,
-            submission_count=1,
+            submit_count=1,
             status=SubmissionStatus.SUBMITTED
         )
         
@@ -438,7 +536,7 @@ async def grade_submission(
     # Update grading info
     submission.score = grade_data.score
     submission.grade = Grade(grade_data.grade)
-    submission.feedback = grade_data.feedback
+    submission.comment = grade_data.feedback
     submission.graded_by = current_user.id
     submission.graded_at = datetime.utcnow()
     submission.status = SubmissionStatus.GRADED
@@ -613,4 +711,234 @@ async def grade_submission_enhanced(
         },
         msg="批改完成"
     )
+
+
+# Batch upload handler to solve frontend multiple file upload limitation
+import asyncio
+from typing import Dict, Set
+
+# Global storage for batch uploads
+batch_storage: Dict[str, Dict] = {}
+
+async def handle_batch_upload(
+    task_id: int, 
+    student_id: int, 
+    files: List[UploadFile], 
+    text_content: str,
+    batch_id: str,
+    file_index: int,
+    total_files: int,
+    db: AsyncSession
+) -> ResponseBase:
+    """
+    Handle batch file uploads from frontend
+    Collects multiple files with same batch_id and creates single submission when all files received
+    """
+    print(f"🔄 [BATCH] Processing batch upload - batch_id: {batch_id}, file_index: {file_index}/{total_files}")
+    global batch_storage
+    
+    # Initialize batch if not exists
+    if batch_id not in batch_storage:
+        batch_storage[batch_id] = {
+            'task_id': task_id,
+            'student_id': student_id,
+            'files_data': [],
+            'text_content': text_content,
+            'total_files': total_files,
+            'received_files': 0,
+            'created_at': datetime.utcnow()
+        }
+    
+    batch_info = batch_storage[batch_id]
+    
+    # Process current file
+    try:
+        for file in files:
+            # Validate file type
+            if file.content_type not in SUPPORTED_FILE_TYPES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"不支持的文件类型: {file.content_type}"
+                )
+            
+            # Validate file size
+            contents = await file.read()
+            max_size = SUPPORTED_FILE_TYPES[file.content_type]
+            
+            if len(contents) > max_size:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"文件 {file.filename} 超过大小限制 10MB"
+                )
+            
+            batch_info['files_data'].append({
+                'content': contents,
+                'filename': file.filename,
+                'content_type': file.content_type,
+                'index': file_index
+            })
+        
+        batch_info['received_files'] += len(files)
+        
+        # If all files received, create submission
+        if batch_info['received_files'] >= batch_info['total_files']:
+            return await create_batch_submission(batch_id, db)
+        else:
+            # Return temporary success for intermediate files
+            return ResponseBase(
+                data={
+                    'batch_id': batch_id,
+                    'received_files': batch_info['received_files'],
+                    'total_files': batch_info['total_files'],
+                    'status': 'partial'
+                },
+                msg=f"已接收 {batch_info['received_files']}/{batch_info['total_files']} 个文件"
+            )
+            
+    except Exception as e:
+        # Clean up batch on error
+        if batch_id in batch_storage:
+            del batch_storage[batch_id]
+        raise e
+
+
+async def create_batch_submission(batch_id: str, db: AsyncSession) -> ResponseBase:
+    """
+    Create final submission record when all batch files are received
+    """
+    global batch_storage
+    
+    if batch_id not in batch_storage:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="批次上传信息不存在"
+        )
+    
+    batch_info = batch_storage[batch_id]
+    
+    try:
+        # Upload files to storage
+        upload_result = await enhanced_storage.upload_files_to_submission(
+            batch_info['files_data'], batch_info['task_id'], batch_info['student_id']
+        )
+        
+        if not upload_result['success']:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"部分文件上传失败: {upload_result['failed_files']}"
+            )
+        
+        file_urls = [file['url'] for file in upload_result['uploaded_files']]
+        
+        # Check current submission count
+        existing_submissions = await db.execute(
+            select(Submission).where(
+                and_(Submission.task_id == batch_info['task_id'], 
+                     Submission.student_id == batch_info['student_id'])
+            )
+        )
+        current_count = len(existing_submissions.scalars().all())
+        submission_count = current_count + 1
+        
+        # Create submission record
+        submission = Submission(
+            task_id=batch_info['task_id'],
+            student_id=batch_info['student_id'],
+            images=file_urls,
+            text=batch_info['text_content'].strip() if batch_info['text_content'].strip() else None,
+            submit_count=submission_count,
+            status=SubmissionStatus.SUBMITTED
+        )
+        
+        db.add(submission)
+        await db.commit()
+        await db.refresh(submission)
+        
+        # Clean up batch storage
+        del batch_storage[batch_id]
+        
+        return ResponseBase(
+            data={
+                'submission_id': submission.id,
+                'submission_count': submission_count,
+                'uploaded_files': upload_result['uploaded_files'],
+                'folder_path': upload_result['folder_path'],
+                'submission_time': upload_result['submission_time'],
+                'text_description': batch_info['text_content'].strip(),
+                'remaining_attempts': 3 - submission_count,
+                'batch_complete': True
+            },
+            msg=f"批量上传完成！第 {submission_count} 次提交，共 {len(file_urls)} 个文件"
+        )
+        
+    except Exception as e:
+        # Clean up batch on error
+        if batch_id in batch_storage:
+            del batch_storage[batch_id]
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"创建提交记录失败: {str(e)}"
+        )
+
+
+async def auto_merge_recent_uploads(task_id: int, student_id: int, db: AsyncSession):
+    """
+    Auto-merge multiple submissions uploaded within 3 seconds into a single submission
+    This solves the frontend limitation where each file creates a separate request
+    """
+    try:
+        # Find submissions from the last 3 seconds for this task/student
+        from datetime import timedelta
+        cutoff_time = datetime.utcnow() - timedelta(seconds=3)
+        
+        recent_submissions = await db.execute(
+            select(Submission).where(
+                and_(
+                    Submission.task_id == task_id,
+                    Submission.student_id == student_id,
+                    Submission.created_at > cutoff_time,
+                    Submission.status == SubmissionStatus.SUBMITTED
+                )
+            ).order_by(Submission.created_at)
+        )
+        
+        submissions_list = recent_submissions.scalars().all()
+        
+        # If we have multiple submissions within 3 seconds, merge them
+        if len(submissions_list) > 1:
+            print(f"🔄 [AUTO-MERGE] 发现 {len(submissions_list)} 个近期提交（3秒内），开始自动合并...")
+            
+            # Keep the first submission, merge others into it
+            main_submission = submissions_list[0]
+            merge_submissions = submissions_list[1:]
+            
+            # Collect all images and text from all submissions
+            all_images = list(main_submission.images) if main_submission.images else []
+            all_text_parts = []
+            
+            if main_submission.text and main_submission.text.strip():
+                all_text_parts.append(main_submission.text.strip())
+            
+            # Merge data from other submissions
+            for sub in merge_submissions:
+                if sub.images:
+                    all_images.extend(sub.images)
+                if sub.text and sub.text.strip():
+                    all_text_parts.append(sub.text.strip())
+            
+            # Update main submission with merged data
+            main_submission.images = all_images
+            main_submission.text = ' '.join(all_text_parts) if all_text_parts else None
+            
+            # Delete the duplicate submissions
+            for sub in merge_submissions:
+                await db.delete(sub)
+            
+            await db.commit()
+            
+            print(f"✅ [AUTO-MERGE] 成功合并到提交 ID {main_submission.id}，包含 {len(all_images)} 个文件")
+            
+    except Exception as e:
+        print(f"❌ [AUTO-MERGE] 自动合并失败: {e}")
+        # Don't raise the error, just log it - this is a background optimization
 
