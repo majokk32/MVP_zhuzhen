@@ -8,7 +8,7 @@ from sqlalchemy import select
 from typing import Optional
 
 from app.database import get_db
-from app.models import User, UserRole
+from app.models import User, UserRole, SubscriptionType
 from app.schemas import ResponseBase, UserLogin, UserInfo, UserUpdateProfile
 from app.auth import create_access_token, get_current_user
 from app.utils.wechat import get_wechat_session, WeChatError
@@ -97,14 +97,18 @@ async def get_profile(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Get current user profile with subscription status
+    Get current user profile with subscription status (students only)
     """
     user_info = UserInfo.from_orm(current_user)
     user_data = user_info.dict()
     
-    # Add subscription information
-    subscription_display = await get_subscription_display_async(current_user, db)
-    user_data["subscription_status"] = subscription_display
+    # Add subscription information only for students
+    if current_user.role == UserRole.STUDENT:
+        subscription_display = await get_subscription_display_async(current_user, db)
+        user_data["subscription_status"] = subscription_display
+    else:
+        # Teachers don't need subscription info
+        user_data["subscription_status"] = None
     
     return ResponseBase(data=user_data)
 
@@ -138,10 +142,10 @@ async def grant_teacher_role(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Grant teacher role to a user (admin only)
+    Grant teacher role to a user (teacher only)
     Note: In MVP, we might manually update database for teacher accounts
     """
-    # For MVP, only allow if current user is already a teacher
+    # Only allow if current user is already a teacher
     if current_user.role != UserRole.TEACHER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -158,11 +162,15 @@ async def grant_teacher_role(
             detail="User not found"
         )
     
-    # Update role
+    # Update role and subscription
     target_user.role = UserRole.TEACHER
+    target_user.subscription_type = SubscriptionType.PREMIUM
+    target_user.subscription_expires_at = None  # Teachers have permanent premium
+    target_user.is_active = True
     await db.commit()
     
     return ResponseBase(msg="Teacher role granted successfully")
+
 
 
 @router.get("/stats", response_model=ResponseBase)

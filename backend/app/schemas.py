@@ -154,7 +154,7 @@ class SubmissionInfo(BaseModel):
         from_attributes = True
 
 
-# Admin schemas
+# Teacher management schemas
 class TaskProgress(BaseModel):
     task_id: int
     task_title: str

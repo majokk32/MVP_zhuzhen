@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
-from app.models import User, SubscriptionType
+from app.models import User, SubscriptionType, UserRole
 
 
 class AsyncSubscriptionService:
@@ -30,15 +30,27 @@ class AsyncSubscriptionService:
     
     async def check_subscription_status(self, user: User) -> Dict[str, Any]:
         """检查用户订阅状态"""
+        # Teachers always have premium status
+        if user.role == UserRole.TEACHER:
+            return {
+                "subscription_type": SubscriptionType.PREMIUM,
+                "is_active": True,
+                "expires_at": None,  # No expiration for teachers
+                "days_remaining": 999999,  # Unlimited
+                "is_trial": False,
+                "is_premium": True,
+                "is_expired": False
+            }
+            
         now = datetime.utcnow()
         
-        # 检查是否过期
+        # Check for expiration (students only)
         if user.subscription_expires_at and now > user.subscription_expires_at:
             if user.subscription_type != SubscriptionType.EXPIRED:
                 user.subscription_type = SubscriptionType.EXPIRED
                 await self.db.commit()
         
-        # 计算剩余天数
+        # Calculate remaining days
         days_remaining = 0
         if user.subscription_expires_at:
             remaining = user.subscription_expires_at - now
@@ -55,7 +67,11 @@ class AsyncSubscriptionService:
         }
     
     async def get_subscription_display_text(self, user: User) -> str:
-        """获取订阅状态显示文本"""
+        """获取订阅状态显示文本（仅限学生）"""
+        # Teachers don't need subscription display
+        if user.role == UserRole.TEACHER:
+            return ""
+            
         status = await self.check_subscription_status(user)
         
         if status["is_premium"]:
@@ -81,6 +97,10 @@ class AsyncSubscriptionService:
     
     async def has_feature_access(self, user: User, feature: str) -> bool:
         """检查用户是否有权限访问特定功能"""
+        # Teachers always have premium access
+        if user.role == UserRole.TEACHER:
+            return True
+            
         status = await self.check_subscription_status(user)
         
         # 如果是过期用户，只能访问基础功能
