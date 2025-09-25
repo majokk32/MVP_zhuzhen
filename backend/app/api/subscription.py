@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas import ResponseBase
 from app.auth import get_current_user
+from app.models import UserRole
 from app.services.async_subscription import (
     AsyncSubscriptionService,
     get_subscription_status_async
@@ -24,8 +25,15 @@ async def get_subscription_status(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    获取当前用户的订阅状态详情
+    获取当前用户的订阅状态详情（仅限学生）
     """
+    # Only students need subscription status
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(
+            status_code=403,
+            detail="Subscription status is only available for students"
+        )
+    
     service = AsyncSubscriptionService(db)
     status = await service.check_subscription_status(current_user)
     
@@ -38,8 +46,15 @@ async def get_feature_limits(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    获取当前用户的功能限制信息
+    获取当前用户的功能限制信息（仅限学生）
     """
+    # Only students have feature limits
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(
+            status_code=403,
+            detail="Feature limits are only applicable to students"
+        )
+    
     service = AsyncSubscriptionService(db)
     limits = await service.get_feature_limits(current_user)
     
@@ -58,10 +73,15 @@ async def check_feature_access(
     service = AsyncSubscriptionService(db)
     has_access = await service.has_feature_access(current_user, feature)
     
+    # Return subscription type only for students
+    subscription_info = None
+    if current_user.role == UserRole.STUDENT:
+        subscription_info = current_user.subscription_type
+    
     return ResponseBase(data={
         "feature": feature,
         "has_access": has_access,
-        "subscription_type": current_user.subscription_type
+        "subscription_type": subscription_info
     })
 
 
@@ -71,8 +91,14 @@ async def upgrade_to_premium_demo(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    演示升级功能 - 实际生产环境中这应该与支付系统集成
+    演示升级功能 - 实际生产环境中这应该与支付系统集成（仅限学生）
     """
+    # Only students can upgrade subscription
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(
+            status_code=403,
+            detail="Subscription upgrade is only available for students"
+        )
     service = AsyncSubscriptionService(db)
     updated_user = await service.upgrade_to_premium(current_user, days=365)
     

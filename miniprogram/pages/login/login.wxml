@@ -5,6 +5,7 @@
     <view class="logo-container">
       <view class="logo-icon">🎓</view>
       <view class="app-name">公考督学助手</view>
+      <view class="app-slogan">智能督学，高效备考</view>
     </view>
   </view>
 
@@ -26,77 +27,6 @@
         <text wx:else>登录中...</text>
       </view>
     </button>
-
-    <!-- 手机号授权登录按钮 -->
-    <button 
-      class="auth-btn secondary"
-      open-type="getPhoneNumber"
-      bindgetphonenumber="handlePhoneLogin"
-      disabled="{{loading}}"
-      wx:if="{{showPhoneLogin}}"
-    >
-      <view class="btn-content">
-        <text wx:if="{{!loading}}">📱 手机号快速登录</text>
-        <text wx:else>登录中...</text>
-      </view>
-    </button>
-  </view>
-
-  <view class="login-content">
-
-    <!-- 完善资料登录（可选） -->
-    <view class="profile-section" wx:if="{{canUseNicknameInput}}">
-      <view class="profile-title">完善个人信息</view>
-      
-      <!-- 头像选择 -->
-      <view class="avatar-wrapper">
-        <button 
-          class="avatar-btn" 
-          open-type="chooseAvatar" 
-          bindchooseavatar="onChooseAvatar"
-        >
-          <image class="avatar" src="{{avatarUrl || ''}}" mode="aspectFill" wx:if="{{avatarUrl}}"></image>
-          <view class="avatar" wx:else>
-            <text class="avatar-icon">👤</text>
-          </view>
-          <view class="avatar-edit">
-            <text>点击修改</text>
-          </view>
-        </button>
-      </view>
-
-      <!-- 昵称输入 -->
-      <view class="input-wrapper">
-        <input 
-          type="nickname" 
-          class="nickname-input"
-          placeholder="请输入昵称"
-          placeholder-class="placeholder"
-          value="{{nickname}}"
-          bindinput="onNicknameInput"
-        />
-      </view>
-
-      <!-- 完善资料按钮 -->
-      <button 
-        class="btn-secondary" 
-        bindtap="handleCompleteProfile"
-        disabled="{{loading || !nickname}}"
-      >
-        完善资料并登录
-      </button>
-    </view>
-
-    <!-- 旧版getUserProfile方式（兼容） -->
-    <view class="profile-section" wx:elif="{{canUseGetUserProfile}}">
-      <button 
-        class="btn-secondary" 
-        bindtap="handleCompleteProfile"
-        disabled="{{loading}}"
-      >
-        授权登录
-      </button>
-    </view>
   </view>
 
   <!-- 服务条款 -->
