@@ -34,7 +34,7 @@ class AuthModule {
    * @returns {boolean}
    */
   isPaidUser() {
-    return this.userInfo && (this.userInfo.permission_type === 'paid' || this.userInfo.userType === 'paid')
+    return this.userInfo && this.userInfo.subscription_type === 'PREMIUM'
   }
 
   /**
@@ -42,7 +42,17 @@ class AuthModule {
    * @returns {boolean}
    */
   isTrialUser() {
-    return this.userInfo && (this.userInfo.permission_type === 'trial' || this.userInfo.userType === 'trial')
+    if (!this.userInfo) return false;
+    
+    // 如果 subscription_type 未定义、为 null，或为试用类型，当作试用用户处理（对于学生角色）
+    const isStudentTrialUser = this.userInfo.role === 'student' && 
+      (!this.userInfo.subscription_type || 
+       this.userInfo.subscription_type === 'TRIAL' || 
+       this.userInfo.subscription_type === 'TRAIL'); // 兼容可能的拼写差异
+    
+    const result = isStudentTrialUser;
+    console.log('🔑 [DEBUG] isTrialUser 检查 - subscription_type:', this.userInfo?.subscription_type, 'role:', this.userInfo?.role, 'result:', result);
+    return result;
   }
 
   /**
@@ -50,10 +60,10 @@ class AuthModule {
    * @returns {boolean}
    */
   isPermissionExpired() {
-    if (!this.userInfo || !this.userInfo.permission_expire) {
+    if (!this.userInfo || !this.userInfo.subscription_expires_at) {
       return false
     }
-    const expireDate = new Date(this.userInfo.permission_expire)
+    const expireDate = new Date(this.userInfo.subscription_expires_at)
     return expireDate < new Date()
   }
 
@@ -252,8 +262,8 @@ class AuthModule {
   }
 
   /**
-   * 检查任务访问权限（试用用户无法访问任务详情）
-   * @param {object} options - {showModal: boolean, onUpgrade: function} 配置选项
+   * 检查任务访问权限
+   * @param {object} options - {showModal: boolean} 配置选项
    * @returns {boolean}
    */
   checkTaskAccess(options = {}) {
@@ -262,42 +272,33 @@ class AuthModule {
       return true
     }
 
-    // 检查是否为试用用户
+    // 试用用户无访问权限
     if (this.isTrialUser()) {
-      if (options.showModal !== false) {
+      if (options.showModal) {
         wx.showModal({
-          title: '试用用户无权限',
-          content: '试用用户只能浏览课程目录，无法查看任务详情。请联系客服升级为付费学员。',
-          confirmText: '联系客服',
-          cancelText: '返回',
-          success: (res) => {
-            if (res.confirm && options.onUpgrade) {
-              options.onUpgrade()
-            }
-          }
+          title: '试用学员无法使用',
+          content: '只能浏览课程目录',
+          confirmText: '返回',
+          showCancel: false
         })
       }
       return false
     }
 
-    // 检查权限是否过期
+    // 权限过期检查
     if (this.isPermissionExpired()) {
-      if (options.showModal !== false) {
+      if (options.showModal) {
         wx.showModal({
           title: '权限已过期',
-          content: '您的学习权限已过期，请联系客服续费。',
-          confirmText: '联系客服',
-          cancelText: '返回',
-          success: (res) => {
-            if (res.confirm && options.onUpgrade) {
-              options.onUpgrade()
-            }
-          }
+          content: '请联系客服续费',
+          confirmText: '返回',
+          showCancel: false
         })
       }
       return false
     }
 
+    // 付费用户允许访问
     return true
   }
 
@@ -316,9 +317,9 @@ class AuthModule {
 
     if (this.isPaidUser()) {
       return { 
-        type: 'paid', 
+        type: 'premium', 
         status: '付费学员', 
-        expire: this.userInfo.permission_expire,
+        expire: this.userInfo.subscription_expires_at,
         isExpired: this.isPermissionExpired()
       }
     }

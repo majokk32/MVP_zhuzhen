@@ -39,9 +39,9 @@ class SubmissionStatus(str, enum.Enum):
 
 
 class Grade(str, enum.Enum):
-    PENDING = "待复盘"
-    GOOD = "优秀"
-    EXCELLENT = "极佳"
+    REVIEW = "review"
+    GOOD = "good"
+    EXCELLENT = "excellent"
 
 
 class User(Base):

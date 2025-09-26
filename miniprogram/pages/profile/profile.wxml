@@ -147,5 +147,11 @@
   bind:close="closeNotificationSettings"
 />
 
+<!-- 试用限制提示组件 -->
+<trial-restriction 
+  show="{{showTrialRestriction}}"
+  bind:close="onTrialRestrictionClose"
+/>
+
 <!-- 底部安全区域 -->
 <view class="safe-bottom"></view>

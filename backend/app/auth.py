@@ -13,7 +13,7 @@ from sqlalchemy import select
 
 from app.config import settings
 from app.database import get_db
-from app.models import User, UserRole
+from app.models import User, UserRole, SubscriptionType
 
 
 # Password hashing
@@ -112,6 +112,34 @@ async def get_current_student(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions. Student role required."
         )
+    return current_user
+
+
+async def get_current_premium_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """Ensure current user has premium access (paid subscription or is teacher)"""
+    # Teachers always have premium access
+    if current_user.role == UserRole.TEACHER:
+        return current_user
+    
+    # Students must have premium subscription
+    if current_user.role == UserRole.STUDENT:
+        if current_user.subscription_type == SubscriptionType.TRIAL:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="试用学员无法访问。请升级为付费学员后使用此功能。"
+            )
+        
+        # Check subscription expiration for paid users
+        if (current_user.subscription_type == SubscriptionType.PREMIUM and 
+            current_user.subscription_expires_at and 
+            current_user.subscription_expires_at < datetime.utcnow()):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="订阅已过期。请续费后继续使用。"
+            )
+    
     return current_user
 
 

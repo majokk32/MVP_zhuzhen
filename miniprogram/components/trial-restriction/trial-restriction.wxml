@@ -1,0 +1,17 @@
+<!-- 试用限制提示组件 -->
+<view class="modal-overlay" wx:if="{{show}}" catchtap="onClose">
+  <view class="modal-container" catchtap="preventDefault">
+    <view class="modal-content">
+      <view class="icon-section">
+        <text class="lock-icon">🔒</text>
+      </view>
+      <view class="message-section">
+        <text class="title">试用学员无法访问</text>
+        <text class="desc">该功能仅对付费学员开放，请升级为付费学员后使用</text>
+      </view>
+      <view class="button-section">
+        <button class="close-btn" bindtap="onClose">我知道了</button>
+      </view>
+    </view>
+  </view>
+</view>

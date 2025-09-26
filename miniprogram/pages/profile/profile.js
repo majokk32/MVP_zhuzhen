@@ -47,7 +47,10 @@ Page({
     permissionStatus: '试用用户',
     
     // 通知设置面板状态
-    showNotificationSettings: false
+    showNotificationSettings: false,
+    
+    // 试用限制相关
+    showTrialRestriction: false
   },
 
   onLoad() {
@@ -231,14 +234,18 @@ Page({
 
   // 跳转到排行榜
   async goToLeaderboard() {
-    // 使用支付模块检查功能访问权限
-    const hasAccess = await this.checkFeatureAccess('leaderboard');
-    
-    if (hasAccess) {
-      wx.navigateTo({
-        url: '/pages/leaderboard/leaderboard'
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
       });
+      return;
     }
+    
+    wx.navigateTo({
+      url: '/pages/leaderboard/leaderboard'
+    });
   },
 
   // 显示升级信息
@@ -297,6 +304,15 @@ Page({
 
   // 编辑个人资料
   editProfile() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     wx.navigateTo({
       url: '/pages/edit-profile/edit-profile'
     });
@@ -304,6 +320,15 @@ Page({
 
   // 我的作业
   goToMySubmissions() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     wx.navigateTo({
       url: '/pages/my-submissions/my-submissions'
     });
@@ -311,6 +336,15 @@ Page({
 
   // 成就墙
   goToAchievements() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     wx.showToast({
       title: '功能开发中',
       icon: 'none'
@@ -319,6 +353,15 @@ Page({
 
   // 学习报告
   goToLearningReport() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     wx.showToast({
       title: '功能开发中',
       icon: 'none'
@@ -327,6 +370,15 @@ Page({
 
   // 订阅管理
   goToSubscriptionManagement() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     this.goToSubscription();
   },
 
@@ -417,6 +469,15 @@ Page({
 
   // 打开通知设置
   openNotificationSettings() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     this.setData({
       showNotificationSettings: true
     });
@@ -458,6 +519,15 @@ Page({
 
   // 通知设置
   goToNotificationSettings() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     wx.navigateTo({
       url: '/pages/notification-settings/notification-settings'
     });
@@ -465,6 +535,15 @@ Page({
 
   // 帮助中心
   goToHelp() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     wx.navigateTo({
       url: '/pages/help/help'
     });
@@ -472,6 +551,16 @@ Page({
 
   // 意见反馈
   goToFeedback() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     // 使用微信原生反馈功能
     wx.openSetting({
       success: (res) => {
@@ -482,6 +571,16 @@ Page({
 
   // 关于我们
   goToAbout() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     wx.navigateTo({
       url: '/pages/about/about'
     });
@@ -513,6 +612,15 @@ Page({
 
   // 编辑昵称
   editNickname() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     wx.navigateTo({
       url: '/pages/edit-profile/edit-profile'
     });
@@ -521,6 +629,16 @@ Page({
   // 设置
   // 跳转到复盘页面
   goToReview() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        content: '只能浏览课程目录',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     wx.navigateTo({
       url: '/pages/review/review'
     });
@@ -528,12 +646,30 @@ Page({
 
   // 跳转到课后加餐
   goToMaterials() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     wx.navigateTo({
       url: '/pages/materials/materials'
     });
   },
 
   goToSettings() {
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        confirmText: '返回',
+        showCancel: false
+      });
+      return;
+    }
+    
     wx.showToast({
       title: '功能开发中',
       icon: 'none'
@@ -572,5 +708,20 @@ Page({
   onImageError(e) {
     console.warn('图片加载失败:', e.detail.errMsg);
     // 可以在这里添加默认图片或重试逻辑
+  },
+
+  // 检查试用学员权限
+  checkTrialPermission() {
+    const userInfo = this.data.userInfo;
+    if (userInfo && userInfo.role === 'student' && authModule.isTrialUser()) {
+      this.setData({ showTrialRestriction: true });
+      return false;
+    }
+    return true;
+  },
+
+  // 关闭试用限制提示
+  onTrialRestrictionClose() {
+    this.setData({ showTrialRestriction: false });
   }
 });

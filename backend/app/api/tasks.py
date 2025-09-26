@@ -17,7 +17,7 @@ from app.schemas import (
     ResponseBase, TaskCreate, TaskUpdate, TaskInfo, 
     TaskListResponse, TaskCreateWithTags, TaskUpdateWithTags, TaskInfoWithTags
 )
-from app.auth import get_current_user, get_current_teacher
+from app.auth import get_current_user, get_current_teacher, get_current_premium_user
 
 router = APIRouter(prefix="/tasks")
 
@@ -213,7 +213,7 @@ async def list_tasks(
 @router.get("/{task_id}", response_model=ResponseBase)
 async def get_task(
     task_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_premium_user),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -446,7 +446,7 @@ async def get_task_summary(
         "pending_submission": 0,
         "pending_grading": 0,
         "average_score": 0,
-        "grade_distribution": {"待复盘": 0, "优秀": 0, "极佳": 0}
+        "grade_distribution": {"review": 0, "good": 0, "excellent": 0}
     }
     
     graded_scores = []

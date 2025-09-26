@@ -562,19 +562,12 @@ Page({
     wx.showLoading({ title: '提交中...' });
     
     try {
-      // 映射英文评级到中文
-      const gradeMapping = {
-        'excellent': '极佳',
-        'good': '优秀', 
-        'review': '待复盘'
-      };
-      
       const res = await app.request({
         url: '/submissions/grade',
         method: 'POST',
         data: {
           submission_id: this.data.currentSubmission.id,
-          grade: gradeMapping[this.data.gradeData.grade] || this.data.gradeData.grade,
+          grade: this.data.gradeData.grade,
           score: this.data.gradeData.score || null,
           feedback: this.data.gradeData.feedback ? this.data.gradeData.feedback.trim() : ''
         }

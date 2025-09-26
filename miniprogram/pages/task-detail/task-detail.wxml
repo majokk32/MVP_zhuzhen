@@ -19,7 +19,7 @@
         <text class="icon">📝</text>
         <text>任务要求</text>
       </view>
-      <view class="requirements-content">{{task.requirements || '请按要求完成作业并提交'}}</view>
+      <view class="requirements-content">{{task.desc || '请按要求完成作业并提交'}}</view>
     </view>
 
     <!-- 截止时间 -->
@@ -34,7 +34,7 @@
     <!-- 提交限制提示 -->
     <view class="submit-limit-tip" wx:if="{{!isTeacher}}">
       <text class="icon">💡</text>
-      <text>每个任务最多可提交3次，当前已提交 {{submissionCount}}/3 次，剩余 {{3 - submissionCount}} 次</text>
+      <text>当前已提交 {{submissionCount}}/3 次</text>
     </view>
 
     <!-- 待复盘重置提示 -->
@@ -51,27 +51,14 @@
     <view class="section-card">
       <view class="section-title">
         <text class="icon">📤</text>
-        <text>提交作业</text>
+        <text>作业提交</text>
       </view>
       
-      <!-- 多文件上传区域 -->
+      <!-- 简化的上传区域 -->
       <view class="upload-area">
-        <!-- 文件类型选择器 -->
-        <view class="file-type-selector">
-          <view class="selector-item {{selectedFileType === 'image' ? 'active' : ''}}" bindtap="selectFileType" data-type="image">
-            <text class="type-icon">🖼️</text>
-            <text class="type-name">图片</text>
-          </view>
-          <view class="selector-item {{selectedFileType === 'document' ? 'active' : ''}}" bindtap="selectFileType" data-type="document">
-            <text class="type-icon">📄</text>
-            <text class="type-name">文档</text>
-          </view>
-        </view>
-
-        <!-- 已上传文件列表 -->
-        <view class="uploaded-files">
-          <!-- 图片显示为缩略图 -->
-          <view wx:if="{{item.type === 'image'}}" wx:for="{{uploadedFiles}}" wx:key="index" class="image-item">
+        <!-- 已上传图片预览 -->
+        <view wx:if="{{uploadedFiles.length > 0}}" class="uploaded-images">
+          <view wx:for="{{uploadedFiles}}" wx:key="index" class="image-preview">
             <image 
               src="{{item.path}}" 
               class="preview-image" 
@@ -80,59 +67,27 @@
               data-index="{{index}}"
             />
             <view class="image-delete-btn" bindtap="deleteFile" data-index="{{index}}">×</view>
-            <text class="image-name">{{item.shortName || item.name}}</text>
-          </view>
-          
-          <!-- 文档显示为列表 -->
-          <view wx:if="{{item.type === 'document'}}" wx:for="{{uploadedFiles}}" wx:key="index" class="file-item">
-            <view class="file-info">
-              <text class="file-icon">{{item.icon}}</text>
-              <view class="file-details">
-                <text class="file-name">{{item.shortName || item.name}}</text>
-                <text class="file-size">{{item.size}}</text>
-              </view>
-            </view>
-            <view class="file-actions">
-              <text class="action-btn delete" bindtap="deleteFile" data-index="{{index}}">删除</text>
-            </view>
           </view>
         </view>
         
-        <!-- 上传按钮区域 -->
-        <view class="upload-buttons">
-          <button wx:if="{{selectedFileType === 'image'}}" class="upload-btn" bindtap="chooseImages">
-            <text class="upload-icon">+</text>
-            <text class="upload-text">选择图片</text>
-          </button>
-          <button wx:if="{{selectedFileType === 'document'}}" class="upload-btn" bindtap="chooseDocuments">
-            <text class="upload-icon">+</text>
-            <text class="upload-text">选择文档</text>
-          </button>
+        <!-- 空状态上传提示 -->
+        <view wx:else class="upload-placeholder">
+          <view class="upload-icon">
+            <text class="icon">📷</text>
+          </view>
+          <text class="upload-hint">请上传您的作业图片</text>
         </view>
         
-        <view class="upload-tips">
-          <text wx:if="{{selectedFileType === 'image'}}">• 支持 jpg、png、gif、webp、bmp 格式</text>
-          <text wx:elif="{{selectedFileType === 'document'}}">• 支持 pdf、doc、docx、txt、rtf 格式</text>
-          <text>• 单个文件不超过10MB</text>
-          <text>• 总共已上传 {{uploadedFiles.length}} 个文件</text>
-        </view>
-      </view>
-
-      <!-- 文字说明 -->
-      <view class="text-input-area">
-        <textarea 
-          class="text-input"
-          placeholder="可添加文字说明（选填）"
-          maxlength="500"
-          bindinput="onTextInput"
-          value="{{submissionText}}"
-        />
-        <view class="text-counter">{{submissionText.length}}/500</view>
+        <!-- 上传按钮 -->
+        <button class="upload-btn-primary" bindtap="chooseImages">
+          上传图片提交作业
+        </button>
       </view>
 
       <!-- 提交按钮 -->
       <button 
-        class="submit-btn {{canSubmit && !isOverdue ? '' : 'disabled'}}" 
+        wx:if="{{uploadedFiles.length > 0}}"
+        class="submit-btn {{canSubmit && !isOverdue ? 'primary' : 'disabled'}}" 
         disabled="{{!canSubmit || isSubmitting || isOverdue}}"
         bindtap="submitHomework"
       >
@@ -366,6 +321,12 @@
   guideType="{{upgradeGuideType}}"
   featureName="任务详情"
   bind:close="onUpgradeGuideClose"
+/>
+
+<!-- 试用限制提示组件 -->
+<trial-restriction 
+  show="{{showTrialRestriction}}"
+  bind:close="onTrialRestrictionClose"
 />
 
 <!-- 底部安全区域 -->

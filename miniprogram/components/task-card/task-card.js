@@ -71,20 +71,8 @@ Component({
     onTapCard() {
       const task = this.properties.task
       
-      // 触发点击事件
+      // 只触发点击事件，让父组件处理权限检查和导航
       this.triggerEvent('click', { task })
-      
-      // 检查任务访问权限
-      if (!authModule.checkTaskAccess({
-        onUpgrade: this.handleUpgradeContact
-      })) {
-        return; // 权限不足，不跳转
-      }
-      
-      // 跳转到任务详情页
-      wx.navigateTo({
-        url: `/pages/task-detail/task-detail?id=${task.id}`
-      })
     },
 
     // 处理升级联系客服
@@ -97,14 +85,13 @@ Component({
       });
     },
 
-    // 检查用户权限状态
+    // 检查用户权限状态 (已禁用权限标签显示)
     checkUserPermission() {
       const userPermission = authModule.getUserPermissionStatus();
-      const showPermissionBadge = userPermission.type === 'trial';
       
       this.setData({
         userPermission,
-        showPermissionBadge
+        showPermissionBadge: false // 不显示权限标签
       });
     },
 

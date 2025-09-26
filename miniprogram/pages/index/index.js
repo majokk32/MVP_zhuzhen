@@ -45,6 +45,11 @@ Page({
     // 筛选
     currentFilter: 'all', // all, ongoing, ended
     
+    // 搜索
+    searchKeyword: '',
+    showSearch: false, // 控制搜索框显示
+    originalTaskList: [], // 保存原始任务列表用于搜索
+    
     // 空状态
     isEmpty: false,
     
@@ -254,8 +259,11 @@ Page({
       }
       
       
+      const newTaskList = loadMore ? [...this.data.taskList, ...tasks] : tasks
+      
       this.setData({
-        taskList: loadMore ? [...this.data.taskList, ...tasks] : tasks,
+        taskList: newTaskList,
+        originalTaskList: loadMore ? [...this.data.originalTaskList, ...tasks] : tasks, // 保存原始数据用于搜索
         page: result.page,
         total: result.total,
         hasMore: (result.page * result.page_size) < result.total,
@@ -315,7 +323,6 @@ Page({
   // 任务卡片点击
   async onTaskClick(e) {
     const { task } = e.detail
-    console.log('点击任务', task)
     
     // 权限检查
     const authModule = await loadAuth()
@@ -328,23 +335,29 @@ Page({
       return
     }
     
-    // 试用用户权限检查
-    if (!authModule.checkTaskAccess({ showModal: false })) {
-      let guideType = 'permission_denied'
-      if (authModule.isPermissionExpired()) {
-        guideType = 'trial_expired'
-      } else if (authModule.isTrialUser()) {
-        guideType = 'permission_denied'
-      }
-      
-      this.setData({
-        showUpgradeGuide: true,
-        upgradeGuideType: guideType
+    // 检查是否为试用用户
+    if (authModule.isTrialUser()) {
+      wx.showModal({
+        title: '试用学员无法使用',
+        content: '只能浏览课程目录',
+        confirmText: '返回',
+        showCancel: false
       })
       return
     }
     
-    // 有权限则正常跳转
+    // 检查权限是否过期
+    if (authModule.isPermissionExpired()) {
+      wx.showModal({
+        title: '权限已过期',
+        content: '您的学习权限已过期，请联系客服续费。',
+        confirmText: '联系客服',
+        cancelText: '返回'
+      })
+      return
+    }
+    
+    // 付费用户正常跳转
     wx.navigateTo({
       url: `/pages/task-detail/task-detail?id=${task.id}`
     })
@@ -470,6 +483,66 @@ Page({
     // console.log('虚拟列表滚动', e.detail)
     
     // 可以在这里添加滚动位置记忆、无限滚动等功能
+  },
+
+  // 搜索相关方法
+  onSearchToggle() {
+    this.setData({
+      showSearch: !this.data.showSearch
+    })
+  },
+
+  onCancelSearch() {
+    this.setData({
+      showSearch: false,
+      searchKeyword: '',
+      taskList: this.data.originalTaskList
+    })
+  },
+
+  onSearchInput(e) {
+    const keyword = e.detail.value
+    this.setData({
+      searchKeyword: keyword
+    })
+    
+    // 实时搜索，延迟300ms执行
+    clearTimeout(this.searchTimer)
+    this.searchTimer = setTimeout(() => {
+      this.performSearch(keyword)
+    }, 300)
+  },
+
+  onSearch(e) {
+    const keyword = e.detail.value || this.data.searchKeyword
+    this.performSearch(keyword)
+  },
+
+  onClearSearch() {
+    this.setData({
+      searchKeyword: '',
+      taskList: this.data.originalTaskList
+    })
+  },
+
+  performSearch(keyword) {
+    if (!keyword.trim()) {
+      // 如果搜索关键字为空，显示所有任务
+      this.setData({
+        taskList: this.data.originalTaskList
+      })
+      return
+    }
+
+    // 在原始任务列表中搜索
+    const filteredTasks = this.data.originalTaskList.filter(task => {
+      return task.title && task.title.toLowerCase().includes(keyword.toLowerCase())
+    })
+
+    this.setData({
+      taskList: filteredTasks,
+      isEmpty: filteredTasks.length === 0
+    })
   },
 
   // 分享设置
