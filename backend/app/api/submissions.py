@@ -18,7 +18,7 @@ from app.schemas import (
     ResponseBase, SubmissionCreate, SubmissionGrade, 
     SubmissionInfo, FileUploadResponse
 )
-from app.auth import get_current_user, get_current_teacher
+from app.auth import get_current_user, get_current_teacher, get_current_premium_user
 from app.utils.storage import storage, StorageError, enhanced_storage
 from app.config import settings
 from app.services.async_learning_data import trigger_checkin_async, trigger_submission_score_async, trigger_grading_score_async
@@ -160,7 +160,7 @@ async def upload_multiple_files(
     file_index: int = Form(0),
     total_files: int = Form(1),
     is_batch_upload: str = Form("false"),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_premium_user),
     db: AsyncSession = Depends(get_db)
 ):
     """

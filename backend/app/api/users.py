@@ -60,7 +60,9 @@ async def login(
                     "id": user.id,
                     "nickname": user.nickname,
                     "avatar": user.avatar,
-                    "role": user.role.value
+                    "role": user.role.value,
+                    "subscription_type": user.subscription_type.value if user.subscription_type else None,
+                    "subscription_expires_at": user.subscription_expires_at.isoformat() if user.subscription_expires_at else None
                 }
             }
         )

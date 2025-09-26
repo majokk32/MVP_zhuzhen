@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "申论批改",
+  "navigationBarTitleText": "任务栏",
   "enablePullDownRefresh": false,
   "usingComponents": {
     "task-card": "/components/task-card/task-card",

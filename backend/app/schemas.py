@@ -22,10 +22,15 @@ class TaskStatusEnum(str, Enum):
     ended = "ended"
 
 
+class SubscriptionTypeEnum(str, Enum):
+    trial = "TRIAL"
+    premium = "PREMIUM"
+
+
 class GradeEnum(str, Enum):
-    pending = "待复盘"
-    good = "优秀"
-    excellent = "极佳"
+    review = "review"
+    good = "good"
+    excellent = "excellent"
 
 
 # Type variable for generic response
@@ -58,6 +63,8 @@ class UserInfo(BaseModel):
     role: UserRoleEnum
     phone: Optional[str]
     created_at: datetime
+    subscription_type: Optional[SubscriptionTypeEnum]
+    subscription_expires_at: Optional[datetime]
     
     class Config:
         from_attributes = True

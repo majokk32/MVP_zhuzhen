@@ -5,6 +5,7 @@
     "skeleton": "/components/skeleton/skeleton",
     "upload-progress": "/components/upload-progress/upload-progress",
     "grading-history": "/components/grading-history/grading-history",
-    "upgrade-guide": "/components/upgrade-guide/upgrade-guide"
+    "upgrade-guide": "/components/upgrade-guide/upgrade-guide",
+    "trial-restriction": "/components/trial-restriction/trial-restriction"
   }
 }

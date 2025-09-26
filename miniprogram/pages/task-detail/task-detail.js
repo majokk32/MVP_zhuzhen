@@ -18,8 +18,7 @@ Page({
     formattedCreatedAt: '',
     formattedDeadline: '',
     
-    // 提交相关 - 多文件上传
-    selectedFileType: 'image', // image | document
+    // 提交相关 - 图片上传
     uploadedFiles: [],
     submissionText: '',
     canSubmit: false,
@@ -60,7 +59,10 @@ Page({
     
     // 升级引导相关
     showUpgradeGuide: false,
-    upgradeGuideType: 'permission_denied'
+    upgradeGuideType: 'permission_denied',
+    
+    // 试用限制相关
+    showTrialRestriction: false
   },
 
   onLoad(options) {
@@ -81,7 +83,7 @@ Page({
   },
 
   onShow() {
-    if (this.data.taskId) {
+    if (this.data.taskId && !this.data.showTrialRestriction && !this.data.showUpgradeGuide) {
       this.loadTaskDetail();
       this.loadSubmissions();
     }
@@ -107,12 +109,18 @@ Page({
 
     // 检查任务访问权限
     if (!authModule.checkTaskAccess({ showModal: false })) {
-      // 显示升级引导而不是直接返回
+      // 对试用学员显示限制消息
+      if (authModule.isTrialUser()) {
+        this.setData({
+          showTrialRestriction: true
+        });
+        return;
+      }
+      
+      // 其他情况显示升级引导
       let guideType = 'permission_denied';
       if (authModule.isPermissionExpired()) {
         guideType = 'trial_expired';
-      } else if (authModule.isTrialUser()) {
-        guideType = 'permission_denied';
       }
       
       this.setData({
@@ -121,6 +129,10 @@ Page({
       });
       return;
     }
+    
+    // 如果有访问权限，加载任务数据
+    this.loadTaskDetail();
+    this.loadSubmissions();
   },
 
   // 处理升级联系客服
@@ -295,13 +307,6 @@ Page({
     });
   },
 
-  // 文件类型选择
-  selectFileType(e) {
-    const fileType = e.currentTarget.dataset.type;
-    this.setData({
-      selectedFileType: fileType
-    });
-  },
 
   // 选择图片
   chooseImages() {
@@ -328,10 +333,8 @@ Page({
           return {
             type: 'image',
             name: fileName,
-            shortName: this.generateShortName(fileName, 12),
             path: file.tempFilePath,
-            size: this.formatFileSize(file.size),
-            icon: '🖼️'
+            size: this.formatFileSize(file.size)
           };
         });
         
@@ -352,55 +355,9 @@ Page({
     });
   },
 
-  // 选择文档
-  chooseDocuments() {
-    // 使用 wx.chooseMessageFile 选择文档文件
-    wx.chooseMessageFile({
-      count: 5,
-      type: 'file',
-      extension: ['pdf', 'doc', 'docx', 'txt', 'rtf'],
-      success: (res) => {
-        // 验证文件大小和类型
-        const validFiles = res.tempFiles.filter(file => {
-          // 检查文件大小（10MB限制）
-          if (file.size > 10 * 1024 * 1024) {
-            wx.showToast({
-              title: `文件 ${file.name} 超过10MB限制`,
-              icon: 'none'
-            });
-            return false;
-          }
-          return true;
-        });
-
-        const newFiles = validFiles.map(file => ({
-          type: 'document',
-          name: file.name,
-          shortName: this.generateShortName(file.name, 20),
-          path: file.path,
-          size: this.formatFileSize(file.size),
-          icon: this.getDocumentIcon(file.name)
-        }));
-        
-        if (newFiles.length > 0) {
-          this.setData({
-            uploadedFiles: [...this.data.uploadedFiles, ...newFiles],
-            canSubmit: true
-          });
-        }
-      },
-      fail: (err) => {
-        console.error('选择文档失败:', err);
-        wx.showToast({
-          title: '选择文档失败，请重试',
-          icon: 'none'
-        });
-      }
-    });
-  },
 
 
-  // 删除文件
+  // 删除图片
   deleteFile(e) {
     const index = e.currentTarget.dataset.index;
     const uploadedFiles = [...this.data.uploadedFiles];
@@ -408,7 +365,7 @@ Page({
     
     this.setData({
       uploadedFiles,
-      canSubmit: uploadedFiles.length > 0 || this.data.submissionText.trim().length > 0
+      canSubmit: uploadedFiles.length > 0
     });
   },
 
@@ -483,14 +440,6 @@ Page({
     // 可以在这里添加默认图片或重试逻辑
   },
 
-  // 输入文字
-  onTextInput(e) {
-    const text = e.detail.value;
-    this.setData({
-      submissionText: text,
-      canSubmit: text.trim().length > 0 || this.data.uploadedFiles.length > 0
-    });
-  },
 
   // 提交作业
   async submitHomework() {
@@ -920,6 +869,15 @@ Page({
   onUpgradeGuideClose() {
     this.setData({ showUpgradeGuide: false });
     // 关闭升级引导后返回上一页
+    setTimeout(() => {
+      wx.navigateBack();
+    }, 300);
+  },
+
+  // 关闭试用限制提示
+  onTrialRestrictionClose() {
+    this.setData({ showTrialRestriction: false });
+    // 关闭后返回上一页
     setTimeout(() => {
       wx.navigateBack();
     }, 300);

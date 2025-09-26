@@ -1,56 +1,33 @@
 <!--pages/index/index.wxml-->
 <view class="container">
-  <!-- 顶部用户信息栏（简化版） -->
-  <view class="header" wx:if="{{userInfo}}">
-    <view class="user-greeting">
-      <progressive-image 
-        class="user-avatar" 
-        src="{{userInfo.avatar || '/assets/images/default-avatar.png'}}" 
-        mode="aspectFill" 
-        lazy-load="{{true}}"
-        enable-compress="{{true}}"
-        quality="{{0.85}}"
-        max-width="{{120}}"
-        max-height="{{120}}"
-        border-radius="50%"
-        placeholder="/assets/images/avatar-placeholder.png"
-        error-src="/assets/images/default-avatar.png"
-        bind:error="onImageError"
-      />
-      <view class="greeting-text">
-        <text class="greeting">你好，{{userInfo.nickname || '同学'}}</text>
-        <view class="role-tag" wx:if="{{isTeacher}}">教师</view>
+  <!-- 顶部标题和搜索 -->
+  <view class="header-section">
+    <view class="title-search-container">
+      <view class="page-title">申论批改任务</view>
+      <view class="search-btn" bindtap="onSearchToggle">
+        <icon class="search-icon" type="search" size="20" color="#6b7280"/>
       </view>
     </view>
-  </view>
-
-  <!-- 任务筛选器 -->
-  <view class="task-filter">
-    <scroll-view class="filter-scroll" scroll-x>
-      <view class="filter-tabs">
-        <view 
-          class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}"
-          data-filter="all"
-          bindtap="onFilterChange"
-        >
-          全部
+    
+    <!-- 搜索输入框（展开时显示） -->
+    <view class="search-input-container" wx:if="{{showSearch}}">
+      <view class="search-input-box">
+        <icon class="search-icon" type="search" size="16" color="#9ca3af"/>
+        <input 
+          class="search-input" 
+          placeholder="搜索任务关键字"
+          placeholder-class="search-placeholder"
+          value="{{searchKeyword}}"
+          bindinput="onSearchInput"
+          bindconfirm="onSearch"
+          focus="{{showSearch}}"
+        />
+        <view wx:if="{{searchKeyword}}" class="clear-btn" bindtap="onClearSearch">
+          <icon type="clear" size="14" color="#9ca3af"/>
         </view>
-        <view 
-          class="filter-tab {{currentFilter === 'ongoing' ? 'active' : ''}}"
-          data-filter="ongoing"
-          bindtap="onFilterChange"
-        >
-          进行中
-        </view>
-        <view 
-          class="filter-tab {{currentFilter === 'ended' ? 'active' : ''}}"
-          data-filter="ended"
-          bindtap="onFilterChange"
-        >
-          已结束
-        </view>
+        <view class="cancel-btn" bindtap="onCancelSearch">取消</view>
       </view>
-    </scroll-view>
+    </view>
   </view>
 
   <!-- 任务列表 -->

@@ -3,7 +3,7 @@
 /* 容器 */
 .container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f3f4f6;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -104,13 +104,13 @@
 }
 
 .deadline-label {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #666;
   margin-right: 12rpx;
 }
 
 .deadline-time {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #ff6b35;
   font-weight: 600;
 }
@@ -823,6 +823,121 @@
 
 .upload-buttons .upload-btn:active {
   background: #3367d6;
+}
+
+/* 简化的上传区域样式 */
+.upload-placeholder {
+  text-align: center;
+  padding: 80rpx 40rpx;
+}
+
+.upload-placeholder .upload-icon {
+  margin-bottom: 32rpx;
+}
+
+.upload-placeholder .icon {
+  font-size: 100rpx;
+  color: #d1d5db;
+}
+
+.upload-hint {
+  font-size: 32rpx;
+  color: #6b7280;
+  margin-bottom: 40rpx;
+  display: block;
+}
+
+.upload-btn-primary {
+  width: 100%;
+  background: #1989fa;
+  color: white;
+  border: none;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  font-size: 36rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 24rpx rgba(25, 137, 250, 0.3);
+}
+
+.upload-btn-primary::after {
+  display: none;
+}
+
+.upload-btn-primary:active {
+  background: #0d7bd8;
+}
+
+/* 已上传图片预览 */
+.uploaded-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx;
+  margin-bottom: 32rpx;
+}
+
+.image-preview {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.image-preview .preview-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 16rpx;
+}
+
+.image-preview .image-delete-btn {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  width: 48rpx;
+  height: 48rpx;
+  background: #ff4444;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: bold;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+}
+
+/* 提交按钮样式更新 */
+.submit-btn.primary {
+  background: #1989fa;
+  color: white;
+  border: none;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  font-size: 36rpx;
+  font-weight: 600;
+  width: 100%;
+  margin-top: 32rpx;
+  box-shadow: 0 8rpx 24rpx rgba(25, 137, 250, 0.3);
+}
+
+.submit-btn.primary::after {
+  display: none;
+}
+
+.submit-btn.disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  border: none;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  font-size: 36rpx;
+  font-weight: 600;
+  width: 100%;
+  margin-top: 32rpx;
+}
+
+.submit-btn.disabled::after {
+  display: none;
 }
 
 /* 安全区域 */

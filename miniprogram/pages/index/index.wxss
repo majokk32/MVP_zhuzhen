@@ -3,16 +3,87 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #f7f8fa;
+  background: #f3f4f6;
 }
 
-/* 顶部用户问候区 */
-.header {
+/* 顶部标题和搜索区域 */
+.header-section {
   background: white;
-  padding: 30rpx;
-  padding-top: calc(30rpx + constant(safe-area-inset-top));
-  padding-top: calc(30rpx + env(safe-area-inset-top));
-  border-bottom: 1rpx solid #f0f0f0;
+  padding: 20rpx 32rpx;
+  padding-top: calc(20rpx + constant(safe-area-inset-top));
+  padding-top: calc(20rpx + env(safe-area-inset-top));
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.title-search-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+}
+
+.page-title {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: #1f2937;
+  flex-shrink: 0;
+}
+
+.search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #f9fafb;
+  border: 1rpx solid #e5e7eb;
+}
+
+.search-input-container {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #f3f4f6;
+}
+
+.search-input-box {
+  display: flex;
+  align-items: center;
+  background: #f3f4f6;
+  border-radius: 24rpx;
+  padding: 16rpx 20rpx;
+  gap: 12rpx;
+}
+
+.search-icon {
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #374151;
+  background: transparent;
+}
+
+.search-placeholder {
+  color: #9ca3af;
+}
+
+.clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx;
+  border-radius: 50%;
+  background: rgba(156, 163, 175, 0.1);
+}
+
+.cancel-btn {
+  color: #3b82f6;
+  font-size: 28rpx;
+  padding: 8rpx 16rpx;
+  flex-shrink: 0;
 }
 
 .user-greeting {
@@ -75,23 +146,52 @@
   font-size: 24rpx;
 }
 
-/* 任务筛选器 */
-.task-filter {
-  background: white;
-  border-bottom: 1rpx solid #f0f0f0;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+/* 任务列表容器 */
+.task-list-container {
+  flex: 1;
+  padding: 24rpx 32rpx;
+  overflow: hidden;
 }
 
-.filter-scroll {
-  white-space: nowrap;
+.task-scroll-container {
+  height: 100%;
 }
 
-.filter-tabs {
-  display: inline-flex;
-  gap: 24rpx;
-  padding: 20rpx 30rpx;
+.task-list-direct {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 加载状态样式 */
+.loading-more,
+.no-more,
+.loading-state {
+  text-align: center;
+  padding: 32rpx;
+  color: #9ca3af;
+  font-size: 26rpx;
+}
+
+.loading-spinner {
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid #f3f4f6;
+  border-top: 4rpx solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16rpx;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 安全底部区域 */
+.safe-bottom {
+  height: constant(safe-area-inset-bottom);
+  height: env(safe-area-inset-bottom);
+  min-height: 20rpx;
 }
 
 .filter-tab {

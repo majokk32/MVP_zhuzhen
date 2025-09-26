@@ -4,6 +4,7 @@
   "usingComponents": {
     "checkin-chart": "/components/checkin-chart/checkin-chart",
     "notification-settings": "/components/notification-settings/notification-settings",
-    "skeleton": "/components/skeleton/skeleton"
+    "skeleton": "/components/skeleton/skeleton",
+    "trial-restriction": "/components/trial-restriction/trial-restriction"
   }
 }

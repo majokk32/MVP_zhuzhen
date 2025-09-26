@@ -1,0 +1,72 @@
+/* 试用限制提示组件样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-container {
+  width: 600rpx;
+  background: white;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.modal-content {
+  padding: 60rpx 40rpx 40rpx;
+  text-align: center;
+}
+
+.icon-section {
+  margin-bottom: 32rpx;
+}
+
+.lock-icon {
+  font-size: 80rpx;
+  display: inline-block;
+}
+
+.message-section {
+  margin-bottom: 48rpx;
+}
+
+.title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 16rpx;
+}
+
+.desc {
+  display: block;
+  font-size: 28rpx;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.button-section {
+  display: flex;
+  justify-content: center;
+}
+
+.close-btn {
+  background: #1989fa;
+  color: white;
+  padding: 20rpx 60rpx;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  border: none;
+}
+
+.close-btn::after {
+  display: none;
+}

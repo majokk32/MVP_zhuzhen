@@ -1071,7 +1071,7 @@ App({
   },
 
   // 处理深链接跳转
-  handleDeepLink() {
+  async handleDeepLink() {
     const query = this.globalData.launchQuery;
     if (!query) return;
     
@@ -1080,17 +1080,42 @@ App({
     
     // 根据参数跳转到对应页面
     if (query.taskId) {
-      // 跳转到任务详情页
-      wx.navigateTo({
-        url: `/pages/task-detail/task-detail?id=${query.taskId}`,
-        fail: (err) => {
-          console.error('Deep link navigation failed:', err);
-          // 跳转失败则跳转到首页
-          wx.switchTab({
-            url: '/pages/index/index'
+      // 检查任务访问权限
+      try {
+        const authModule = require('./modules/auth/auth');
+        
+        // 教师用户直接跳转
+        if (authModule.isTeacher()) {
+          wx.navigateTo({
+            url: `/pages/task-detail/task-detail?id=${query.taskId}`,
+            fail: (err) => {
+              console.error('Deep link navigation failed:', err);
+              wx.switchTab({ url: '/pages/index/index' });
+            }
           });
+          return;
         }
-      });
+        
+        // 学生用户检查访问权限
+        if (!authModule.checkTaskAccess({ showModal: true })) {
+          // 权限不足，跳转到首页并显示提示
+          wx.switchTab({ url: '/pages/index/index' });
+          return;
+        }
+        
+        // 有权限则正常跳转
+        wx.navigateTo({
+          url: `/pages/task-detail/task-detail?id=${query.taskId}`,
+          fail: (err) => {
+            console.error('Deep link navigation failed:', err);
+            wx.switchTab({ url: '/pages/index/index' });
+          }
+        });
+      } catch (error) {
+        console.error('Auth check failed in deep link:', error);
+        // 认证模块错误，跳转到首页
+        wx.switchTab({ url: '/pages/index/index' });
+      }
     } else if (query.page) {
       // 其他页面跳转
       wx.navigateTo({
