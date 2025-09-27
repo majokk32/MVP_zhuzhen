@@ -60,12 +60,12 @@
         data-index="{{index}}"
       >
         <view class="student-info">
-          <image class="student-avatar" src="{{item.user.avatar}}" mode="aspectFill" wx:if="{{item.user.avatar}}" lazy-load="true" binderror="onImageError"/>
+          <image class="student-avatar" src="{{item.student_info.avatar_url}}" mode="aspectFill" wx:if="{{item.student_info.avatar_url}}" lazy-load="true" binderror="onImageError"/>
           <view class="student-avatar avatar-placeholder" wx:else>
             <text>👤</text>
           </view>
           <view class="student-detail">
-            <text class="student-name">{{item.user.nickname || '学生'}}</text>
+            <text class="student-name">{{item.student_info.nickname || '学生'}}</text>
             <text class="submit-time">{{item.submitted_at}}</text>
           </view>
         </view>
@@ -98,29 +98,15 @@
     <!-- 学生信息栏 -->
     <view class="student-bar">
       <view class="student-info">
-        <image class="student-avatar" src="{{currentSubmission.user.avatar}}" mode="aspectFill" wx:if="{{currentSubmission.user.avatar}}" lazy-load="true" binderror="onImageError"/>
+        <image class="student-avatar" src="{{currentSubmission.student_info.avatar_url}}" mode="aspectFill" wx:if="{{currentSubmission.student_info.avatar_url}}" lazy-load="true" binderror="onImageError"/>
         <view class="student-avatar avatar-placeholder" wx:else>
           <text>👤</text>
         </view>
         <view class="student-detail">
-          <text class="student-name">{{currentSubmission.user.nickname || '学生'}}</text>
-          <text class="submit-info">第{{currentSubmission.attemptNumber}}次提交 · {{currentSubmission.submitted_at}}</text>
+          <text class="student-name">{{currentSubmission.student_info.nickname || '学生'}}</text>
+          <text class="submit-info">上传时间：{{currentSubmission.submitted_at}} | 第{{currentSubmission.attemptNumber}}次上传</text>
         </view>
       </view>
-      
-      <!-- 使用新的导航组件 -->
-      <grading-navigator
-        currentIndex="{{currentIndex}}"
-        totalCount="{{submissions.length}}"
-        submissionList="{{submissions}}"
-        currentStudent="{{currentSubmission.user}}"
-        taskInfo="{{task}}"
-        gradingStats="{{gradingStats}}"
-        showSmartNav="{{true}}"
-        showEfficiency="{{true}}"
-        bind:navigate="onNavigatorNavigate"
-        bind:action="onNavigatorAction"
-      />
     </view>
 
     <!-- 作业内容 -->
@@ -130,26 +116,6 @@
         <text>学生提交内容</text>
       </view>
       
-      <!-- 提交统计信息 -->
-      <view class="submission-meta">
-        <view class="meta-item">
-          <text class="meta-label">提交时间：</text>
-          <text class="meta-value">{{currentSubmission.submitted_at || '未知'}}</text>
-        </view>
-        <view class="meta-item">
-          <text class="meta-label">提交次数：</text>
-          <text class="meta-value">第{{currentSubmission.attemptNumber || 1}}次</text>
-        </view>
-        <view class="meta-item">
-          <text class="meta-label">内容统计：</text>
-          <text class="meta-value">
-            {{currentSubmission.images && currentSubmission.images.length > 0 ? currentSubmission.images.length + '张图片' : ''}}
-            {{currentSubmission.documents && currentSubmission.documents.length > 0 ? (currentSubmission.images && currentSubmission.images.length > 0 ? ' + ' : '') + currentSubmission.documents.length + '个文档' : ''}}
-            {{currentSubmission.text && currentSubmission.text.trim() ? (currentSubmission.images && currentSubmission.images.length > 0 || currentSubmission.documents && currentSubmission.documents.length > 0 ? ' + ' : '') + '文字说明' : ''}}
-            {{(!currentSubmission.images || currentSubmission.images.length === 0) && (!currentSubmission.documents || currentSubmission.documents.length === 0) && (!currentSubmission.text || !currentSubmission.text.trim()) ? '无内容' : ''}}
-          </text>
-        </view>
-      </view>
       
       <!-- 内容区域分块展示 -->
       <view class="submission-content-sections">
@@ -168,11 +134,6 @@
         
         <!-- 图片内容区域 -->
         <view wx:if="{{currentSubmission.images && currentSubmission.images.length > 0}}" class="content-section image-section">
-          <view class="content-header">
-            <text class="content-icon">🖼️</text>
-            <text class="content-title">提交图片</text>
-            <text class="content-count">({{currentSubmission.images.length}}张)</text>
-          </view>
           <view class="content-images">
             <scroll-view scroll-x class="image-scroll" show-scrollbar="false">
               <view class="image-list">
@@ -283,107 +244,51 @@
         </view>
       </view>
 
-      <!-- 分数输入 -->
-      <view class="score-input-area">
-        <view class="input-label">得分（选填）</view>
-        <view class="score-input-wrapper">
-          <input 
-            type="number"
-            class="score-input"
-            placeholder="请输入分数"
-            value="{{gradeData.score}}"
-            bindinput="onScoreInput"
-          />
-          <text class="score-total">/ {{task.total_score || 100}}</text>
-        </view>
-      </view>
-
-      <!-- 混合输入评语区域 -->
+  
+      <!-- 简化的评语输入区域 -->
       <view class="feedback-input-section">
-        <view class="input-label">批改评语（选填）</view>
-        <mixed-input 
-          placeholder="请输入批改评语（选填），给学生一些建议和鼓励..."
-          maxLength="500"
+        <view class="input-label">批改评语</view>
+        <textarea 
+          class="feedback-textarea"
+          placeholder="请输入批改评语，给学生一些建议和鼓励..."
+          maxlength="500"
           value="{{gradeData.feedback}}"
-          bind:input="onMixedInput"
-          bind:confirm="onFeedbackConfirm"
-          bind:transcriptionComplete="onTranscriptionComplete"
-          showQuickActions="{{true}}"
-          showClearBtn="{{true}}"
+          bindinput="onFeedbackInput"
         />
       </view>
 
-      <!-- 快捷评语（保留作为补充） -->
-      <view class="quick-feedback" wx:if="{{quickFeedbacks.length > 0}}">
-        <view class="quick-title">常用评语模板</view>
-        <scroll-view scroll-x class="quick-list">
-          <view class="quick-items">
-            <view 
-              wx:for="{{quickFeedbacks}}" 
-              wx:key="index"
-              class="quick-item"
-              bindtap="useQuickFeedback"
-              data-text="{{item}}"
-            >
-              {{item}}
-            </view>
-          </view>
-        </scroll-view>
-      </view>
 
-      <!-- 操作按钮 -->
-      <view class="action-buttons">
-        <button class="btn-secondary" bindtap="cancelGrading">取消</button>
-        <button 
-          class="btn-primary {{canSubmitGrade ? '' : 'disabled'}}"
-          disabled="{{!canSubmitGrade || isSubmitting}}"
-          bindtap="submitGrade"
-        >
-          {{isSubmitting ? '提交中...' : '提交批改'}}
-        </button>
-      </view>
+    </view>
+
+    <!-- 底部导航和操作按钮 -->
+    <view class="bottom-actions">
+      <button 
+        class="nav-btn-bottom {{currentIndex === 0 ? 'disabled' : ''}}"
+        bindtap="previousSubmission"
+        disabled="{{currentIndex === 0}}"
+      >
+        上一篇
+      </button>
+      <button 
+        class="submit-btn-bottom {{canSubmitGrade ? 'active' : ''}}"
+        disabled="{{!canSubmitGrade || isSubmitting}}"
+        bindtap="submitGrade"
+      >
+        {{isSubmitting ? '提交中...' : '提交批改'}}
+      </button>
+      <button 
+        class="nav-btn-bottom {{currentIndex === submissions.length - 1 ? 'disabled' : ''}}"
+        bindtap="nextSubmission"
+        disabled="{{currentIndex === submissions.length - 1}}"
+      >
+        下一篇
+      </button>
     </view>
     </view> <!-- 结束批改内容 -->
   </view>
 
-  <!-- 批量操作浮动按钮 -->
-  <view wx:if="{{!currentSubmission && isTeacher}}" class="float-actions">
-    <view class="float-btn" bindtap="showGradingAnalytics">
-      <text class="icon">📊</text>
-      <text>数据统计</text>
-    </view>
-    <view class="float-btn" bindtap="batchGrade">
-      <text class="icon">⚡</text>
-      <text>批量批改</text>
-    </view>
-    <view class="float-btn" bindtap="exportGrades">
-      <text class="icon">📥</text>
-      <text>导出成绩</text>
-    </view>
-  </view>
 </view>
 
-<!-- 批改历史组件 -->
-<grading-history 
-  show="{{showGradingHistory}}"
-  studentName="{{currentSubmission.user.nickname || ''}}"
-  taskId="{{taskId}}"
-  studentId="{{currentSubmission.user.id || ''}}"
-  allowExport="{{isTeacher}}"
-  bind:close="onGradingHistoryClose"
-/>
-
-<!-- 数据统计面板 -->
-<grading-analytics
-  show="{{showAnalytics}}"
-  taskId="{{taskId}}"
-  taskTitle="{{task.title}}"
-  submissions="{{submissions}}"
-  bind:close="onAnalyticsClose"
-  bind:showReviewStudents="onShowReviewStudents"
-  bind:applySuggestion="onApplySuggestion"
-  bind:exportReport="onExportReport"
-/>
 
 <!-- 底部安全区域 -->
 <view class="safe-bottom"></view>

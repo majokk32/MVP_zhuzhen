@@ -1,85 +1,131 @@
 /* 创建新任务页样式 */
 .container {
   min-height: 100vh;
-  background-color: #f5f6fa;
+  background: #f9fafb;
+  padding: 32rpx;
 }
 
+/* 页面标题 */
+.page-header {
+  padding: 32rpx 0;
+}
+
+.page-title {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #667eea;
+}
+
+/* 表单容器 */
 .form-container {
-  padding: 30rpx;
+  flex: 1;
 }
 
-/* 表单区块 */
-.form-section {
-  background: white;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 30rpx;
-  box-shadow: 0 2rpx 20rpx rgba(0, 0, 0, 0.05);
+/* 表单组 */
+.form-group {
+  margin-bottom: 32rpx;
 }
 
-.form-label {
+.form-group.half {
+  flex: 1;
+}
+
+/* 表单行（左右布局） */
+.form-row {
   display: flex;
-  align-items: center;
-  margin-bottom: 20rpx;
+  gap: 24rpx;
+  align-items: flex-start;
 }
 
-.label-text {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
+.form-row .form-group {
+  margin-bottom: 0;
 }
 
-.required-star {
-  color: #ff6b6b;
-  margin-left: 8rpx;
+/* 表单标签 */
+.form-label {
+  display: block;
+  color: #374151;
   font-size: 28rpx;
+  font-weight: 500;
+  margin-bottom: 8rpx;
 }
 
-/* 输入框样式 */
+/* 表单输入框 */
 .form-input {
   width: 100%;
-  padding: 25rpx;
-  background: #f8f9fa;
-  border-radius: 16rpx;
-  font-size: 28rpx;
-  color: #333;
-  border: 2rpx solid transparent;
-  transition: all 0.3s ease;
+  padding: 10rpx 24rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 12rpx;
+  font-size: 30rpx;
+  color: #111827;
+  background: white;
   box-sizing: border-box;
+  transition: all 0.3s ease;
+  min-height: 60rpx;
+  display: flex;
+  align-items: center;
+}
+
+/* 日期时间行布局 */
+.datetime-row {
+  display: flex;
+  gap: 16rpx;
+}
+
+.datetime-picker {
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 .form-input:focus {
-  background: white;
   border-color: #667eea;
+  outline: none;
+  box-shadow: none;
 }
 
 .form-input.error {
-  border-color: #ff6b6b;
-  background: #fff5f5;
+  border-color: #ef4444;
 }
 
+/* 选择器内的文本样式 */
+.form-input text {
+  display: block;
+  width: 100%;
+  color: #111827;
+  font-size: 30rpx;
+  line-height: 1.4;
+  flex: 1;
+  align-self: flex-start;
+}
+
+.form-input text.placeholder {
+  color: #9ca3af;
+}
+
+/* 文本域 */
 .form-textarea {
   width: 100%;
+  padding: 30rpx 24rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 12rpx;
+  font-size: 30rpx;
+  color: #111827;
+  background: white;
   min-height: 200rpx;
-  padding: 25rpx;
-  background: #f8f9fa;
-  border-radius: 16rpx;
-  font-size: 28rpx;
-  color: #333;
-  border: 2rpx solid transparent;
-  transition: all 0.3s ease;
   box-sizing: border-box;
+  transition: all 0.3s ease;
   line-height: 1.6;
 }
 
 .form-textarea:focus {
-  background: white;
   border-color: #667eea;
+  outline: none;
+  box-shadow: none;
 }
 
 .form-textarea.error {
-  border-color: #ff6b6b;
-  background: #fff5f5;
+  border-color: #ef4444;
 }
 
 /* 日期时间选择器 */
@@ -234,71 +280,54 @@
   color: #667eea;
 }
 
-/* 提交按钮区域 */
-.submit-area {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  padding: 30rpx;
-  box-shadow: 0 -2rpx 20rpx rgba(0, 0, 0, 0.1);
-  display: flex;
-  gap: 20rpx;
-  padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+/* 输入计数器 */
+.input-counter {
+  text-align: right;
+  font-size: 24rpx;
+  color: #9ca3af;
+  margin-top: 8rpx;
 }
 
-.btn-secondary {
-  flex: 1;
-  background: #f8f9fa;
-  color: #666;
-  border-radius: 25rpx;
-  height: 90rpx;
-  line-height: 90rpx;
-  font-size: 30rpx;
-  border: none;
-  transition: all 0.3s ease;
+/* 错误提示 */
+.error-text {
+  color: #ef4444;
+  font-size: 24rpx;
+  margin-top: 8rpx;
 }
 
-.btn-secondary:active {
-  background: #e9ecef;
-}
-
-.btn-secondary[disabled] {
-  background: #f1f1f1;
-  color: #ccc;
-}
-
-.btn-primary {
-  flex: 2;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* 提交按钮 */
+.submit-btn {
+  width: 100%;
+  padding: 32rpx;
+  border-radius: 16rpx;
+  background: #4B206E;
   color: white;
-  border-radius: 25rpx;
-  height: 90rpx;
-  line-height: 90rpx;
-  font-size: 30rpx;
-  font-weight: bold;
+  font-size: 36rpx;
+  font-weight: 600;
   border: none;
+  margin-top: 48rpx;
+  box-shadow: 0 8rpx 24rpx rgba(75, 32, 110, 0.3);
   transition: all 0.3s ease;
 }
 
-.btn-primary:active {
-  transform: scale(0.98);
-}
-
-.btn-primary[disabled] {
-  background: #ccc;
-  color: #999;
-  transform: none;
-}
-
-.btn-secondary::after,
-.btn-primary::after {
+.submit-btn::after {
   border: none;
 }
 
-/* 底部安全区域 */
+.submit-btn:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  box-shadow: none;
+}
+
+.submit-btn:active:not(:disabled) {
+  background: #3c1a5b;
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 16rpx rgba(75, 32, 110, 0.4);
+}
+
+/* 安全区域 */
 .safe-bottom {
-  height: calc(140rpx + env(safe-area-inset-bottom));
-  background-color: #f5f6fa;
+  height: env(safe-area-inset-bottom);
+  background: #f9fafb;
 }

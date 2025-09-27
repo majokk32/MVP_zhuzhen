@@ -96,7 +96,8 @@ class Task(Base):
     course = Column(String(100), nullable=False)
     desc = Column(Text, nullable=False)
     total_score = Column(Float, default=40, nullable=False)  # 总分
-    deadline = Column(DateTime, nullable=True)
+    deadline = Column(DateTime, nullable=True)  # 截止时间
+    live_start_time = Column(DateTime, nullable=True)  # 直播开始时间
     status = Column(SQLEnum(TaskStatus), default=TaskStatus.ONGOING, nullable=False)
     task_type = Column(SQLEnum(TaskType), default=TaskType.LIVE, nullable=False)  # 任务类型
     
@@ -123,8 +124,12 @@ class Submission(Base):
     
     # Submission content
     images = Column(JSON, nullable=False)  # JSON array of image URLs
+    photo_paths = Column(JSON, nullable=True)  # JSON array of local photo paths
     text = Column(Text, nullable=True)  # Optional text content
     submit_count = Column(Integer, default=1, nullable=False)  # 第几次提交 (max 3)
+    
+    # Task timing information (cached from task at submission time)
+    live_start_time = Column(DateTime, nullable=True)  # 直播开始时间（提交时缓存）
     
     # Grading information
     status = Column(SQLEnum(SubmissionStatus), default=SubmissionStatus.SUBMITTED, nullable=False)

@@ -1,180 +1,116 @@
 <!-- 创建新任务页 -->
 <view class="container">
+  <!-- 标题 -->
+  <view class="page-header">
+    <text class="page-title">新建申论任务</text>
+  </view>
+
   <!-- 表单内容 -->
-  <form bindsubmit="onSubmit" bindreset="onReset">
-    <view class="form-container">
-      <!-- 课程名称 -->
-      <view class="form-section">
-        <view class="form-label required">
-          <text class="label-text">课程名称</text>
-          <text class="required-star">*</text>
-        </view>
-        <input 
-          class="form-input {{errors.title ? 'error' : ''}}"
-          name="title"
-          placeholder="请输入课程或任务的名称"
-          value="{{formData.title}}"
-          bindinput="onInputChange"
-          data-field="title"
-          maxlength="50"
-        />
-        <view wx:if="{{errors.title}}" class="error-text">{{errors.title}}</view>
-        <view class="input-counter">{{formData.title.length}}/50</view>
+  <form bindsubmit="onSubmit" class="form-container">
+    <!-- 课程名称 -->
+    <view class="form-group">
+      <view class="form-label">课程名称</view>
+      <input 
+        class="form-input {{errors.title ? 'error' : ''}}"
+        name="title"
+        placeholder="请输入课程或任务的名称"
+        value="{{formData.title}}"
+        bindinput="onInputChange"
+        data-field="title"
+        maxlength="50"
+      />
+      <view wx:if="{{errors.title}}" class="error-text">{{errors.title}}</view>
+    </view>
+
+    <!-- 直播开始时间 -->
+    <view class="form-group">
+      <view class="form-label">直播开始时间</view>
+      <view class="datetime-row">
+        <picker 
+          mode="date" 
+          value="{{formData.startDate}}" 
+          bindchange="onStartDateChange"
+          class="form-input datetime-picker {{errors.startDate ? 'error' : ''}}"
+        >
+          <text class="{{formData.startDate ? '' : 'placeholder'}}">
+            {{formData.startDate || '选择日期'}}
+          </text>
+        </picker>
+        <picker 
+          mode="time" 
+          value="{{formData.startTime}}" 
+          bindchange="onStartTimeChange"
+          class="form-input datetime-picker {{errors.startTime ? 'error' : ''}}"
+        >
+          <text class="{{formData.startTime ? '' : 'placeholder'}}">
+            {{formData.startTime || '选择时间'}}
+          </text>
+        </picker>
+      </view>
+      <view wx:if="{{errors.startDate || errors.startTime}}" class="error-text">
+        {{errors.startDate || errors.startTime}}
+      </view>
+    </view>
+
+
+    <!-- 题目详情 -->
+    <view class="form-group">
+      <view class="form-label">题目详情</view>
+      <textarea 
+        class="form-textarea {{errors.desc ? 'error' : ''}}"
+        placeholder="请在此处输入详细的题目要求和背景材料..."
+        value="{{formData.desc}}"
+        bindinput="onInputChange"
+        data-field="desc"
+        maxlength="2000"
+        show-confirm-bar="{{false}}"
+        auto-height
+      />
+      <view wx:if="{{errors.desc}}" class="error-text">{{errors.desc}}</view>
+      <view class="input-counter">{{formData.desc.length}}/2000</view>
+    </view>
+
+    <!-- 底部设置行 -->
+    <view class="form-row">
+      <!-- 截止日期 -->
+      <view class="form-group half">
+        <view class="form-label">截止日期</view>
+        <picker 
+          mode="date" 
+          value="{{formData.deadlineDate}}" 
+          bindchange="onDeadlineDateChange"
+          class="form-input {{errors.deadlineDate ? 'error' : ''}}"
+        >
+          <text class="{{formData.deadlineDate ? '' : 'placeholder'}}">
+            {{formData.deadlineDate || '请选择截止日期'}}
+          </text>
+        </picker>
+        <view wx:if="{{errors.deadlineDate}}" class="error-text">{{errors.deadlineDate}}</view>
       </view>
 
-      <!-- 直播开始时间 -->
-      <view class="form-section">
-        <view class="form-label required">
-          <text class="label-text">直播开始时间</text>
-          <text class="required-star">*</text>
-        </view>
-        <view class="datetime-picker-wrapper">
-          <picker 
-            mode="date" 
-            value="{{formData.date}}" 
-            bindchange="onDateChange"
-            start="{{minDate}}"
-            class="datetime-picker {{errors.date ? 'error' : ''}}"
-          >
-            <view class="picker-display">
-              <text class="picker-text {{formData.date ? '' : 'placeholder'}}">
-                {{formData.date || '请选择日期'}}
-              </text>
-              <text class="picker-icon">📅</text>
-            </view>
-          </picker>
-          
-          <picker 
-            mode="time" 
-            value="{{formData.time}}" 
-            bindchange="onTimeChange"
-            class="datetime-picker {{errors.time ? 'error' : ''}}"
-          >
-            <view class="picker-display">
-              <text class="picker-text {{formData.time ? '' : 'placeholder'}}">
-                {{formData.time || '请选择时间'}}
-              </text>
-              <text class="picker-icon">🕐</text>
-            </view>
-          </picker>
-        </view>
-        <view wx:if="{{errors.date || errors.time}}" class="error-text">
-          {{errors.date || errors.time}}
-        </view>
-        <view wx:if="{{formData.date && formData.time}}" class="datetime-preview">
-          预览：{{formData.date}} {{formData.time}}
-        </view>
-      </view>
-
-      <!-- 题目详情 -->
-      <view class="form-section">
-        <view class="form-label required">
-          <text class="label-text">题目详情</text>
-          <text class="required-star">*</text>
-        </view>
-        <textarea 
-          class="form-textarea {{errors.requirements ? 'error' : ''}}"
-          name="requirements"
-          placeholder="请在此处输入详细的题目要求和背景材料..."
-          value="{{formData.requirements}}"
-          bindinput="onInputChange"
-          data-field="requirements"
-          maxlength="2000"
-          show-confirm-bar="{{false}}"
-          auto-height
-        />
-        <view wx:if="{{errors.requirements}}" class="error-text">{{errors.requirements}}</view>
-        <view class="input-counter">{{formData.requirements.length}}/2000</view>
-      </view>
-
-      <!-- 任务类型（预留） -->
-      <view class="form-section">
-        <view class="form-label">
-          <text class="label-text">任务类型</text>
-        </view>
+      <!-- 任务类型 -->
+      <view class="form-group half">
+        <view class="form-label">任务类型</view>
         <picker 
           range="{{taskTypes}}" 
           range-key="name"
           value="{{formData.typeIndex}}" 
           bindchange="onTypeChange"
-          class="form-picker"
+          class="form-input"
         >
-          <view class="picker-display">
-            <text class="picker-text">{{taskTypes[formData.typeIndex].name}}</text>
-            <text class="picker-icon">⌄</text>
-          </view>
+          <text>{{taskTypes[formData.typeIndex].name}}</text>
         </picker>
-        <view class="form-hint">V1.0版本仅支持直播课任务</view>
-      </view>
-
-      <!-- 高级设置（可折叠） -->
-      <view class="form-section">
-        <view class="section-header" bindtap="toggleAdvanced">
-          <text class="section-title">高级设置</text>
-          <text class="toggle-icon {{showAdvanced ? 'expanded' : ''}}">⌄</text>
-        </view>
-        
-        <view wx:if="{{showAdvanced}}" class="advanced-settings">
-          <!-- 总分设置 -->
-          <view class="setting-item">
-            <view class="setting-label">总分</view>
-            <input 
-              class="setting-input"
-              type="number"
-              placeholder="100"
-              value="{{formData.totalScore}}"
-              bindinput="onInputChange"
-              data-field="totalScore"
-            />
-            <view class="setting-unit">分</view>
-          </view>
-          
-          <!-- 提交次数限制 -->
-          <view class="setting-item">
-            <view class="setting-label">提交次数限制</view>
-            <input 
-              class="setting-input"
-              type="number"
-              placeholder="3"
-              value="{{formData.maxSubmissions}}"
-              bindinput="onInputChange"
-              data-field="maxSubmissions"
-            />
-            <view class="setting-unit">次</view>
-          </view>
-
-          <!-- 是否立即发布 -->
-          <view class="setting-item">
-            <view class="setting-label">发布状态</view>
-            <switch 
-              checked="{{formData.publishImmediately}}" 
-              bindchange="onSwitchChange"
-              data-field="publishImmediately"
-              color="#667eea"
-            />
-            <view class="setting-desc">{{formData.publishImmediately ? '立即发布' : '保存为草稿'}}</view>
-          </view>
-        </view>
       </view>
     </view>
 
-    <!-- 提交按钮区域 -->
-    <view class="submit-area">
-      <button 
-        class="btn-secondary" 
-        bindtap="saveDraft"
-        disabled="{{isSubmitting}}"
-      >
-        {{isSubmitting && submitMode === 'draft' ? '保存中...' : '保存草稿'}}
-      </button>
-      <button 
-        class="btn-primary" 
-        form-type="submit"
-        disabled="{{!canSubmit || isSubmitting}}"
-      >
-        {{isSubmitting && submitMode === 'publish' ? '发布中...' : (isEditMode ? '更新任务' : '发布任务')}}
-      </button>
-    </view>
+    <!-- 创建任务按钮 -->
+    <button 
+      class="submit-btn" 
+      form-type="submit"
+      disabled="{{!canSubmit || isSubmitting}}"
+    >
+      {{isSubmitting ? '创建中...' : '创建任务'}}
+    </button>
   </form>
 </view>
 

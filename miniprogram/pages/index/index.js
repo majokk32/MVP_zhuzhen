@@ -249,14 +249,7 @@ Page({
       const result = await taskModuleInstance.getTaskList(params);
       console.log('🎯 [DEBUG] getTaskList 调用完成, result:', result);
       
-      // 处理置顶逻辑（课后加餐任务置顶）
       let tasks = result.tasks || []
-      if (!loadMore) {
-        // 分离置顶任务和普通任务
-        const pinnedTasks = tasks.filter(t => t.task_type === "extra" && t.submission_status === '未提交')
-        const normalTasks = tasks.filter(t => !(t.task_type === "extra" && t.submission_status === '未提交'))
-        tasks = [...pinnedTasks, ...normalTasks]
-      }
       
       
       const newTaskList = loadMore ? [...this.data.taskList, ...tasks] : tasks

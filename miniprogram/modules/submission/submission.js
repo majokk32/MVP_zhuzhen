@@ -61,15 +61,47 @@ class SubmissionModule {
     }
   }
 
+  // 提交作业（新版本，支持本地路径）
+  async submitAssignment(data) {
+    try {
+      const res = await app.request({
+        url: '/submissions/submit',
+        method: 'POST',
+        data: {
+          task_id: data.task_id,
+          images: data.images || [], // 直接使用images字段存储本地路径
+          text: data.text || ''
+        }
+      });
+
+      // app.request 成功时直接返回 data 部分，失败时会抛出异常
+      // 所以这里 res 就是提交成功的数据
+      return res;
+    } catch (error) {
+      console.error('提交作业失败:', error);
+      throw error;
+    }
+  }
+
   // 单张图片上传（使用增强的上传系统）
   uploadImage(filePath, options = {}) {
     return new Promise((resolve, reject) => {
       const app = getApp();
       
+      // 准备form数据
+      const formData = {};
+      if (options.taskId) {
+        formData.task_id = options.taskId;
+      }
+      if (options.textContent) {
+        formData.text_content = options.textContent;
+      }
+      
       app.uploadFile({
         url: '/submissions/upload-image',
         filePath: filePath,
         name: 'file',
+        formData: formData,
         showError: options.showError !== false,
         onProgress: options.onProgress,
         onComplete: options.onComplete,
@@ -264,42 +296,11 @@ class SubmissionModule {
     if (!dateStr) return '';
     
     const date = new Date(dateStr);
-    const now = new Date();
-    const diff = now - date;
-    
-    // 小于1分钟
-    if (diff < 60 * 1000) {
-      return '刚刚';
-    }
-    
-    // 小于1小时
-    if (diff < 60 * 60 * 1000) {
-      const minutes = Math.floor(diff / (60 * 1000));
-      return `${minutes}分钟前`;
-    }
-    
-    // 小于24小时
-    if (diff < 24 * 60 * 60 * 1000) {
-      const hours = Math.floor(diff / (60 * 60 * 1000));
-      return `${hours}小时前`;
-    }
-    
-    // 小于7天
-    if (diff < 7 * 24 * 60 * 60 * 1000) {
-      const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-      return `${days}天前`;
-    }
-    
-    // 显示具体日期
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const hour = String(date.getHours()).padStart(2, '0');
     const minute = String(date.getMinutes()).padStart(2, '0');
-    
-    if (year === now.getFullYear()) {
-      return `${month}-${day} ${hour}:${minute}`;
-    }
     
     return `${year}-${month}-${day} ${hour}:${minute}`;
   }
