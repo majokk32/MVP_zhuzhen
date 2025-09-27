@@ -133,9 +133,6 @@ class TaskModule {
     // 格式化日期
     const deadline = task.deadline ? this.formatDate(task.deadline) : ''
     
-    // 判断是否为课后加餐（根据task_type字段）
-    const isExtra = task.task_type === 'extra'
-    
     return {
       ...task,
       statusLabel,
@@ -144,7 +141,6 @@ class TaskModule {
       topRightText,
       topRightType,
       deadlineText: deadline,
-      isExtra,
       // 添加是否可以提交的标志
       canSubmit: task.status === 'ongoing' && task.submission_status !== 'graded'
     }

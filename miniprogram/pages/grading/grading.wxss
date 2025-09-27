@@ -1,8 +1,134 @@
 /* 批改页面样式 */
+
+/* 简化的导航按钮 */
+.simple-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 24rpx;
+}
+
+.nav-btn {
+  padding: 16rpx 32rpx;
+  border: 1px solid #007aff;
+  border-radius: 8rpx;
+  background: white;
+  color: #007aff;
+  font-size: 28rpx;
+}
+
+.nav-btn.disabled {
+  border-color: #e0e0e0;
+  color: #bbb;
+  background: #f9f9f9;
+}
+
+.nav-info {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 简化的评语输入 */
+.feedback-textarea {
+  width: 100%;
+  min-height: 200rpx;
+  padding: 24rpx;
+  border: 1px solid #e0e0e0;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  background: white;
+  color: #333;
+}
+
+.feedback-textarea::placeholder {
+  color: #999;
+}
+
+/* 紧凑的提交统计信息 */
+.submission-meta-compact {
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 24rpx;
+}
+
+.meta-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.meta-row:last-child {
+  margin-bottom: 0;
+}
+
+.meta-label {
+  font-size: 26rpx;
+  color: #666;
+  min-width: 120rpx;
+  flex-shrink: 0;
+}
+
+.meta-value {
+  font-size: 26rpx;
+  color: #333;
+  flex: 1;
+}
+
+/* 底部操作栏 */
+.bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  gap: 16rpx;
+  box-shadow: 0 -4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.nav-btn-bottom {
+  flex: 1;
+  padding: 24rpx 16rpx;
+  background: #f5f6fa;
+  color: #666;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+}
+
+.nav-btn-bottom.disabled {
+  background: #e0e0e0;
+  color: #bbb;
+}
+
+.submit-btn-bottom {
+  flex: 1;
+  padding: 24rpx 16rpx;
+  background: #e0e0e0;
+  color: #bbb;
+  border: none;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.submit-btn-bottom.active {
+  background: #007aff;
+  color: white;
+}
 .container {
   min-height: 100vh;
   background: #f5f6fa;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
 }
 
 /* 任务头部 */

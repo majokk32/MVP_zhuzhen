@@ -77,6 +77,7 @@ class TaskCreate(BaseModel):
     desc: str = Field(..., description="题目详情")
     total_score: float = Field(default=40, gt=0, description="总分")
     deadline: Optional[datetime] = Field(None, description="截止时间")
+    live_start_time: Optional[datetime] = Field(None, description="直播开始时间")
     status: Optional[TaskStatusEnum] = Field(default=TaskStatusEnum.ongoing, description="任务状态")
 
 
@@ -86,6 +87,7 @@ class TaskUpdate(BaseModel):
     desc: Optional[str] = None
     total_score: Optional[float] = Field(None, gt=0)
     deadline: Optional[datetime] = None
+    live_start_time: Optional[datetime] = None
     status: Optional[TaskStatusEnum] = None
 
 
@@ -96,6 +98,7 @@ class TaskInfo(BaseModel):
     desc: str
     total_score: float
     deadline: Optional[datetime]
+    live_start_time: Optional[datetime]
     status: TaskStatusEnum
     created_by: int
     created_at: datetime

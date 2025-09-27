@@ -9,7 +9,7 @@
       <view class="task-title">{{task.title}}</view>
       <view class="task-meta">
         <text class="task-type {{task.type}}">{{taskTypeText}}</text>
-        <text class="task-date">{{formattedCreatedAt}}</text>
+        <text class="task-date">{{formattedLiveTime}}</text>
       </view>
     </view>
     
@@ -79,8 +79,12 @@
         </view>
         
         <!-- 上传按钮 -->
-        <button class="upload-btn-primary" bindtap="chooseImages">
-          上传图片提交作业
+        <button 
+          class="upload-btn-primary {{isOverdue ? 'disabled' : ''}}" 
+          disabled="{{isOverdue}}"
+          bindtap="chooseImages"
+        >
+          {{isOverdue ? '作业已截止' : '上传图片提交作业'}}
         </button>
       </view>
 
@@ -168,7 +172,7 @@
       <!-- 操作按钮 -->
       <view class="action-buttons">
         <button wx:if="{{submissionCount < 3}}" class="resubmit-btn" bindtap="resubmit">
-          重新提交（剩余{{3 - submissionCount}}次机会）
+          重新提交
         </button>
       </view>
     </view>
@@ -176,83 +180,69 @@
 
   <!-- 视图3：已批改状态 -->
   <view wx:elif="{{viewType === 'reviewed'}}" class="reviewed-section">
-    <view class="section-card">
-      <!-- 评价结果 -->
-      <view class="grade-result-card {{currentSubmission.grade}}">
-        <view class="grade-header">
-          <text class="grade-icon">{{currentSubmission.grade === 'excellent' ? '🎆' : currentSubmission.grade === 'good' ? '👍' : '📖'}}</text>
-          <view class="grade-info">
-            <text class="grade-title">{{gradeTitle}}</text>
-            <text class="grade-desc">{{gradeDesc}}</text>
-          </view>
-        </view>
-        
-        <!-- 得分详情 -->
-        <view wx:if="{{currentSubmission.score}}" class="score-detail">
-          <text class="score-label">得分：</text>
-          <text class="score-value">{{currentSubmission.score}}</text>
-          <text class="score-total">/{{task.total_score || 100}}</text>
-        </view>
+    <!-- 批改结果标题 -->
+    <view class="section-title">
+      <text class="icon">✨</text>
+      <text>批改结果</text>
+    </view>
+
+    <!-- 我的作业 -->
+    <view class="my-work-card">
+      <view class="work-title">
+        <text class="icon">📝</text>
+        <text>我的作业</text>
+      </view>
+      
+      <!-- 图片展示 (小图片) -->
+      <view wx:if="{{currentSubmission.images && currentSubmission.images.length > 0}}" class="work-images">
+        <image 
+          wx:for="{{currentSubmission.images}}" 
+          wx:key="index"
+          src="{{item}}" 
+          mode="aspectFill"
+          class="work-image-small"
+          bindtap="previewSubmittedImage"
+          data-url="{{item}}"
+          lazy-load="true"
+          show-menu-by-longpress="false"
+          binderror="onImageError"
+        />
       </view>
 
-      <!-- 老师评语 -->
-      <view class="teacher-feedback">
-        <view class="section-title">
-          <text class="icon">💬</text>
-          <text>老师评语</text>
-        </view>
-        <view class="feedback-content">
-          {{currentSubmission.feedback || '暂无评语'}}
-        </view>
-        <view wx:if="{{currentSubmission.graded_by}}" class="feedback-footer">
-          <text>批改老师：{{currentSubmission.graded_by}}</text>
-          <text>批改时间：{{currentSubmission.graded_at}}</text>
-        </view>
+      <!-- 文字内容 -->
+      <view wx:if="{{currentSubmission.text}}" class="work-text">
+        <text>{{currentSubmission.text}}</text>
       </view>
+    </view>
 
-      <!-- 作业内容 -->
-      <view class="submission-content">
-        <view class="section-title">
-          <text class="icon">📝</text>
-          <text>我的作业</text>
-        </view>
-        
-        <!-- 图片展示 -->
-        <view wx:if="{{currentSubmission.images && currentSubmission.images.length > 0}}" class="content-images">
-          <view class="image-grid">
-            <image 
-              wx:for="{{currentSubmission.images}}" 
-              wx:key="index"
-              src="{{item}}" 
-              mode="aspectFill"
-              class="content-image"
-              bindtap="previewSubmittedImage"
-              data-url="{{item}}"
-              lazy-load="true"
-              show-menu-by-longpress="false"
-              binderror="onImageError"
-            />
-          </view>
-        </view>
-
-        <!-- 文字内容 -->
-        <view wx:if="{{currentSubmission.text}}" class="content-text">
-          <text>{{currentSubmission.text}}</text>
-        </view>
+    <!-- 评分状态卡片 -->
+    <view class="grade-status-card {{currentSubmission.grade}}">
+      <view class="grade-badge">
+        <text class="grade-icon">{{currentSubmission.grade === 'excellent' ? '💫' : currentSubmission.grade === 'good' ? '⭐' : '🔄'}}</text>
+        <text class="grade-text">{{gradeTitle}}</text>
       </view>
+      <text class="grade-description">{{gradeDesc}}</text>
+    </view>
 
-      <!-- 操作按钮 -->
-      <view class="action-buttons">
-        <button wx:if="{{submissionCount < 3 && !task.is_ended}}" class="resubmit-btn outline" bindtap="resubmit">
-          重新提交（剩余{{3 - submissionCount}}次机会）
-        </button>
-        <button class="history-btn outline" bindtap="showMyGradingHistory">
-          查看批改历史
-        </button>
-        <button class="share-btn" open-type="share">
-          分享成绩
-        </button>
+    <!-- 老师评语 -->
+    <view wx:if="{{currentSubmission.comment}}" class="teacher-comment">
+      <view class="comment-title">
+        <text class="icon">💬</text>
+        <text>老师评语</text>
       </view>
+      <view class="comment-content">
+        {{currentSubmission.comment}}
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-buttons">
+      <button wx:if="{{submissionCount < 3 && !task.is_ended}}" class="resubmit-btn outline" bindtap="resubmit">
+        重新提交
+      </button>
+      <button class="history-btn outline" bindtap="showMyGradingHistory">
+        查看批改历史
+      </button>
     </view>
   </view>
 

@@ -940,6 +940,146 @@
   display: none;
 }
 
+/* 批改结果 - 我的作业样式 */
+.my-work-card {
+  background: white;
+  margin: 24rpx;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+}
+
+.work-title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+.work-title .icon {
+  font-size: 32rpx;
+}
+
+/* 我的作业小图片样式 */
+.work-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.work-image-small {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 12rpx;
+  border: 2rpx solid #f0f0f0;
+}
+
+.work-text {
+  padding: 16rpx 20rpx;
+  background: #f9f9f9;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* 评分状态卡片 */
+.grade-status-card {
+  background: white;
+  margin: 24rpx;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+  border-left: 8rpx solid #4285f4;
+}
+
+.grade-status-card.excellent {
+  border-left-color: #ff6b6b;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+}
+
+.grade-status-card.good {
+  border-left-color: #ffc107;
+  background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%);
+}
+
+.grade-status-card.review {
+  border-left-color: #6c5ce7;
+  background: linear-gradient(135deg, #f8f7ff 0%, #ffffff 100%);
+}
+
+.grade-badge {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.grade-icon {
+  font-size: 48rpx;
+}
+
+.grade-text {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.grade-description {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* 老师评语区域 */
+.teacher-comment {
+  background: white;
+  margin: 24rpx;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+}
+
+.comment-title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24rpx;
+}
+
+.comment-title .icon {
+  font-size: 32rpx;
+}
+
+.comment-content {
+  font-size: 30rpx;
+  color: #333;
+  line-height: 1.6;
+  background: #f8f9fa;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.comment-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 26rpx;
+  color: #999;
+}
+
+.comment-time {
+  margin-left: 16rpx;
+}
+
 /* 安全区域 */
 .safe-bottom {
   height: env(safe-area-inset-bottom);

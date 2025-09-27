@@ -38,7 +38,8 @@ async def create_task(
         desc=task_data.desc,
         total_score=task_data.total_score,
         deadline=task_data.deadline,
-        status=TaskStatus(task_data.status.value) if task_data.status else TaskStatus.ONGOING,
+        live_start_time=task_data.live_start_time,
+        status=TaskStatus(task_data.status) if task_data.status else TaskStatus.ONGOING,
         created_by=current_user.id
     )
     
@@ -237,6 +238,9 @@ async def get_task(
         )
     
     task_info = TaskInfo.from_orm(task)
+    
+    # 手动设置 task_type 字段（确保前端能正确获取）
+    task_info.task_type = task.task_type.value if task.task_type else None
     
     # Get submission status for current user
     sub_result = await db.execute(

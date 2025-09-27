@@ -17,31 +17,7 @@
   box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
 }
 
-/* 置顶卡片特殊样式 */
-.task-card-extra {
-  border: 2rpx solid var(--primary-color);
-  background: linear-gradient(135deg, #fff 0%, #f0f8ff 100%);
-}
 
-/* 置顶标记 */
-.pin-badge {
-  position: absolute;
-  top: -10rpx;
-  right: 30rpx;
-  background: var(--primary-color);
-  color: white;
-  padding: 4rpx 16rpx;
-  border-radius: 20rpx;
-  font-size: 22rpx;
-  display: flex;
-  align-items: center;
-  gap: 4rpx;
-  z-index: 1;
-}
-
-.pin-icon {
-  font-size: 20rpx;
-}
 
 /* 权限标记 */
 .permission-badge {

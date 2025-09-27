@@ -15,10 +15,11 @@ Page({
     remainingTime: '',
     
     // 格式化时间显示
-    formattedCreatedAt: '',
+    formattedLiveTime: '',
     formattedDeadline: '',
     
-    // 提交相关 - 图片上传
+    // 提交相关 - 多文件上传
+    selectedFileType: 'image', // 固定为图片类型
     uploadedFiles: [],
     submissionText: '',
     canSubmit: false,
@@ -153,12 +154,30 @@ Page({
     try {
       const task = await taskModule.getTaskDetail(this.data.taskId);
       
-      // 计算任务类型文本
-      const typeMap = {
-        'live': '直播课',
-        'extra': '课后加餐',
-        'normal': '日常任务'
-      };
+      // 计算任务类型文本（与任务卡片保持一致）
+      let taskTypeText = '任务'; // 默认值
+      
+      // 使用与任务卡片完全相同的逻辑
+      const now = getChinaTime();
+      const deadline = task.deadline ? new Date(task.deadline) : null;
+      
+      if (task.task_type === 'extra') {
+        taskTypeText = '课后加餐';
+      } else if (task.status === 'ongoing') {
+        if (deadline && now > deadline) {
+          taskTypeText = '已结束';
+        } else {
+          taskTypeText = '正在进行中';
+        }
+      } else if (task.status === 'ended') {
+        if (task.submission_status === 'graded' && task.submission_grade) {
+          taskTypeText = '已完成';
+        } else {
+          taskTypeText = '已结束';
+        }
+      } else {
+        taskTypeText = '正在进行中';
+      }
       
       // 计算剩余时间
       let remainingTime = '';
@@ -188,10 +207,10 @@ Page({
       
       this.setData({
         task,
-        taskTypeText: typeMap[task.type] || '任务',
+        taskTypeText,
         isOverdue,
         remainingTime,
-        formattedCreatedAt: formatDateTime(task.created_at),
+        formattedLiveTime: task.live_start_time ? formatDateTime(task.live_start_time) : formatDateTime(task.created_at),
         formattedDeadline: task.deadline ? formatDateTime(task.deadline) : '无截止时间'
       });
       
@@ -287,11 +306,11 @@ Page({
   setGradeInfo(grade) {
     const gradeInfo = {
       'excellent': {
-        title: '极佳作品',
+        title: '极佳',
         desc: '完成质量优异，值得其他同学学习'
       },
       'good': {
-        title: '优秀作品',
+        title: '优秀', 
         desc: '完成质量良好，继续保持'
       },
       'review': {
@@ -306,7 +325,6 @@ Page({
       gradeDesc: info.desc
     });
   },
-
 
   // 选择图片
   chooseImages() {
@@ -333,8 +351,10 @@ Page({
           return {
             type: 'image',
             name: fileName,
+            shortName: this.generateShortName(fileName, 12),
             path: file.tempFilePath,
-            size: this.formatFileSize(file.size)
+            size: this.formatFileSize(file.size),
+            icon: '🖼️'
           };
         });
         
@@ -355,9 +375,7 @@ Page({
     });
   },
 
-
-
-  // 删除图片
+  // 删除文件
   deleteFile(e) {
     const index = e.currentTarget.dataset.index;
     const uploadedFiles = [...this.data.uploadedFiles];
@@ -365,7 +383,7 @@ Page({
     
     this.setData({
       uploadedFiles,
-      canSubmit: uploadedFiles.length > 0
+      canSubmit: uploadedFiles.length > 0 || this.data.submissionText.trim().length > 0
     });
   },
 
@@ -402,19 +420,6 @@ Page({
     return shortName + '.' + extension;
   },
 
-  // 工具方法：获取文档图标
-  getDocumentIcon(filename) {
-    const ext = filename.split('.').pop().toLowerCase();
-    const iconMap = {
-      'pdf': '📕',
-      'doc': '📘',
-      'docx': '📘',
-      'txt': '📄',
-      'rtf': '📝'
-    };
-    return iconMap[ext] || '📄';
-  },
-
   // 预览图片
   previewImage(e) {
     const url = e.currentTarget.dataset.url;
@@ -440,6 +445,14 @@ Page({
     // 可以在这里添加默认图片或重试逻辑
   },
 
+  // 文字输入
+  onTextInput(e) {
+    const text = e.detail.value;
+    this.setData({
+      submissionText: text,
+      canSubmit: text.trim().length > 0 || this.data.uploadedFiles.length > 0
+    });
+  },
 
   // 提交作业
   async submitHomework() {
@@ -460,11 +473,11 @@ Page({
       });
       return;
     }
-    
+
     const currentUsed = this.data.submissionCount;
     const remainingAfterSubmit = 3 - currentUsed - 1; // 提交后剩余次数
     const resetMessage = this.data.hasReviewReset ? '(因"待复盘"评价已重置提交次数) ' : '';
-    
+
     wx.showModal({
       title: '确认提交',
       content: `确定要提交作业吗？${resetMessage}提交后您还剩 ${remainingAfterSubmit} 次提交机会`,
@@ -543,8 +556,7 @@ Page({
             
             uploadResult = [uploadResult];
           } else {
-            // 多文件情况：使用一个创新的解决方案
-            // 我们将所有文件信息先收集，然后通过一个特殊的批处理接口处理
+            // 多文件情况：使用批次ID机制
             console.log('📤 [DEBUG] 多文件上传，开始依次处理...');
             
             // 生成唯一的批次ID
@@ -666,7 +678,6 @@ Page({
     }
   },
 
-
   // 重新提交
   resubmit() {
     if (this.data.submissionCount >= 3) {
@@ -689,7 +700,7 @@ Page({
     
     this.setData({
       viewType: 'toSubmit',
-      uploadedImages: [],
+      uploadedFiles: [],
       submissionText: '',
       canSubmit: false
     });

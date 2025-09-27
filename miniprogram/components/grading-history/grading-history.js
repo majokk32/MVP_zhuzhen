@@ -227,38 +227,13 @@ Component({
       if (!dateString) return '';
       
       const date = new Date(dateString);
-      const now = new Date();
-      const diff = now - date;
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hour = String(date.getHours()).padStart(2, '0');
+      const minute = String(date.getMinutes()).padStart(2, '0');
       
-      // 1分钟内
-      if (diff < 60 * 1000) {
-        return '刚刚';
-      }
-      
-      // 1小时内
-      if (diff < 60 * 60 * 1000) {
-        return `${Math.floor(diff / (60 * 1000))}分钟前`;
-      }
-      
-      // 今天
-      if (date.toDateString() === now.toDateString()) {
-        return `今天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-      }
-      
-      // 昨天
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      if (date.toDateString() === yesterday.toDateString()) {
-        return `昨天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-      }
-      
-      // 本年
-      if (date.getFullYear() === now.getFullYear()) {
-        return `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-      }
-      
-      // 其他年份
-      return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+      return `${year}-${month}-${day} ${hour}:${minute}`;
     },
 
     // 获取状态文本

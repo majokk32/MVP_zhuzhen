@@ -179,10 +179,6 @@ Component({
       // 根据任务卡片的特殊状态调整高度
       let height = estimatedItemHeight;
       
-      // 置顶任务高度稍微增加
-      if (item.isExtra || item.task_type === 'extra') {
-        height += 20;
-      }
       
       // 有权限提示的卡片高度增加
       if (item.showPermissionBadge) {

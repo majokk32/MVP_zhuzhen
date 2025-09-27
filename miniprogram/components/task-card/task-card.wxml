@@ -1,15 +1,10 @@
 <!--components/task-card/task-card.wxml-->
 <view 
-  class="task-card {{task.isExtra ? 'task-card-extra' : ''}}" 
+  class="task-card" 
   style="background-color: {{task.cardColor}}; animation: {{animation}}"
   bindtap="onTapCard"
   bindlongpress="onLongPressCard"
 >
-  <!-- 置顶标记（课后加餐） -->
-  <view wx:if="{{task.isExtra}}" class="pin-badge">
-    <text class="pin-icon">📌</text>
-    <text class="pin-text">置顶</text>
-  </view>
 
   <!-- 试用用户权限提示 -->
   <view wx:if="{{showPermissionBadge}}" class="permission-badge trial">
