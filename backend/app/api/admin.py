@@ -5,7 +5,7 @@ Admin/Teacher management API endpoints
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, desc
+from sqlalchemy import select, func, and_, desc, or_
 from typing import Optional, List
 from datetime import datetime, timedelta
 
@@ -115,9 +115,14 @@ async def get_student_list(
                 func.coalesce(User.last_checkin_date, User.updated_at) >= cutoff_date
             )
         
-        # 应用关键词搜索
+        # 应用关键词搜索 (支持按姓名或手机号搜索)
         if keyword:
-            base_query = base_query.where(User.nickname.ilike(f"%{keyword}%"))
+            base_query = base_query.where(
+                or_(
+                    User.nickname.ilike(f"%{keyword}%"),
+                    User.phone.ilike(f"%{keyword}%")
+                )
+            )
         
         # 获取筛选后的总数
         count_result = await db.execute(select(func.count()).select_from(base_query.subquery()))

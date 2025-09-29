@@ -524,6 +524,13 @@ Page({
             const token = app.globalData.token || wx.getStorageSync('token');
             const uploadUrl = `${app.globalData.baseUrl}/submissions/upload-files`;
             
+            console.log(`📤 [DEBUG] 开始单文件上传:`, {
+              url: uploadUrl,
+              filePath: file.path,
+              fileName: file.name,
+              hasToken: !!token
+            });
+            
             const uploadResult = await new Promise((resolve, reject) => {
               wx.uploadFile({
                 url: uploadUrl,
@@ -595,6 +602,7 @@ Page({
                     }
                   },
                   fail: (err) => {
+                    console.error('❌ [DEBUG] 单文件上传失败:', err);
                     reject(new Error(err.errMsg || '上传失败'));
                   }
                 });

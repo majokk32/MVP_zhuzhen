@@ -210,7 +210,9 @@ Page({
    * 操作按钮点击
    */
   onActionTap(e) {
-    e.stopPropagation()
+    if (e && typeof e.stopPropagation === 'function') {
+      e.stopPropagation()
+    }
   },
 
   onActionClick(e) {

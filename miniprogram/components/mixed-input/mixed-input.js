@@ -536,7 +536,9 @@ Component({
 
     // 使用历史记录
     useHistoryItem(e) {
-      e.stopPropagation();
+      if (e && typeof e.stopPropagation === 'function') {
+        e.stopPropagation();
+      }
       const index = e.currentTarget.dataset.index;
       const item = this.data.voiceHistory[index];
       if (item) {
