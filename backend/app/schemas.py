@@ -22,6 +22,12 @@ class TaskStatusEnum(str, Enum):
     ended = "ended"
 
 
+class TaskTypeEnum(str, Enum):
+    live = "live"
+    extra = "extra"
+    normal = "normal"
+
+
 class SubscriptionTypeEnum(str, Enum):
     trial = "TRIAL"
     premium = "PREMIUM"
@@ -79,6 +85,7 @@ class TaskCreate(BaseModel):
     deadline: Optional[datetime] = Field(None, description="截止时间")
     live_start_time: Optional[datetime] = Field(None, description="直播开始时间")
     status: Optional[TaskStatusEnum] = Field(default=TaskStatusEnum.ongoing, description="任务状态")
+    task_type: Optional[TaskTypeEnum] = Field(default=TaskTypeEnum.live, description="任务类型")
 
 
 class TaskUpdate(BaseModel):
@@ -89,6 +96,7 @@ class TaskUpdate(BaseModel):
     deadline: Optional[datetime] = None
     live_start_time: Optional[datetime] = None
     status: Optional[TaskStatusEnum] = None
+    task_type: Optional[TaskTypeEnum] = None
 
 
 class TaskInfo(BaseModel):
@@ -100,6 +108,7 @@ class TaskInfo(BaseModel):
     deadline: Optional[datetime]
     live_start_time: Optional[datetime]
     status: TaskStatusEnum
+    task_type: Optional[TaskTypeEnum] = Field(None, description="任务类型")
     created_by: int
     created_at: datetime
     

@@ -10,7 +10,7 @@ from typing import Optional, List, Dict
 from datetime import datetime
 
 from app.database import get_db
-from app.models import Task, TaskStatus, User, Submission, SubmissionStatus, CheckinType
+from app.models import Task, TaskStatus, TaskType, User, Submission, SubmissionStatus, CheckinType
 from app.utils.task_status import calculate_display_status, get_task_priority
 from app.services.async_learning_data import trigger_checkin_async
 from app.schemas import (
@@ -40,6 +40,7 @@ async def create_task(
         deadline=task_data.deadline,
         live_start_time=task_data.live_start_time,
         status=TaskStatus(task_data.status) if task_data.status else TaskStatus.ONGOING,
+        task_type=task_data.task_type if task_data.task_type else TaskType.LIVE,
         created_by=current_user.id
     )
     
@@ -238,9 +239,6 @@ async def get_task(
         )
     
     task_info = TaskInfo.from_orm(task)
-    
-    # 手动设置 task_type 字段（确保前端能正确获取）
-    task_info.task_type = task.task_type.value if task.task_type else None
     
     # Get submission status for current user
     sub_result = await db.execute(

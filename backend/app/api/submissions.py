@@ -3,6 +3,7 @@ Submission-related API endpoints
 """
 
 import json
+import asyncio
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +21,7 @@ from app.schemas import (
 )
 from app.auth import get_current_user, get_current_teacher, get_current_premium_user
 from app.utils.storage import storage, StorageError, enhanced_storage
+from app.utils.file_decoder import file_decoder
 from app.config import settings
 from app.services.async_learning_data import trigger_checkin_async, trigger_submission_score_async, trigger_grading_score_async
 from app.utils.notification import notification_service
@@ -713,12 +715,12 @@ async def grade_submission_enhanced(
     )
 
 
-# Batch upload handler to solve frontend multiple file upload limitation
-import asyncio
-from typing import Dict, Set
+# Simplified batch upload handler
+from typing import Dict
 
-# Global storage for batch uploads
+# Global storage for batch uploads  
 batch_storage: Dict[str, Dict] = {}
+batch_locks: Dict[str, bool] = {}
 
 async def handle_batch_upload(
     task_id: int, 
@@ -731,75 +733,182 @@ async def handle_batch_upload(
     db: AsyncSession
 ) -> ResponseBase:
     """
-    Handle batch file uploads from frontend
-    Collects multiple files with same batch_id and creates single submission when all files received
+    Simplified batch file upload handler
     """
-    print(f"🔄 [BATCH] Processing batch upload - batch_id: {batch_id}, file_index: {file_index}/{total_files}")
+    print(f"🔄 [BATCH] Processing - batch_id: {batch_id}, file_index: {file_index}, total: {total_files}")
     global batch_storage
     
     # Initialize batch if not exists
     if batch_id not in batch_storage:
+        print(f"🆕 [BATCH] New batch - {batch_id}")
         batch_storage[batch_id] = {
             'task_id': task_id,
             'student_id': student_id,
             'files_data': [],
             'text_content': text_content,
             'total_files': total_files,
-            'received_files': 0,
-            'created_at': datetime.utcnow()
+            'received_files': 0
         }
     
     batch_info = batch_storage[batch_id]
     
-    # Process current file
+    # Process files
+    for file in files:
+        # Validate file
+        if file.content_type not in SUPPORTED_FILE_TYPES:
+            raise HTTPException(status_code=400, detail=f"不支持的文件类型: {file.content_type}")
+        
+        contents = await file.read()
+        if len(contents) > SUPPORTED_FILE_TYPES[file.content_type]:
+            raise HTTPException(status_code=400, detail="文件过大")
+        
+        batch_info['files_data'].append({
+            'content': contents,
+            'filename': file.filename,
+            'content_type': file.content_type,
+            'index': file_index
+        })
+    
+    batch_info['received_files'] += 1
+    print(f"📊 [BATCH] Progress - {batch_info['received_files']}/{batch_info['total_files']}")
+    print(f"🔍 [BATCH] 当前收到的文件索引: {[f['index'] for f in batch_info['files_data']]}")
+    
+    # Check if complete
+    if batch_info['received_files'] >= batch_info['total_files']:
+        print(f"✅ [BATCH] Complete - creating submission")
+        try:
+            result = await create_batch_submission(batch_id, db)
+            return result
+        except Exception as e:
+            print(f"❌ [BATCH] Failed: {e}")
+            if batch_id in batch_storage:
+                del batch_storage[batch_id]
+            raise e
+    else:
+        print(f"⏳ [BATCH] Waiting for more files")
+        return ResponseBase(
+            data={
+                'batch_id': batch_id,
+                'received_files': batch_info['received_files'], 
+                'total_files': batch_info['total_files'],
+                'status': 'partial'
+            },
+            msg=f"已接收 {batch_info['received_files']}/{batch_info['total_files']} 个文件"
+        )
+
+
+@router.post("/upload-encoded-files", response_model=ResponseBase)
+async def upload_encoded_files(
+    task_id: int = Form(...),
+    text_content: str = Form(""),
+    encoded_files: str = Form(...),  # JSON字符串格式的编码文件数据
+    file_count: int = Form(...),
+    total_size: int = Form(...),
+    current_user: User = Depends(get_current_premium_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    上传编码后的多个文件（新的编码解码方案）
+    """
+    import json
+    
+    print(f"🚀 [ENCODED] 接收编码文件上传 - task_id: {task_id}, 文件数: {file_count}, 总大小: {total_size}B")
+    
     try:
-        for file in files:
-            # Validate file type
-            if file.content_type not in SUPPORTED_FILE_TYPES:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"不支持的文件类型: {file.content_type}"
-                )
-            
-            # Validate file size
-            contents = await file.read()
-            max_size = SUPPORTED_FILE_TYPES[file.content_type]
-            
-            if len(contents) > max_size:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"文件 {file.filename} 超过大小限制 10MB"
-                )
-            
-            batch_info['files_data'].append({
-                'content': contents,
-                'filename': file.filename,
-                'content_type': file.content_type,
-                'index': file_index
-            })
+        # 验证任务存在
+        task_result = await db.execute(select(Task).where(Task.id == task_id))
+        task = task_result.scalar_one_or_none()
         
-        batch_info['received_files'] += len(files)
-        
-        # If all files received, create submission
-        if batch_info['received_files'] >= batch_info['total_files']:
-            return await create_batch_submission(batch_id, db)
-        else:
-            # Return temporary success for intermediate files
-            return ResponseBase(
-                data={
-                    'batch_id': batch_id,
-                    'received_files': batch_info['received_files'],
-                    'total_files': batch_info['total_files'],
-                    'status': 'partial'
-                },
-                msg=f"已接收 {batch_info['received_files']}/{batch_info['total_files']} 个文件"
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="任务不存在"
             )
-            
+        
+        # 检查提交次数限制
+        existing_submissions = await db.execute(
+            select(Submission).where(
+                and_(Submission.task_id == task_id, Submission.student_id == current_user.id)
+            )
+        )
+        current_count = len(existing_submissions.scalars().all())
+        
+        if current_count >= 3:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="已达到最大提交次数（3次）"
+            )
+        
+        # 解析编码文件数据
+        try:
+            files_data = json.loads(encoded_files)
+            print(f"📦 [ENCODED] 解析到 {len(files_data)} 个编码文件")
+        except json.JSONDecodeError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"编码文件数据格式错误: {str(e)}"
+            )
+        
+        # 验证文件数量
+        if len(files_data) != file_count:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"文件数量不匹配: 期望 {file_count}, 实际 {len(files_data)}"
+            )
+        
+        # 使用文件解码器处理文件
+        decode_result = await file_decoder.decode_and_save_files(
+            files_data, task_id, current_user.id
+        )
+        
+        if not decode_result['success']:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"部分文件处理失败: {decode_result['failed_files']}"
+            )
+        
+        # 提取文件URLs
+        file_urls = [file['url'] for file in decode_result['saved_files']]
+        
+        # 创建提交记录
+        submission_count = current_count + 1
+        submission = Submission(
+            task_id=task_id,
+            student_id=current_user.id,
+            images=file_urls,
+            text=text_content.strip() if text_content.strip() else None,
+            submit_count=submission_count,
+            status=SubmissionStatus.SUBMITTED
+        )
+        
+        db.add(submission)
+        await db.commit()
+        await db.refresh(submission)
+        
+        print(f"✅ [ENCODED] 编码文件提交成功 - submission_id: {submission.id}")
+        
+        return ResponseBase(
+            data={
+                'submission_id': submission.id,
+                'submission_count': submission_count,
+                'uploaded_files': decode_result['saved_files'],
+                'folder_path': decode_result['folder_path'],
+                'text_description': text_content.strip(),
+                'remaining_attempts': 3 - submission_count,
+                'file_count': len(file_urls),
+                'method': 'encoded_upload'
+            },
+            msg=f"编码上传成功！第 {submission_count} 次提交，共 {len(file_urls)} 个文件"
+        )
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        # Clean up batch on error
-        if batch_id in batch_storage:
-            del batch_storage[batch_id]
-        raise e
+        print(f"❌ [ENCODED] 编码文件上传失败: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"编码文件上传失败: {str(e)}"
+        )
 
 
 async def create_batch_submission(batch_id: str, db: AsyncSession) -> ResponseBase:
@@ -854,8 +963,10 @@ async def create_batch_submission(batch_id: str, db: AsyncSession) -> ResponseBa
         await db.commit()
         await db.refresh(submission)
         
-        # Clean up batch storage
+        # Clean up batch storage and lock
         del batch_storage[batch_id]
+        if batch_id in batch_locks:
+            del batch_locks[batch_id]
         
         return ResponseBase(
             data={
