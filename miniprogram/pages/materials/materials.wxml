@@ -40,83 +40,16 @@
     </view>
   </scroll-view>
 
-  <!-- 资料列表 -->
+  <!-- 资料列表 - 简化版本 -->
   <view class="materials-list">
     <view 
-      class="material-card"
+      class="material-card-simple"
       wx:for="{{materials}}"
       wx:key="id"
       bindtap="viewMaterial"
-      data-id="{{item.id}}"
+      data-url="{{item.url}}"
     >
-      <!-- 资料图片/缩略图 -->
-      <view class="material-thumbnail">
-        <image 
-          class="thumbnail-img"
-          src="{{item.thumbnail_url || getDefaultThumbnail(item.material_type)}}"
-          mode="aspectFill"
-        />
-        <view class="type-badge {{item.material_type}}">
-          {{typeMap[item.material_type] || '其他'}}
-        </view>
-        
-        <!-- 付费标识 -->
-        <view class="premium-badge" wx:if="{{item.required_subscription}}">
-          <text>付费</text>
-        </view>
-      </view>
-
-      <!-- 资料信息 -->
-      <view class="material-info">
-        <view class="material-header">
-          <text class="material-title">{{item.title}}</text>
-          <view class="material-actions">
-            <text 
-              class="action-btn collect {{item.is_collected ? 'active' : ''}}"
-              bindtap="toggleCollect"
-              data-id="{{item.id}}"
-              data-collected="{{item.is_collected}}"
-              catchtap="stopPropagation"
-            >
-              {{item.is_collected ? '💖' : '🤍'}}
-            </text>
-            
-            <text 
-              class="action-btn like {{item.is_liked ? 'active' : ''}}"
-              bindtap="toggleLike"
-              data-id="{{item.id}}"
-              data-liked="{{item.is_liked}}"
-              catchtap="stopPropagation"
-            >
-              {{item.is_liked ? '👍' : '👍🏻'}}
-            </text>
-          </view>
-        </view>
-
-        <text class="material-desc" wx:if="{{item.description}}">
-          {{item.description}}
-        </text>
-
-        <view class="material-meta">
-          <text class="meta-item">👁️ {{item.view_count}}</text>
-          <text class="meta-item">👍 {{item.like_count}}</text>
-          <text class="meta-item" wx:if="{{item.duration}}">
-            ⏱️ {{formatDuration(item.duration)}}
-          </text>
-          <text class="meta-item">{{formatDate(item.created_at)}}</text>
-        </view>
-
-        <view class="material-tags" wx:if="{{item.tags && item.tags.length > 0}}">
-          <text 
-            class="tag"
-            wx:for="{{item.tags}}"
-            wx:key="*this"
-            wx:for-item="tag"
-          >
-            #{{tag}}
-          </text>
-        </view>
-      </view>
+      <text class="material-title">{{item.title}}</text>
     </view>
 
     <!-- 加载更多 -->

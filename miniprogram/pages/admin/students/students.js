@@ -78,6 +78,15 @@ Page({
     try {
       console.log('👥 [DEBUG] 开始加载学生统计数据')
       const app = getApp();
+      
+      // 检查认证状态
+      const token = app.globalData.token || wx.getStorageSync('token');
+      console.log('👥 [DEBUG] 认证状态:', {
+        hasToken: !!token,
+        isLogin: app.globalData.isLogin,
+        userInfo: app.globalData.userInfo
+      });
+      
       const res = await app.request({
         url: '/admin/students',
         method: 'GET',
@@ -85,7 +94,6 @@ Page({
       })
       
       console.log('👥 [DEBUG] 学生统计响应:', res)
-      
       console.log('👥 [DEBUG] 响应结构详细:', JSON.stringify(res, null, 2));
       
       // app.request已经提取了data，直接使用res
@@ -103,19 +111,35 @@ Page({
       } else {
         console.log('👥 [WARN] 响应中没有统计字段，使用total作为totalStudents')
         this.setData({
-          totalStudents: res.total || 3,
+          totalStudents: res.total || 0,
           paidStudents: 0,
-          trialStudents: res.total || 3
+          trialStudents: res.total || 0
         })
       }
     } catch (error) {
       console.error('加载统计数据失败:', error)
       console.log('👥 [ERROR] 统计API调用失败，使用默认值')
+      
+      // 检查是否是认证错误
+      if (error.code === 403 || (error.errMsg && error.errMsg.includes('403'))) {
+        wx.showModal({
+          title: '认证失败',
+          content: '登录状态已过期，请重新登录',
+          showCancel: false,
+          success: () => {
+            wx.reLaunch({
+              url: '/pages/login/login'
+            })
+          }
+        })
+        return;
+      }
+      
       // 使用默认值
       this.setData({
-        totalStudents: 3, // 从管理面板看到的学生总数
+        totalStudents: 0,
         paidStudents: 0,
-        trialStudents: 3
+        trialStudents: 0
       })
     }
   },
@@ -150,6 +174,15 @@ Page({
       }
 
       const app = getApp();
+      
+      // 检查认证状态
+      const token = app.globalData.token || wx.getStorageSync('token');
+      console.log('👥 [DEBUG] 学生列表请求参数:', params);
+      console.log('👥 [DEBUG] 认证状态:', {
+        hasToken: !!token,
+        isLogin: app.globalData.isLogin
+      });
+      
       const res = await app.request({
         url: '/admin/students',
         method: 'GET',
@@ -175,11 +208,29 @@ Page({
           loadingMore: false,
           refreshing: false
         })
+        
+        console.log('👥 [DEBUG] 学生列表已加载:', processedStudents);
       } else {
         throw new Error(res.msg || '获取数据失败')
       }
     } catch (error) {
       console.error('加载学生列表失败:', error)
+      
+      // 检查是否是认证错误
+      if (error.code === 403 || (error.errMsg && error.errMsg.includes('403'))) {
+        wx.showModal({
+          title: '认证失败',
+          content: '登录状态已过期，请重新登录',
+          showCancel: false,
+          success: () => {
+            wx.reLaunch({
+              url: '/pages/login/login'
+            })
+          }
+        })
+        return;
+      }
+      
       this.setData({ 
         loading: false, 
         loadingMore: false, 
@@ -249,15 +300,46 @@ Page({
    * 搜索输入
    */
   onSearchInput(e) {
+    const keyword = e.detail.value.trim()
     this.setData({
-      searchKeyword: e.detail.value
+      searchKeyword: keyword
     })
+    
+    // 清除之前的搜索延时器
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer)
+    }
+    
+    // 设置新的搜索延时器（防抖，避免频繁请求）
+    this.searchTimer = setTimeout(() => {
+      this.loadStudentList(true)
+    }, 500) // 500ms后自动搜索
   },
 
   /**
    * 搜索确认
    */
   onSearchConfirm() {
+    // 清除搜索延时器
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer)
+    }
+    // 立即执行搜索
+    this.loadStudentList(true)
+  },
+
+  /**
+   * 清除搜索
+   */
+  onSearchClear() {
+    this.setData({
+      searchKeyword: ''
+    })
+    // 清除搜索延时器
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer)
+    }
+    // 重新加载所有学生
     this.loadStudentList(true)
   },
 
@@ -284,7 +366,9 @@ Page({
    * 阻止操作区域点击事件冒泡
    */
   onActionTap(e) {
-    e.stopPropagation()
+    if (e && typeof e.stopPropagation === 'function') {
+      e.stopPropagation()
+    }
   },
 
   /**
@@ -433,7 +517,7 @@ Page({
    */
   getEmptyHint() {
     if (this.data.searchKeyword) {
-      return `没有找到包含"${this.data.searchKeyword}"的学生`
+      return `没有找到包含"${this.data.searchKeyword}"的学生，支持按姓名或手机号搜索`
     }
     
     const hintMap = {

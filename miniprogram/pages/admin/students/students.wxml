@@ -1,71 +1,69 @@
-<!-- 学生总列表页 -->
+<!-- 学生管理页面 -->
 <view class="container">
-  <!-- 搜索栏 -->
+  <!-- 头部统计 -->
+  <view class="stats-header">
+    <view class="header-title">
+      <text class="title-icon">👥</text>
+      <text class="title-text">学生管理</text>
+    </view>
+    <view class="stats-grid">
+      <view class="stat-item">
+        <view class="stat-number">{{totalStudents}}</view>
+        <view class="stat-label">总学员</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-number paid">{{paidStudents}}</view>
+        <view class="stat-label">付费</view>
+      </view>
+      <view class="stat-item">
+        <view class="stat-number trial">{{trialStudents}}</view>
+        <view class="stat-label">试用</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 筛选按钮 -->
+  <view class="filter-buttons">
+    <view class="filter-btn-group">
+      <button 
+        class="filter-btn {{currentFilter === 'all' ? 'active' : ''}}"
+        data-filter="all"
+        bindtap="onFilterChange"
+      >
+        <text class="filter-icon">📋</text>全部
+      </button>
+      <button 
+        class="filter-btn {{currentFilter === 'paid' ? 'active' : ''}}"
+        data-filter="paid"
+        bindtap="onFilterChange"
+      >
+        <text class="filter-icon">✅</text>付费
+      </button>
+      <button 
+        class="filter-btn {{currentFilter === 'trial' ? 'active' : ''}}"
+        data-filter="trial"
+        bindtap="onFilterChange"
+      >
+        <text class="filter-icon">❌</text>试用
+      </button>
+    </view>
+  </view>
+
+  <!-- 搜索框 -->
   <view class="search-section">
     <view class="search-wrapper">
+      <text class="search-icon">🔍</text>
       <input 
         class="search-input" 
-        placeholder="搜索学生昵称或手机号..."
+        placeholder="搜索学生姓名或手机号"
         value="{{searchKeyword}}"
         bindinput="onSearchInput"
         bindconfirm="onSearchConfirm"
       />
-      <text class="search-icon">🔍</text>
-    </view>
-  </view>
-
-  <!-- 统计概览 -->
-  <view class="stats-overview">
-    <view class="stats-item">
-      <view class="stats-number">{{totalStudents}}</view>
-      <view class="stats-label">学生总数</view>
-    </view>
-    <view class="stats-divider"></view>
-    <view class="stats-item">
-      <view class="stats-number">{{paidStudents}}</view>
-      <view class="stats-label">付费学员</view>
-    </view>
-    <view class="stats-divider"></view>
-    <view class="stats-item">
-      <view class="stats-number">{{trialStudents}}</view>
-      <view class="stats-label">试用学员</view>
-    </view>
-  </view>
-
-  <!-- 筛选标签 -->
-  <view class="filter-tabs">
-    <scroll-view class="filter-scroll" scroll-x>
-      <view class="filter-list">
-        <view 
-          class="filter-tab {{currentFilter === 'all' ? 'active' : ''}}"
-          data-filter="all"
-          bindtap="onFilterChange"
-        >
-          全部学员
-        </view>
-        <view 
-          class="filter-tab {{currentFilter === 'paid' ? 'active' : ''}}"
-          data-filter="paid"
-          bindtap="onFilterChange"
-        >
-          付费学员
-        </view>
-        <view 
-          class="filter-tab {{currentFilter === 'trial' ? 'active' : ''}}"
-          data-filter="trial"
-          bindtap="onFilterChange"
-        >
-          试用学员
-        </view>
-        <view 
-          class="filter-tab {{currentFilter === 'active' ? 'active' : ''}}"
-          data-filter="active"
-          bindtap="onFilterChange"
-        >
-          活跃学员
-        </view>
+      <view wx:if="{{searchKeyword}}" class="search-clear" bindtap="onSearchClear">
+        <text class="clear-icon">×</text>
       </view>
-    </scroll-view>
+    </view>
   </view>
 
   <!-- 学生列表 -->
@@ -78,81 +76,44 @@
     bindrefresherrefresh="onRefresh"
     bindscrolltolower="onLoadMore"
   >
-    <!-- 学生信息卡片 -->
-    <view wx:for="{{studentList}}" wx:key="id" class="student-card" bindtap="onStudentClick" data-student="{{item}}">
-      <view class="student-basic-info">
-        <!-- 头像 -->
-        <view class="avatar-wrapper">
-          <image class="student-avatar" src="{{item.avatar}}" mode="aspectFill" wx:if="{{item.avatar}}"/>
-          <view class="avatar-placeholder" wx:else>
-            <text class="avatar-icon">👤</text>
-          </view>
-          <view class="permission-badge {{item.permission_type}}">
-            {{item.permission_type === 'paid' ? 'VIP' : '试用'}}
-          </view>
-        </view>
-
-        <!-- 基本信息 -->
-        <view class="student-details">
-          <view class="student-name">{{item.nickname || '未设置昵称'}}</view>
-          <view class="student-meta">
-            <view class="meta-item">
-              <text class="meta-label">注册时间：</text>
-              <text class="meta-value">{{item.created_at}}</text>
+    <!-- 学生卡片 -->
+    <view wx:for="{{studentList}}" wx:key="id" class="student-card" data-student="{{item}}">
+      <view class="student-main-info">
+        <view class="student-avatar-section">
+          <!-- 头像 -->
+          <view class="avatar-container">
+            <image 
+              class="student-avatar" 
+              src="{{item.avatar}}" 
+              mode="aspectFill" 
+              wx:if="{{item.avatar && item.avatar !== 'https://example.com/default_avatar.jpg'}}"
+              lazy-load="true" 
+              binderror="onImageError"
+            />
+            <view class="avatar-placeholder" wx:else>
+              <text class="avatar-icon">👤</text>
             </view>
-            <view class="meta-item" wx:if="{{item.last_active}}">
-              <text class="meta-label">最近活跃：</text>
-              <text class="meta-value">{{item.last_active}}</text>
-            </view>
-            <view class="meta-item" wx:if="{{item.permission_expire}}">
-              <text class="meta-label">权限到期：</text>
-              <text class="meta-value {{item.isExpiringSoon ? 'warning' : ''}}">{{item.permission_expire}}</text>
+            <!-- 在线状态指示器 -->
+            <view class="status-indicator {{item.permission_type === 'paid' ? 'online' : 'offline'}}"></view>
+          </view>
+          
+          <!-- 学生信息 -->
+          <view class="student-info">
+            <view class="student-name">{{item.nickname || '未设置昵称'}}</view>
+            <view class="student-stats-text">
+              总提交：{{item.stats.total_submissions || 0}}次 | 最后登录：{{item.last_active}}
             </view>
           </view>
         </view>
 
-        <!-- 操作箭头 -->
-        <view class="action-arrow">
-          <text class="arrow-icon">›</text>
-        </view>
-      </view>
-
-      <!-- 学习统计 -->
-      <view class="student-stats">
-        <view class="stat-group">
-          <view class="stat-item">
-            <view class="stat-number">{{item.stats.total_submissions || 0}}</view>
-            <view class="stat-label">总提交</view>
+        <!-- 状态和操作 -->
+        <view class="student-actions">
+          <view class="permission-status {{item.permission_type === 'paid' ? 'authorized' : 'unauthorized'}}">
+            {{item.permission_type === 'paid' ? '付费' : '试用'}}
           </view>
-          <view class="stat-item">
-            <view class="stat-number">{{item.stats.completed_tasks || 0}}</view>
-            <view class="stat-label">已完成</view>
-          </view>
-          <view class="stat-item">
-            <view class="stat-number">{{item.stats.average_score || 0}}</view>
-            <view class="stat-label">平均分</view>
-          </view>
-        </view>
-        
-        <!-- 最近表现标签 -->
-        <view wx:if="{{item.recentPerformance}}" class="performance-tag {{item.recentPerformance.type}}">
-          {{item.recentPerformance.text}}
-        </view>
-      </view>
-
-      <!-- 快速操作 -->
-      <view class="quick-actions" catchtap="onActionTap">
-        <view class="quick-btn" data-action="archive" data-student="{{item}}" bindtap="onQuickAction">
-          <text class="btn-icon">📋</text>
-          <text class="btn-text">档案</text>
-        </view>
-        <view class="quick-btn" data-action="contact" data-student="{{item}}" bindtap="onQuickAction">
-          <text class="btn-icon">💬</text>
-          <text class="btn-text">联系</text>
-        </view>
-        <view class="quick-btn" data-action="permission" data-student="{{item}}" bindtap="onQuickAction">
-          <text class="btn-icon">🔑</text>
-          <text class="btn-text">权限</text>
+          <button class="archive-btn {{item.permission_type === 'paid' ? 'active' : 'inactive'}}" bindtap="viewStudentArchive" data-student="{{item}}">
+            档案
+          </button>
         </view>
       </view>
     </view>

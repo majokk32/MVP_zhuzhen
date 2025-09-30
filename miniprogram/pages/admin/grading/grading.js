@@ -248,7 +248,9 @@ Page({
    * 阻止操作区域点击事件冒泡
    */
   onActionTap(e) {
-    e.stopPropagation()
+    if (e && typeof e.stopPropagation === 'function') {
+      e.stopPropagation()
+    }
   },
 
   /**

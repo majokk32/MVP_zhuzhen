@@ -99,8 +99,8 @@ async def startup_event():
     """Initialize database on startup"""
     await init_db()
     
-    # 启动定时任务调度器（可选，根据需要开启）
-    # asyncio.create_task(scheduler_service.start())
+    # 启动定时任务调度器（包括艾宾浩斯复盘队列生成）
+    asyncio.create_task(scheduler_service.start())
     
     print(f"✅ {settings.PROJECT_NAME} v{settings.VERSION} started successfully!")
     print(f"📚 API Documentation: http://localhost:8000/docs")
