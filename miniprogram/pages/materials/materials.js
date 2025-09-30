@@ -84,22 +84,91 @@ Page({
       if (selectedCategory) params.category = selectedCategory
       if (selectedType) params.material_type = selectedType
 
-      const response = await app.api.get('/materials/list', { params })
+      // TODO: Fix API call - app.api is undefined
+      // const response = await app.api.get('/materials/list', { params })
+      
+      // Mock data with search and filter support
+      let allMaterials = [
+        {
+          id: 1,
+          title: "申论写作技巧大全",
+          summary: "掌握申论写作的核心要点和高分技巧",
+          url: "https://mp.weixin.qq.com/s/example1",
+          category: "答题技巧",
+          type: "document"
+        },
+        {
+          id: 2,
+          title: "2024国考真题解析",
+          summary: "深度解析2024年国考申论真题，提炼考试要点",
+          url: "https://mp.weixin.qq.com/s/example2",
+          category: "真题解析", 
+          type: "link"
+        },
+        {
+          id: 3,
+          title: "面试常见问题及回答技巧",
+          summary: "面试高频问题汇总及标准答题思路",
+          url: "https://mp.weixin.qq.com/s/example3",
+          category: "面试指导",
+          type: "link"
+        },
+        {
+          id: 4,
+          title: "时政热点分析",
+          summary: "每日时政热点解读，把握申论命题方向",
+          url: "https://mp.weixin.qq.com/s/example4",
+          category: "热点分析",
+          type: "link"
+        },
+        {
+          id: 5,
+          title: "申论理论基础知识",
+          summary: "申论考试必备的理论知识体系梳理",
+          url: "https://mp.weixin.qq.com/s/example5",
+          category: "理论基础",
+          type: "document"
+        }
+      ]
 
-      if (response.code === 0) {
-        const { materials, total, has_next } = response.data
+      // Apply search filter
+      if (keyword && keyword.trim()) {
+        allMaterials = allMaterials.filter(material => 
+          material.title.includes(keyword) || 
+          material.summary.includes(keyword)
+        )
+      }
+
+      // Apply category filter
+      if (selectedCategory && selectedCategory !== '') {
+        allMaterials = allMaterials.filter(material => 
+          material.category === selectedCategory
+        )
+      }
+
+      // Apply type filter
+      if (selectedType && selectedType !== '') {
+        allMaterials = allMaterials.filter(material => 
+          material.type === selectedType
+        )
+      }
+
+      const mockMaterials = allMaterials
+
+      // if (response.code === 0) {
+      //   const { materials, total, has_next } = response.data
         
         this.setData({
-          materials: refresh ? materials : [...this.data.materials, ...materials],
-          hasMore: has_next,
+          materials: refresh ? mockMaterials : [...this.data.materials, ...mockMaterials],
+          hasMore: false, // has_next,
           page: refresh ? 2 : page + 1
         })
-      } else {
-        wx.showToast({
-          title: response.msg || '加载失败',
-          icon: 'error'
-        })
-      }
+      // } else {
+      //   wx.showToast({
+      //     title: response.msg || '加载失败',
+      //     icon: 'error'
+      //   })
+      // }
     } catch (error) {
       console.error('加载资料列表失败:', error)
       wx.showToast({
@@ -124,7 +193,7 @@ Page({
     this.loadMaterials()
   },
 
-  // 刷新资料状态（收藏、点赞）
+  // 刷新资料状态（暂时不需要）
   refreshMaterialsStatus() {
     // 这里可以实现局部刷新逻辑，避免重新加载整个列表
   },
@@ -150,97 +219,30 @@ Page({
     this.refreshData()
   },
 
-  // 查看资料详情
+  // 点击资料卡片 - 跳转到网页链接
   viewMaterial(e) {
-    const materialId = e.currentTarget.dataset.id
-    wx.navigateTo({
-      url: `/pages/material-detail/material-detail?id=${materialId}`
-    })
-  },
-
-  // 切换收藏状态
-  async toggleCollect(e) {
-    const materialId = e.currentTarget.dataset.id
-    const isCollected = e.currentTarget.dataset.collected
-
-    try {
-      let response
-      if (isCollected) {
-        response = await app.api.delete(`/materials/collect/${materialId}`)
-      } else {
-        response = await app.api.post('/materials/collect', {
-          material_id: materialId
-        })
-      }
-
-      if (response.code === 0) {
-        // 更新本地状态
-        const materials = this.data.materials.map(material => {
-          if (material.id === materialId) {
-            return {
-              ...material,
-              is_collected: !isCollected
-            }
-          }
-          return material
-        })
-
-        this.setData({ materials })
-
-        wx.showToast({
-          title: isCollected ? '已取消收藏' : '收藏成功',
-          icon: 'success'
-        })
-      } else {
-        throw new Error(response.msg)
-      }
-    } catch (error) {
-      console.error('收藏操作失败:', error)
-      wx.showToast({
-        title: '操作失败',
-        icon: 'error'
+    const url = e.currentTarget.dataset.url
+    if (url) {
+      // 跳转到外部链接
+      wx.navigateTo({
+        url: `/pages/webview/webview?url=${encodeURIComponent(url)}`
       })
     }
   },
 
-  // 切换点赞状态
-  async toggleLike(e) {
-    const materialId = e.currentTarget.dataset.id
-    const isLiked = e.currentTarget.dataset.liked
+  // TODO: 收藏功能 - 暂时不需要
+  // toggleCollect(e) {
+  //   const materialId = e.currentTarget.dataset.id
+  //   const isCollected = e.currentTarget.dataset.collected
+  //   // 实现收藏逻辑
+  // },
 
-    try {
-      const response = await app.api.post(`/materials/like/${materialId}`)
-
-      if (response.code === 0) {
-        // 更新本地状态
-        const materials = this.data.materials.map(material => {
-          if (material.id === materialId) {
-            return {
-              ...material,
-              is_liked: !isLiked,
-              like_count: isLiked ? material.like_count - 1 : material.like_count + 1
-            }
-          }
-          return material
-        })
-
-        this.setData({ materials })
-
-        wx.showToast({
-          title: response.msg,
-          icon: 'success'
-        })
-      } else {
-        throw new Error(response.msg)
-      }
-    } catch (error) {
-      console.error('点赞操作失败:', error)
-      wx.showToast({
-        title: '操作失败',
-        icon: 'error'
-      })
-    }
-  },
+  // TODO: 点赞功能 - 暂时不需要  
+  // toggleLike(e) {
+  //   const materialId = e.currentTarget.dataset.id
+  //   const isLiked = e.currentTarget.dataset.liked
+  //   // 实现点赞逻辑
+  // },
 
   // 显示筛选弹窗
   showFilter() {

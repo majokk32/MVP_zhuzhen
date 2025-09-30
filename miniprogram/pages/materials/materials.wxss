@@ -8,6 +8,29 @@ page {
   padding-bottom: 20rpx;
 }
 
+/* 简化卡片样式 */
+.material-card-simple {
+  background: white;
+  margin: 20rpx 30rpx;
+  padding: 40rpx 30rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  border: 2rpx solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.material-card-simple:active {
+  transform: scale(0.98);
+  background: #f8f9ff;
+}
+
+.material-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.4;
+}
+
 /* 搜索栏 */
 .search-bar {
   display: flex;

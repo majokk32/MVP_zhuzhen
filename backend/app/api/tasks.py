@@ -227,14 +227,14 @@ async def get_task(
     
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     
     # Students cannot access draft tasks (only teachers and task creators can)
     if task.status == TaskStatus.DRAFT and current_user.role.value != 'teacher' and task.created_by != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     
@@ -289,14 +289,14 @@ async def update_task(
     
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     
     # Check ownership
     if task.created_by != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=http_status.HTTP_403_FORBIDDEN,
             detail="只能修改自己创建的任务"
         )
     
@@ -326,14 +326,14 @@ async def delete_task(
     
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     
     # Check ownership
     if task.created_by != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=http_status.HTTP_403_FORBIDDEN,
             detail="只能删除自己创建的任务"
         )
     
@@ -343,7 +343,7 @@ async def delete_task(
     )
     if sub_result.scalar_one_or_none():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail="已有学生提交作业，无法删除任务"
         )
     
@@ -368,7 +368,7 @@ async def toggle_task_status(
     
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     
@@ -398,7 +398,7 @@ async def generate_share_link(
     
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     

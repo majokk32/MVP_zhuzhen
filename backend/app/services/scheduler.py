@@ -14,6 +14,7 @@ from app.database import get_db
 from app.models import Task, User, Submission, TaskStatus
 from app.utils.notification import notification_service
 from app.services.review_service import review_service
+from app.services.ebbinghaus_service import ebbinghaus_service
 
 logger = logging.getLogger(__name__)
 
@@ -51,13 +52,21 @@ class SchedulerService:
         """执行每小时任务"""
         logger.info("执行每小时定时任务")
         
-        async with get_db() as db:
+        db_gen = get_db()
+        db = await db_gen.__anext__()
+        try:
             await self.check_deadline_reminders(db)
             
-            # 每天早上8点检查复盘提醒
+            # 每天凌晨0点（中国时间）生成艾宾浩斯复盘队列
             current_hour = datetime.now().hour
+            if current_hour == 0:
+                await self.generate_ebbinghaus_queue(db)
+            
+            # 每天早上8点检查复盘提醒
             if current_hour == 8:
                 await self.check_review_reminders(db)
+        finally:
+            await db.close()
     
     async def check_deadline_reminders(self, db: AsyncSession):
         """
@@ -149,6 +158,21 @@ class SchedulerService:
             logger.info(f"复盘提醒检查完成，创建了{created_count}个新的复盘任务")
         except Exception as e:
             logger.error(f"检查复盘提醒任务失败: {e}")
+    
+    async def generate_ebbinghaus_queue(self, db: AsyncSession):
+        """
+        生成艾宾浩斯复盘队列
+        每天凌晨0点（中国时间）执行
+        
+        Args:
+            db: 数据库会话
+        """
+        try:
+            logger.info("开始生成艾宾浩斯复盘队列")
+            created_count = await ebbinghaus_service.generate_daily_review_queue(db)
+            logger.info(f"艾宾浩斯复盘队列生成完成，创建了{created_count}个新的复盘任务")
+        except Exception as e:
+            logger.error(f"生成艾宾浩斯复盘队列失败: {e}")
 
 
 # 全局调度器实例
