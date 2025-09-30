@@ -1,173 +1,297 @@
-/* 教研功能主页样式 */
+/* pages/admin/index/index.wxss - 教师端任务列表（和学生端相同）*/
 .container {
-  min-height: 100vh;
-  background-color: #f5f6fa;
-  padding: 20rpx;
-}
-
-/* 页面头部 */
-.page-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 20rpx;
-  padding: 40rpx 30rpx;
-  margin-bottom: 30rpx;
-  color: white;
-}
-
-.header-title {
-  font-size: 48rpx;
-  font-weight: bold;
-  margin-bottom: 10rpx;
-}
-
-.header-subtitle {
-  font-size: 28rpx;
-  opacity: 0.9;
-}
-
-/* 统计数据概览 */
-.stats-overview {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 30rpx;
+  flex-direction: column;
+  height: 100vh;
+  background: #f3f4f6;
 }
 
-.stats-card {
-  flex: 1;
+/* 顶部标题和搜索区域 */
+.header-section {
   background: white;
-  border-radius: 16rpx;
-  padding: 30rpx 20rpx;
-  margin: 0 10rpx;
-  text-align: center;
-  box-shadow: 0 2rpx 20rpx rgba(0, 0, 0, 0.05);
+  padding: 20rpx 32rpx;
+  padding-top: calc(20rpx + constant(safe-area-inset-top));
+  padding-top: calc(20rpx + env(safe-area-inset-top));
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 }
 
-.stat-number {
-  font-size: 44rpx;
-  font-weight: bold;
-  color: #667eea;
-  margin-bottom: 8rpx;
-}
-
-.stat-label {
-  font-size: 24rpx;
-  color: #8a8a8a;
-}
-
-/* 功能入口列表 */
-.function-list {
-  margin-bottom: 30rpx;
-}
-
-.function-card {
+.title-search-container {
   display: flex;
   align-items: center;
-  background: white;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 20rpx rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  justify-content: space-between;
+  gap: 24rpx;
 }
 
-.function-card:active {
-  transform: scale(0.98);
-  background-color: #f8f9ff;
+.page-title {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: #1f2937;
+  flex-shrink: 0;
 }
 
-.card-icon {
-  width: 80rpx;
-  height: 80rpx;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 20rpx;
+.search-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 20rpx;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #f9fafb;
+  border: 1rpx solid #e5e7eb;
 }
 
-.icon {
-  font-size: 40rpx;
+.search-input-container {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #f3f4f6;
 }
 
-.card-content {
+.search-input-box {
+  display: flex;
+  align-items: center;
+  background: #f3f4f6;
+  border-radius: 24rpx;
+  padding: 16rpx 20rpx;
+  gap: 12rpx;
+}
+
+.search-icon {
+  flex-shrink: 0;
+}
+
+.search-input {
   flex: 1;
+  font-size: 28rpx;
+  color: #374151;
+  background: transparent;
 }
 
-.card-title {
-  font-size: 32rpx;
-  font-weight: bold;
+.search-placeholder {
+  color: #9ca3af;
+}
+
+.clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx;
+  border-radius: 50%;
+  background: rgba(156, 163, 175, 0.1);
+}
+
+.cancel-btn {
+  color: #3b82f6;
+  font-size: 28rpx;
+  padding: 8rpx 16rpx;
+  flex-shrink: 0;
+}
+
+.user-greeting {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.user-avatar {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  border: 2rpx solid #f0f0f0;
+}
+
+.greeting-text {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.greeting {
+  font-size: 30rpx;
+  font-weight: 500;
   color: #333;
-  margin-bottom: 8rpx;
 }
 
-.card-desc {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.4;
-  margin-bottom: 10rpx;
-}
-
-.card-stats {
-  font-size: 24rpx;
-  color: #999;
-}
-
-.urgent-tag {
-  background: #ff6b6b;
+.role-tag {
+  background: #1989fa;
   color: white;
   padding: 4rpx 12rpx;
   border-radius: 12rpx;
-  font-size: 22rpx;
+  font-size: 20rpx;
+  font-weight: 500;
 }
 
-.card-arrow {
-  width: 40rpx;
-  height: 40rpx;
+/* 教师快捷操作 */
+.teacher-actions {
+  display: flex;
+  gap: 20rpx;
+}
+
+.action-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8rpx;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 12rpx 24rpx;
+  border-radius: 30rpx;
+  font-size: 28rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.3);
 }
 
-.arrow-icon {
-  font-size: 32rpx;
+.action-btn::after {
+  display: none;
+}
+
+.action-icon {
+  font-size: 24rpx;
+}
+
+/* 任务列表容器 */
+.task-list-container {
+  flex: 1;
+  padding: 24rpx 32rpx;
+  overflow: hidden;
+}
+
+.task-scroll-container {
+  height: 100%;
+}
+
+.task-list-direct {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 加载状态样式 */
+.loading-more,
+.no-more,
+.loading-state {
+  text-align: center;
+  padding: 32rpx;
+  color: #9ca3af;
+  font-size: 26rpx;
+}
+
+.loading-spinner {
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid #f3f4f6;
+  border-top: 4rpx solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16rpx;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 安全底部区域 */
+.safe-bottom {
+  height: constant(safe-area-inset-bottom);
+  height: env(safe-area-inset-bottom);
+  min-height: 20rpx;
+}
+
+.filter-tab {
+  flex-shrink: 0;
+  padding: 12rpx 24rpx;
+  font-size: 28rpx;
+  color: #666;
+  background: #f8f9fa;
+  border-radius: 25rpx;
+  transition: all 0.3s ease;
+  min-width: 100rpx;
+  text-align: center;
+}
+
+.filter-tab.active {
+  background: #1989fa;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 2rpx 8rpx rgba(25, 137, 250, 0.3);
+}
+
+/* 任务列表容器 */
+.task-list-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24rpx;
+  padding-bottom: calc(24rpx + constant(safe-area-inset-bottom));
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+}
+
+/* 任务滚动容器 */
+.task-scroll-container {
+  width: 100%;
+}
+
+.task-list-direct {
+  padding: 0 24rpx;
+}
+
+/* 加载更多 */
+.loading-more {
+  padding: 30rpx;
+  text-align: center;
+}
+
+.loading-text {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* 没有更多 */
+.no-more {
+  padding: 40rpx;
+  text-align: center;
+}
+
+.no-more-text {
+  font-size: 24rpx;
   color: #ccc;
 }
 
-/* 快捷操作 */
-.quick-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 40rpx;
-}
-
-.quick-action-btn {
-  flex: 1;
-  background: white;
-  border-radius: 16rpx;
-  padding: 25rpx;
-  margin: 0 10rpx;
+/* 空状态 */
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 2rpx 20rpx rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  justify-content: center;
+  padding: 100rpx 0;
 }
 
-.quick-action-btn:active {
-  transform: scale(0.95);
-  background-color: #f8f9ff;
+.empty-image {
+  width: 300rpx;
+  height: 300rpx;
+  margin-bottom: 30rpx;
+  opacity: 0.6;
 }
 
-.quick-icon {
-  font-size: 36rpx;
-  margin-bottom: 8rpx;
-  color: #667eea;
+.empty-text {
+  font-size: 32rpx;
+  color: #333;
+  margin-bottom: 16rpx;
 }
 
-.quick-text {
-  font-size: 24rpx;
-  color: #666;
+.empty-hint {
+  font-size: 26rpx;
+  color: #999;
+  margin-bottom: 40rpx;
+}
+
+.empty-btn {
+  background: var(--primary-color);
+  color: white;
+  padding: 20rpx 60rpx;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+}
+
+.empty-btn::after {
+  display: none;
 }
 
 /* 加载状态 */
@@ -176,14 +300,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80rpx 0;
+  padding: 200rpx 0;
 }
 
 .loading-spinner {
   width: 60rpx;
   height: 60rpx;
-  border: 4rpx solid #f3f3f3;
-  border-top: 4rpx solid #667eea;
+  border: 4rpx solid #f0f0f0;
+  border-top-color: var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20rpx;
@@ -194,58 +318,41 @@
   100% { transform: rotate(360deg); }
 }
 
-.loading-text {
-  font-size: 28rpx;
-  color: #999;
-}
-
-/* 空状态 */
-.empty-state {
+/* 教研管理按钮 */
+.teacher-admin-btn {
+  position: fixed;
+  right: 32rpx;
+  bottom: calc(32rpx + constant(safe-area-inset-bottom));
+  bottom: calc(32rpx + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 100rpx 40rpx;
-  text-align: center;
-}
-
-.empty-image {
-  width: 240rpx;
-  height: 240rpx;
-  margin-bottom: 40rpx;
-  opacity: 0.6;
-}
-
-.empty-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 16rpx;
-}
-
-.empty-desc {
-  font-size: 28rpx;
-  color: #666;
-  line-height: 1.5;
-  margin-bottom: 40rpx;
-  max-width: 500rpx;
-}
-
-.empty-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
   border-radius: 25rpx;
-  padding: 20rpx 40rpx;
-  font-size: 28rpx;
-  border: none;
+  padding: 16rpx 20rpx;
+  box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
+  z-index: 1000;
+  transition: all 0.3s ease;
 }
 
-.empty-btn::after {
-  border: none;
+.teacher-admin-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.2);
 }
 
-/* 底部安全区域 */
+.admin-btn-icon {
+  font-size: 32rpx;
+  margin-bottom: 4rpx;
+}
+
+.admin-btn-text {
+  font-size: 22rpx;
+  color: white;
+  font-weight: 500;
+}
+
+/* 底部安全区 */
 .safe-bottom {
+  height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
-  background-color: #f5f6fa;
 }
