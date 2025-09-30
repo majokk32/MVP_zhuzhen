@@ -578,6 +578,13 @@ class MaterialLike(Base):
     )
 
 
+# Ebbinghaus Review System Enums
+class EbbinghausReviewStatus(str, enum.Enum):
+    PENDING = "pending"     # 待复盘
+    COMPLETED = "completed" # 已完成
+    MASTERED = "mastered"   # 已掌握(完成5次复盘)
+
+
 # Task Tag related enums and models
 class TagLevel(str, enum.Enum):
     PRIMARY = "primary"      # 一级标签
@@ -629,5 +636,77 @@ class TaskTagUsage(Base):
     task = relationship("Task", back_populates="tag_usages")
     tag = relationship("TaskTag", back_populates="usages")
     creator = relationship("User", back_populates="task_tag_usages")
+
+
+class EbbinghausReviewRecord(Base):
+    """艾宾浩斯复盘记录表"""
+    __tablename__ = "ebbinghaus_review_records"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    submission_id = Column(Integer, ForeignKey("submissions.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    
+    # 复盘基本信息
+    review_count = Column(Integer, default=0, nullable=False)  # 当前第几次复盘 (0-4)
+    scheduled_date = Column(Date, nullable=False, index=True)  # 计划复盘日期
+    original_graded_date = Column(Date, nullable=False)  # 原始评分日期
+    
+    # 艾宾浩斯间隔天数 (1, 3, 7, 15, 30)
+    ebbinghaus_interval = Column(Integer, nullable=False)  # 本次复盘间隔
+    
+    # 复盘状态
+    status = Column(SQLEnum(EbbinghausReviewStatus), default=EbbinghausReviewStatus.PENDING, nullable=False)
+    completed_at = Column(DateTime, nullable=True)  # 完成复盘时间
+    next_review_date = Column(Date, nullable=True)  # 下次复盘日期
+    
+    # 是否已掌握 (完成5次复盘)
+    is_mastered = Column(Boolean, default=False, nullable=False)
+    mastered_at = Column(DateTime, nullable=True)  # 掌握时间
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    submission = relationship("Submission")
+    user = relationship("User")
+    
+    # 索引：用于高效查询今日待复盘任务
+    __table_args__ = (
+        {"mysql_engine": "InnoDB"},
+    )
+
+
+class EbbinghausMasteredTask(Base):
+    """已掌握任务记录表"""
+    __tablename__ = "ebbinghaus_mastered_tasks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    submission_id = Column(Integer, ForeignKey("submissions.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False, index=True)
+    
+    # 任务信息快照
+    task_title = Column(String(200), nullable=False)
+    task_subject = Column(String(100), nullable=False)
+    original_grade = Column(SQLEnum(Grade), nullable=False)
+    original_score = Column(Float, nullable=True)
+    
+    # 掌握信息
+    total_reviews_completed = Column(Integer, default=5, nullable=False)  # 完成的复盘次数
+    original_graded_date = Column(Date, nullable=False)  # 原始评分日期
+    mastered_date = Column(Date, nullable=False)  # 掌握日期
+    total_days_to_master = Column(Integer, nullable=False)  # 总共用了多少天掌握
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    submission = relationship("Submission")
+    user = relationship("User")
+    task = relationship("Task")
+    
+    # 唯一约束：每个submission只能有一条掌握记录
+    __table_args__ = (
+        {"mysql_engine": "InnoDB"},
+    )
 
 

@@ -10,7 +10,7 @@ from typing import Optional, List, Dict
 from datetime import datetime
 
 from app.database import get_db
-from app.models import Task, TaskStatus, User, Submission, SubmissionStatus, CheckinType
+from app.models import Task, TaskStatus, TaskType, User, Submission, SubmissionStatus, CheckinType
 from app.utils.task_status import calculate_display_status, get_task_priority
 from app.services.async_learning_data import trigger_checkin_async
 from app.schemas import (
@@ -40,6 +40,7 @@ async def create_task(
         deadline=task_data.deadline,
         live_start_time=task_data.live_start_time,
         status=TaskStatus(task_data.status) if task_data.status else TaskStatus.ONGOING,
+        task_type=task_data.task_type if task_data.task_type else TaskType.LIVE,
         created_by=current_user.id
     )
     
@@ -226,21 +227,18 @@ async def get_task(
     
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     
     # Students cannot access draft tasks (only teachers and task creators can)
     if task.status == TaskStatus.DRAFT and current_user.role.value != 'teacher' and task.created_by != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     
     task_info = TaskInfo.from_orm(task)
-    
-    # 手动设置 task_type 字段（确保前端能正确获取）
-    task_info.task_type = task.task_type.value if task.task_type else None
     
     # Get submission status for current user
     sub_result = await db.execute(
@@ -291,14 +289,14 @@ async def update_task(
     
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     
     # Check ownership
     if task.created_by != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=http_status.HTTP_403_FORBIDDEN,
             detail="只能修改自己创建的任务"
         )
     
@@ -328,14 +326,14 @@ async def delete_task(
     
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     
     # Check ownership
     if task.created_by != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=http_status.HTTP_403_FORBIDDEN,
             detail="只能删除自己创建的任务"
         )
     
@@ -345,7 +343,7 @@ async def delete_task(
     )
     if sub_result.scalar_one_or_none():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=http_status.HTTP_400_BAD_REQUEST,
             detail="已有学生提交作业，无法删除任务"
         )
     
@@ -370,7 +368,7 @@ async def toggle_task_status(
     
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     
@@ -400,7 +398,7 @@ async def generate_share_link(
     
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=http_status.HTTP_404_NOT_FOUND,
             detail="任务不存在"
         )
     

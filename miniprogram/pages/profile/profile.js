@@ -530,7 +530,7 @@ Page({
     
     wx.navigateTo({
       url: '/pages/notification-settings/notification-settings'
-    });
+    });su
   },
 
   // 帮助中心

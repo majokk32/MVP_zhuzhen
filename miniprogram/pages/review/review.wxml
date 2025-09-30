@@ -1,46 +1,55 @@
-<!--学习复盘主页面-->
+<!--学习复盘主页面 - 简化版本-->
 <view class="container">
-  <!-- 顶部状态卡片 -->
-  <view class="status-card">
-    <view class="status-header">
-      <text class="status-title">当前复盘</text>
-      <text class="status-frequency">{{reviewSettings.frequency || 'weekly'}}</text>
-    </view>
-    
-    <view class="status-content" wx:if="{{currentReview}}">
-      <view class="review-period">
-        <text>复盘周期：{{currentReview.period_start}} 至 {{currentReview.period_end}}</text>
+  <!-- 今日复盘任务标题 -->
+  <view class="page-header">
+    <text class="page-title">今日复盘任务</text>
+    <text class="task-count">{{todayReviewTasks.length}}个任务</text>
+  </view>
+  
+  <!-- 今日任务列表 -->
+  <view class="tasks-list">
+    <view 
+      class="task-card"
+      wx:for="{{todayReviewTasks}}"
+      wx:key="id"
+    >
+      <view 
+        class="task-info"
+        bindtap="viewTaskDetail"
+        data-id="{{item.id}}"
+      >
+        <text class="task-title">{{item.title}}</text>
+        <view class="task-meta">
+          <text class="task-subject">{{item.subject}}</text>
+          <text class="task-count">第{{item.review_count + 1}}次复盘</text>
+          <text class="task-date">{{item.ebbinghaus_day}}天复盘</text>
+          <text class="task-original">原学习：{{item.original_date}}</text>
+        </view>
       </view>
-      <view class="review-actions">
+      
+      <view class="task-actions">
         <button 
-          class="action-btn primary" 
+          class="task-btn complete {{item.status === 'completed' ? 'disabled' : ''}}" 
           bindtap="startReview"
-          data-id="{{currentReview.id}}"
+          data-id="{{item.id}}"
+          disabled="{{item.status === 'completed'}}"
         >
-          开始复盘
-        </button>
-        <button 
-          class="action-btn secondary" 
-          bindtap="skipReview"
-          data-id="{{currentReview.id}}"
-        >
-          跳过
+          {{item.status === 'completed' ? '已完成' : '完成'}}
         </button>
       </view>
     </view>
     
-    <view class="status-content" wx:else>
-      <view class="no-review">
-        <text>暂无待完成的复盘任务</text>
-        <button class="action-btn primary" bindtap="generateReview">
-          手动生成复盘
-        </button>
-      </view>
+    <!-- 空状态 -->
+    <view class="empty-tasks" wx:if="{{todayReviewTasks.length === 0 && !loading}}">
+      <text class="empty-icon">🎉</text>
+      <text class="empty-text">今日无复盘任务</text>
+      <text class="empty-desc">休息一下，明天再来！</text>
     </view>
   </view>
 
+  <!-- TODO: 复杂功能暂时隐藏 - 预留为未来版本 -->
   <!-- 复盘设置 -->
-  <view class="settings-section">
+  <!-- <view class="settings-section">
     <view class="section-title">
       <text>复盘设置</text>
       <text class="edit-btn" bindtap="editSettings">编辑</text>
@@ -71,10 +80,10 @@
         />
       </view>
     </view>
-  </view>
+  </view> -->
 
   <!-- 复盘统计 -->
-  <view class="stats-section">
+  <!-- <view class="stats-section">
     <view class="section-title">
       <text>复盘统计</text>
     </view>
@@ -95,15 +104,16 @@
         <text class="stat-label">平均时长(分钟)</text>
       </view>
       
+      
       <view class="stat-item">
         <text class="stat-number">{{reviewStats.pending_count || 0}}</text>
         <text class="stat-label">待完成</text>
       </view>
     </view>
-  </view>
+  </view> -->
 
   <!-- 历史记录 -->
-  <view class="history-section">
+  <!-- <view class="history-section">
     <view class="section-title">
       <text>最近复盘</text>
       <text class="more-btn" bindtap="showAllHistory">查看全部</text>
@@ -137,11 +147,12 @@
         <text>暂无复盘记录</text>
       </view>
     </view>
-  </view>
+  </view> -->
 </view>
 
+<!-- TODO: 复杂设置弹窗暂时隐藏 - 预留为未来版本 -->
 <!-- 复盘设置弹窗 -->
-<view class="settings-modal" wx:if="{{showSettingsModal}}" bindtap="closeSettingsModal">
+<!-- <view class="settings-modal" wx:if="{{showSettingsModal}}" bindtap="closeSettingsModal">
   <view class="modal-content" catchtap="stopPropagation">
     <view class="modal-header">
       <text class="modal-title">复盘设置</text>
@@ -241,4 +252,4 @@
       </button>
     </view>
   </view>
-</view>
+</view> -->

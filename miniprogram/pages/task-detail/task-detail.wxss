@@ -7,6 +7,151 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* 复盘任务信息卡片 */
+.review-task-info-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin: 32rpx 24rpx;
+  border-radius: 24rpx;
+  padding: 40rpx 32rpx;
+  color: white;
+  box-shadow: 0 12rpx 48rpx rgba(102, 126, 234, 0.25);
+}
+
+.review-header {
+  margin-bottom: 32rpx;
+}
+
+.review-task-title {
+  font-size: 44rpx;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 16rpx;
+}
+
+.review-meta {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
+}
+
+.review-subject {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 6rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+}
+
+.review-count {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 6rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+}
+
+.original-date {
+  font-size: 26rpx;
+  opacity: 0.9;
+}
+
+/* 复盘进度 */
+.review-progress {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  backdrop-filter: blur(10rpx);
+}
+
+.progress-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.progress-bar {
+  height: 8rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4rpx;
+  overflow: hidden;
+  margin-bottom: 12rpx;
+}
+
+.progress-fill {
+  height: 100%;
+  background: white;
+  border-radius: 4rpx;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 24rpx;
+  opacity: 0.9;
+  margin-bottom: 24rpx;
+}
+
+/* 艾宾浩斯时间线 */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  position: relative;
+}
+
+.timeline-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 15rpx;
+  top: 32rpx;
+  width: 2rpx;
+  height: 24rpx;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.timeline-item.completed .timeline-dot {
+  background: #4CAF50;
+  box-shadow: 0 0 0 4rpx rgba(76, 175, 80, 0.2);
+}
+
+.timeline-item.current .timeline-dot {
+  background: #ff9800;
+  box-shadow: 0 0 0 4rpx rgba(255, 152, 0, 0.2);
+}
+
+.timeline-item.pending .timeline-dot {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.timeline-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.timeline-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.timeline-day {
+  font-size: 26rpx;
+  font-weight: 600;
+  min-width: 80rpx;
+}
+
+.timeline-date {
+  font-size: 24rpx;
+  opacity: 0.8;
+}
+
 /* 任务信息卡片 */
 .task-info-card {
   background: white;
@@ -479,7 +624,8 @@
 .resubmit-btn,
 .history-btn,
 .share-btn,
-.action-btn {
+.action-btn,
+.complete-review-btn {
   flex: 1;
   min-width: 200rpx;
   height: 88rpx;
@@ -490,6 +636,7 @@
   align-items: center;
   justify-content: center;
   border: none;
+  transition: all 0.3s ease;
 }
 
 .resubmit-btn {
@@ -501,6 +648,28 @@
   background: white;
   border: 2rpx solid #fd79a8;
   color: #fd79a8;
+}
+
+.resubmit-btn.disabled,
+.resubmit-btn.outline.disabled {
+  background: #f5f5f5 !important;
+  border-color: #e0e0e0 !important;
+  color: #bbb !important;
+  opacity: 0.6;
+}
+
+.complete-review-btn {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.3);
+  width: 100%;
+  min-width: unset;
+  font-weight: 600;
+}
+
+.complete-review-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 2rpx 8rpx rgba(76, 175, 80, 0.4);
 }
 
 .history-btn {

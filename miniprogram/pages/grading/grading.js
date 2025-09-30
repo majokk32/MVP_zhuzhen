@@ -16,6 +16,7 @@ Page({
     // 当前批改
     currentSubmission: null,
     currentIndex: 0,
+    loadingSubmission: false,
     
     // 批改数据
     gradeData: {
@@ -302,7 +303,7 @@ Page({
       images: images, // 只包含图片
       documents: documents, // 文档文件单独处理
       text: submission.text || '',
-      submitted_at: submission.submitted_at || submission.created_at,
+      submitted_at: this.formatDate(submission.submitted_at || submission.created_at),
       attemptNumber: submission.attempt_number || submission.submission_count || 1
     };
     
@@ -328,25 +329,97 @@ Page({
 
   // 上一份作业
   async previousSubmission() {
+    console.log('📍 [DEBUG] previousSubmission 被调用');
+    console.log('📍 [DEBUG] 当前索引:', this.data.currentIndex);
+    console.log('📍 [DEBUG] 总提交数:', this.data.submissions.length);
+    
+    // 立即显示反馈，证明函数被调用了
+    wx.showToast({
+      title: '正在切换上一篇...',
+      icon: 'loading',
+      duration: 1000
+    });
+    
     if (this.data.currentIndex > 0) {
       const index = this.data.currentIndex - 1;
-      await this.loadSubmissionAtIndex(index);
+      console.log('📍 [DEBUG] 切换到索引:', index);
+      try {
+        await this.loadSubmissionAtIndex(index);
+        console.log('📍 [DEBUG] 切换成功');
+        wx.showToast({
+          title: '切换成功',
+          icon: 'success'
+        });
+      } catch (error) {
+        console.error('📍 [ERROR] 切换失败:', error);
+        wx.showToast({
+          title: '切换失败',
+          icon: 'error'
+        });
+      }
+    } else {
+      console.log('📍 [DEBUG] 已经是第一份作业，无法继续往前');
+      wx.showToast({
+        title: '已经是第一份作业',
+        icon: 'none'
+      });
     }
   },
 
   // 下一份作业
   async nextSubmission() {
+    console.log('📍 [DEBUG] nextSubmission 被调用');
+    console.log('📍 [DEBUG] 当前索引:', this.data.currentIndex);
+    console.log('📍 [DEBUG] 总提交数:', this.data.submissions.length);
+    
+    // 立即显示反馈，证明函数被调用了
+    wx.showToast({
+      title: '正在切换下一篇...',
+      icon: 'loading',
+      duration: 1000
+    });
+    
     if (this.data.currentIndex < this.data.submissions.length - 1) {
       const index = this.data.currentIndex + 1;
-      await this.loadSubmissionAtIndex(index);
+      console.log('📍 [DEBUG] 切换到索引:', index);
+      try {
+        await this.loadSubmissionAtIndex(index);
+        console.log('📍 [DEBUG] 切换成功');
+        wx.showToast({
+          title: '切换成功',
+          icon: 'success'
+        });
+      } catch (error) {
+        console.error('📍 [ERROR] 切换失败:', error);
+        wx.showToast({
+          title: '切换失败',
+          icon: 'error'
+        });
+      }
+    } else {
+      console.log('📍 [DEBUG] 已经是最后一份作业，无法继续往后');
+      wx.showToast({
+        title: '已经是最后一份作业',
+        icon: 'none'
+      });
     }
   },
 
   // 加载指定索引的submission（复用selectSubmission的逻辑）
   async loadSubmissionAtIndex(index) {
-    const submission = this.data.submissions[index];
+    console.log('🔍 [DEBUG] loadSubmissionAtIndex 被调用，索引:', index);
+    console.log('🔍 [DEBUG] submissions 数组长度:', this.data.submissions.length);
     
+    if (index < 0 || index >= this.data.submissions.length) {
+      console.error('🔍 [ERROR] 索引超出范围:', index);
+      return;
+    }
+    
+    const submission = this.data.submissions[index];
     console.log('🔍 [DEBUG] 切换到提交作业，获取完整数据:', submission);
+    
+    // 显示加载状态
+    this.setData({ loadingSubmission: true });
     
     // 直接从API获取完整的submission详情，确保包含所有文件
     try {
@@ -364,6 +437,9 @@ Page({
       console.error('获取submission详情失败:', error);
       // 降级使用原有数据
       this.processSubmissionData(submission, index);
+    } finally {
+      // 隐藏加载状态
+      this.setData({ loadingSubmission: false });
     }
   },
 
@@ -657,7 +733,7 @@ Page({
     const hour = String(date.getHours()).padStart(2, '0');
     const minute = String(date.getMinutes()).padStart(2, '0');
     
-    return `${year}-${month}-${day} ${hour}:${minute}`;
+    return `${day}/${month}/${year} ${hour}:${minute}`;
   },
 
 

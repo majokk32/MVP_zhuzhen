@@ -14,6 +14,12 @@ Page({
     isOverdue: false,
     remainingTime: '',
     
+    // 复盘相关
+    fromReview: false,
+    reviewTaskDetail: null,
+    showReviewProgress: false,
+    reviewSchedule: [],
+    
     // 格式化时间显示
     formattedLiveTime: '',
     formattedDeadline: '',
@@ -36,12 +42,6 @@ Page({
     gradeDesc: '',
     taskTypeText: '',
     
-    // 教师统计
-    stats: {
-      submitted: 0,
-      pending: 0,
-      reviewed: 0
-    },
     
     // 上传进度相关
     showUploadProgress: false,
@@ -63,11 +63,16 @@ Page({
     upgradeGuideType: 'permission_denied',
     
     // 试用限制相关
-    showTrialRestriction: false
+    showTrialRestriction: false,
+    
+    // 重新提交权限
+    canResubmit: true
   },
 
   onLoad(options) {
     const taskId = options.id;
+    const fromPage = options.from; // 来源页面：review 表示从复盘页面进入
+    
     if (!taskId) {
       wx.showToast({
         title: '参数错误',
@@ -79,7 +84,10 @@ Page({
       return;
     }
     
-    this.setData({ taskId });
+    this.setData({ 
+      taskId,
+      fromReview: fromPage === 'review'
+    });
     this.checkAuth();
   },
 
@@ -134,6 +142,11 @@ Page({
     // 如果有访问权限，加载任务数据
     this.loadTaskDetail();
     this.loadSubmissions();
+    
+    // 如果是从复盘页面进入，加载复盘相关数据
+    if (this.data.fromReview) {
+      this.loadReviewTaskDetail();
+    }
   },
 
   // 处理升级联系客服
@@ -145,6 +158,97 @@ Page({
       confirmText: '我知道了',
       showCancel: false
     });
+  },
+
+  // 加载复盘任务详情
+  async loadReviewTaskDetail() {
+    try {
+      // TODO: 调用真实API获取复盘任务详情
+      // const response = await app.api.get(`/reviews/task/${this.data.taskId}`)
+      
+      // Mock数据
+      const mockReviewTask = {
+        id: this.data.taskId,
+        title: "数量关系 - 排列组合练习",
+        subject: "行测",
+        review_count: 1,
+        status: 'pending',
+        original_date: '2024-09-25',
+        original_content: '这是一道关于排列组合的练习题，需要计算在特定条件下的排列数量。',
+        images: [], // 原始作业图片
+        feedback: {
+          score: '优秀',
+          comment: '解题思路清晰，计算准确，继续保持！'
+        }
+      }
+      
+      // 生成艾宾浩斯复盘时间线
+      const reviewSchedule = this.generateReviewSchedule(mockReviewTask.original_date)
+      
+      this.setData({
+        reviewTaskDetail: mockReviewTask,
+        reviewSchedule,
+        showReviewProgress: true
+      })
+      
+    } catch (error) {
+      console.error('加载复盘任务详情失败:', error)
+    }
+  },
+
+  // 生成艾宾浩斯复盘时间线
+  generateReviewSchedule(originalDate) {
+    const intervals = [1, 3, 7, 15, 30] // 艾宾浩斯遗忘曲线间隔天数
+    const startDate = new Date(originalDate)
+    
+    return intervals.map((day, index) => {
+      const reviewDate = new Date(startDate)
+      reviewDate.setDate(startDate.getDate() + day)
+      
+      return {
+        day,
+        date: this.formatDate(reviewDate),
+        completed: index < this.data.reviewTaskDetail?.review_count || 0
+      }
+    })
+  },
+
+  // 完成复盘
+  async completeReview() {
+    if (!this.data.fromReview) return
+    
+    try {
+      wx.showLoading({ title: '完成复盘...' })
+      
+      // TODO: 调用真实API
+      // await app.api.post(`/reviews/complete/${this.data.taskId}`)
+      
+      wx.showToast({
+        title: '复盘完成！',
+        icon: 'success'
+      })
+      
+      // 返回复盘页面
+      setTimeout(() => {
+        wx.navigateBack()
+      }, 1500)
+      
+    } catch (error) {
+      console.error('完成复盘失败:', error)
+      wx.showToast({
+        title: '操作失败',
+        icon: 'error'
+      })
+    } finally {
+      wx.hideLoading()
+    }
+  },
+
+  // 格式化日期
+  formatDate(date) {
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    return `${month}-${day}`
   },
 
   // 加载任务详情
@@ -214,10 +318,6 @@ Page({
         formattedDeadline: task.deadline ? formatDateTime(task.deadline) : '无截止时间'
       });
       
-      // 如果是教师，加载统计数据
-      if (this.data.isTeacher) {
-        this.loadTeacherStats();
-      }
     } catch (error) {
       console.error('加载任务详情失败:', error);
       wx.showToast({
@@ -272,12 +372,17 @@ Page({
         }
       }
       
+      // 判断是否允许重新提交：优秀或极佳不允许重新提交
+      const canResubmit = !currentSubmission || 
+                         (currentSubmission.grade !== 'excellent' && currentSubmission.grade !== 'good');
+      
       this.setData({
         currentSubmission,
         historySubmissions,
         submissionCount: effectiveSubmissionCount,
         hasReviewReset,
-        viewType
+        viewType,
+        canResubmit
       });
     } catch (error) {
       console.error('加载提交记录失败:', error);
@@ -287,7 +392,8 @@ Page({
         historySubmissions: [],
         submissionCount: 0,
         hasReviewReset: false,
-        viewType: 'toSubmit'
+        viewType: 'toSubmit',
+        canResubmit: true
       });
     }
   },
@@ -524,6 +630,13 @@ Page({
             const token = app.globalData.token || wx.getStorageSync('token');
             const uploadUrl = `${app.globalData.baseUrl}/submissions/upload-files`;
             
+            console.log(`📤 [DEBUG] 开始单文件上传:`, {
+              url: uploadUrl,
+              filePath: file.path,
+              fileName: file.name,
+              hasToken: !!token
+            });
+            
             const uploadResult = await new Promise((resolve, reject) => {
               wx.uploadFile({
                 url: uploadUrl,
@@ -595,6 +708,7 @@ Page({
                     }
                   },
                   fail: (err) => {
+                    console.error('❌ [DEBUG] 单文件上传失败:', err);
                     reject(new Error(err.errMsg || '上传失败'));
                   }
                 });
@@ -680,6 +794,14 @@ Page({
 
   // 重新提交
   resubmit() {
+    if (!this.data.canResubmit) {
+      wx.showToast({
+        title: '当前作业评价为优秀或极佳，无法重新提交',
+        icon: 'none'
+      });
+      return;
+    }
+    
     if (this.data.submissionCount >= 3) {
       wx.showToast({
         title: '已达到最大提交次数',
@@ -706,69 +828,7 @@ Page({
     });
   },
 
-  // 教师功能：加载统计数据
-  async loadTeacherStats() {
-    try {
-      const res = await app.request({
-        url: `/api/v1/admin/task-progress/${this.data.taskId}`,
-        method: 'GET'
-      });
-      
-      if (res.data.code === 200) {
-        const stats = res.data.data;
-        this.setData({
-          stats: {
-            submitted: stats.submitted_count || 0,
-            pending: stats.pending_count || 0,
-            reviewed: stats.reviewed_count || 0
-          }
-        });
-      }
-    } catch (error) {
-      console.error('加载统计数据失败:', error);
-    }
-  },
 
-  // 教师功能：去批改
-  goToGrading() {
-    wx.navigateTo({
-      url: `/pages/grading/grading?task_id=${this.data.taskId}`
-    });
-  },
-
-  // 教师功能：导出作业
-  async exportSubmissions() {
-    wx.showLoading({ title: '准备导出...' });
-    
-    try {
-      const res = await app.request({
-        url: `/api/v1/admin/batch-download/${this.data.taskId}`,
-        method: 'POST'
-      });
-      
-      if (res.data.code === 200) {
-        wx.hideLoading();
-        wx.showModal({
-          title: '导出成功',
-          content: '作业文件已准备好，请在电脑端下载',
-          showCancel: false
-        });
-      }
-    } catch (error) {
-      wx.hideLoading();
-      wx.showToast({
-        title: '导出失败',
-        icon: 'none'
-      });
-    }
-  },
-
-  // 教师功能：查看统计
-  viewStatistics() {
-    wx.navigateTo({
-      url: `/pages/statistics/statistics?task_id=${this.data.taskId}`
-    });
-  },
 
   // 分享
   onShareAppMessage() {

@@ -1,118 +1,109 @@
-<!-- 教研功能主页 -->
+<!--pages/admin/index/index.wxml - 教师端任务列表（和学生端相同）-->
 <view class="container">
-  <!-- 页面标题 -->
-  <view class="page-header">
-    <view class="header-title">教研中心</view>
-    <view class="header-subtitle">管理课程、批改作业、跟踪学生进度</view>
-  </view>
-
-  <!-- 统计数据概览 -->
-  <view class="stats-overview">
-    <!-- 骨架屏 -->
-    <skeleton show="{{loading}}" type="stats" count="{{3}}"></skeleton>
+  <!-- 顶部标题和搜索 -->
+  <view class="header-section">
+    <view class="title-search-container">
+      <view class="page-title">申论批改任务</view>
+      <view class="search-btn" bindtap="onSearchToggle">
+        <icon class="search-icon" type="search" size="20" color="#6b7280"/>
+      </view>
+    </view>
     
-    <!-- 真实数据 -->
-    <block wx:if="{{!loading}}">
-      <view class="stats-card">
-        <view class="stat-number">{{stats.totalTasks || 0}}</view>
-        <view class="stat-label">总任务数</view>
-      </view>
-      <view class="stats-card">
-        <view class="stat-number">{{stats.pendingGrade || 0}}</view>
-        <view class="stat-label">待批改</view>
-      </view>
-      <view class="stats-card">
-        <view class="stat-number">{{stats.totalStudents || 0}}</view>
-        <view class="stat-label">学生总数</view>
-      </view>
-    </block>
-  </view>
-
-  <!-- 功能入口列表 -->
-  <view class="function-list">
-    <!-- 课程作业管理 -->
-    <view class="function-card" bindtap="goToTaskManage">
-      <view class="card-icon">
-        <text class="icon">📚</text>
-      </view>
-      <view class="card-content">
-        <view class="card-title">课程作业管理</view>
-        <view class="card-desc">创建和管理所有课程任务，查看提交情况</view>
-        <view class="card-stats" wx:if="{{stats.recentTasks}}">
-          最近创建：{{stats.recentTasks}}个任务
+    <!-- 搜索输入框（展开时显示） -->
+    <view class="search-input-container" wx:if="{{showSearch}}">
+      <view class="search-input-box">
+        <icon class="search-icon" type="search" size="16" color="#9ca3af"/>
+        <input 
+          class="search-input" 
+          placeholder="搜索任务关键字"
+          placeholder-class="search-placeholder"
+          value="{{searchKeyword}}"
+          bindinput="onSearchInput"
+          bindconfirm="onSearch"
+          focus="{{showSearch}}"
+        />
+        <view wx:if="{{searchKeyword}}" class="clear-btn" bindtap="onClearSearch">
+          <icon type="clear" size="14" color="#9ca3af"/>
         </view>
-      </view>
-      <view class="card-arrow">
-        <text class="arrow-icon">›</text>
-      </view>
-    </view>
-
-    <!-- 申论作业批改 -->
-    <view class="function-card" bindtap="goToGrading">
-      <view class="card-icon">
-        <text class="icon">✍️</text>
-      </view>
-      <view class="card-content">
-        <view class="card-title">申论作业批改</view>
-        <view class="card-desc">批改学生提交的作业，给出评价和建议</view>
-        <view class="card-stats" wx:if="{{stats.pendingGrade > 0}}">
-          <text class="urgent-tag">待批改：{{stats.pendingGrade}}份</text>
-        </view>
-        <view class="card-stats" wx:else>
-          暂无待批改作业
-        </view>
-      </view>
-      <view class="card-arrow">
-        <text class="arrow-icon">›</text>
-      </view>
-    </view>
-
-    <!-- 学生详情查询 -->
-    <view class="function-card" bindtap="goToStudentList">
-      <view class="card-icon">
-        <text class="icon">👥</text>
-      </view>
-      <view class="card-content">
-        <view class="card-title">学生详情查询</view>
-        <view class="card-desc">查看学生花名册和个人学习档案</view>
-        <view class="card-stats" wx:if="{{stats.activeStudents}}">
-          活跃学生：{{stats.activeStudents}}人
-        </view>
-      </view>
-      <view class="card-arrow">
-        <text class="arrow-icon">›</text>
+        <view class="cancel-btn" bindtap="onCancelSearch">取消</view>
       </view>
     </view>
   </view>
 
-  <!-- 快捷操作 -->
-  <view class="quick-actions">
-    <view class="quick-action-btn" bindtap="createTask">
-      <text class="quick-icon">+</text>
-      <text class="quick-text">快速创建任务</text>
+  <!-- 任务列表 -->
+  <view class="task-list-container">
+    <!-- 骨架屏 -->
+    <skeleton show="{{loading}}" type="task-list" count="{{3}}"></skeleton>
+    
+    <!-- 任务列表 - 使用直接渲染（性能更好的虚拟列表后续优化） -->
+    <scroll-view
+      wx:if="{{!loading}}"
+      class="task-scroll-container"
+      style="height: {{listHeight}}px;"
+      scroll-y
+      enable-back-to-top
+      refresher-enabled="{{true}}"
+      refresher-triggered="{{refreshing}}"
+      bindscrolltolower="onLoadMore"
+      bindrefresherrefresh="onRefresh"
+    >
+      <view class="task-list-direct">
+        <block wx:for="{{taskList}}" wx:key="id">
+          <task-card 
+            task="{{item}}"
+            index="{{index}}"
+            bind:click="onTaskClick"
+            bind:toggleStatus="onToggleStatus"
+            bind:share="onShareTask"
+            bind:viewStats="onViewStats"
+          />
+        </block>
+      </view>
+    </scroll-view>
+    
+    <!-- 空状态 -->
+    <empty-state
+      wx:if="{{!loading && isEmpty}}"
+      icon="📝"
+      title="暂无任务"
+      description="{{currentFilter === 'ongoing' ? '没有进行中的任务' : currentFilter === 'ended' ? '没有已结束的任务' : '老师还没有发布任务'}}"
+      show-action="{{isTeacher}}"
+      action-text="立即创建任务"
+      action-type="primary"
+      bind:actionClick="onCreateTask"
+    />
+
+    <!-- 加载更多 -->
+    <view wx:if="{{loadingMore}}" class="loading-more">
+      <text class="loading-text">加载中...</text>
     </view>
-    <view class="quick-action-btn" bindtap="viewAllGrading">
-      <text class="quick-icon">📊</text>
-      <text class="quick-text">批改工作台</text>
+
+    <!-- 没有更多 -->
+    <view wx:if="{{!hasMore && taskList.length > 0}}" class="no-more">
+      <text class="no-more-text">- 没有更多了 -</text>
+    </view>
+
+    <!-- 加载中 -->
+    <view wx:if="{{loading && taskList.length === 0}}" class="loading-state">
+      <view class="loading-spinner"></view>
+      <text class="loading-text">加载中...</text>
     </view>
   </view>
 
-  <!-- 加载状态 -->
-  <view wx:if="{{loading}}" class="loading-state">
-    <view class="loading-spinner"></view>
-    <text class="loading-text">加载中...</text>
+  <!-- 教研管理入口按钮 -->
+  <view class="teacher-admin-btn" bindtap="goToTeacherAdmin">
+    <view class="admin-btn-icon">🎓</view>
+    <view class="admin-btn-text">教研管理</view>
   </view>
 
-  <!-- 空状态（首次使用） -->
-  <view wx:if="{{isEmpty && !loading}}" class="empty-state">
-    <image class="empty-image" src="/assets/images/empty-admin.png" mode="aspectFit"></image>
-    <text class="empty-title">欢迎使用教研中心</text>
-    <text class="empty-desc">您可以在这里管理课程、批改作业、查看学生进度</text>
-    <button class="empty-btn" bindtap="createTask">
-      创建第一个任务
-    </button>
-  </view>
+  <!-- 底部安全区 -->
+  <view class="safe-bottom"></view>
 </view>
 
-<!-- 底部安全区域 -->
-<view class="safe-bottom"></view>
+<!-- 升级引导组件 -->
+<upgrade-guide 
+  show="{{showUpgradeGuide}}"
+  guideType="{{upgradeGuideType}}"
+  featureName="任务详情查看"
+  bind:close="onUpgradeGuideClose"
+/>
