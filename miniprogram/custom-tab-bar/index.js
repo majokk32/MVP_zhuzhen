@@ -37,7 +37,7 @@ Component({
       // 如果是教师角色，添加教研标签
       if (userInfo && (userInfo.isTeacher || userInfo.role === 'teacher')) {
         list.push({
-          "pagePath": "/pages/admin/index/index", 
+          "pagePath": "/pages/admin/teacher-center/teacher-center", 
           "text": "教研",
           "icon": "🎓",
           "selectedIcon": "🎓"

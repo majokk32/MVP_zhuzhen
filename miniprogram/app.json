@@ -15,7 +15,8 @@
     "pages/admin/grading/grading",
     "pages/admin/students/students",
     "pages/admin/student-archive/student-archive",
-    "pages/admin/task-detail/task-detail"
+    "pages/admin/task-detail/task-detail",
+    "pages/admin/teacher-center/teacher-center"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -39,7 +40,7 @@
         "text": "我的"
       },
       {
-        "pagePath": "pages/admin/index/index",
+        "pagePath": "pages/admin/teacher-center/teacher-center",
         "text": "教研"
       }
     ]

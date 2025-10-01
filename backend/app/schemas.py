@@ -34,6 +34,7 @@ class SubscriptionTypeEnum(str, Enum):
 
 
 class GradeEnum(str, Enum):
+    pending = "pending"
     review = "review"
     good = "good"
     excellent = "excellent"
