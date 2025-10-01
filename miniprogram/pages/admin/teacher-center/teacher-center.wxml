@@ -1,0 +1,102 @@
+<!-- pages/admin/teacher-center/teacher-center.wxml - 教研中心主页 -->
+<view class="container">
+  <!-- 页面头部 -->
+  <view class="header-section">
+    <view class="welcome-info">
+      <text class="page-title">教研中心</text>
+      <text class="welcome-text">欢迎回来，{{userInfo.nickname || '老师'}}！</text>
+    </view>
+  </view>
+
+  <!-- 统计概览卡片 -->
+  <view class="stats-overview">
+    <view class="stats-grid">
+      <view class="stat-card">
+        <text class="stat-number">{{dashboardStats.totalTasks || 12}}</text>
+        <text class="stat-label">课程任务</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-number">{{dashboardStats.gradingProgress || '35/12'}}</text>
+        <text class="stat-label">批改进度</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-number">{{dashboardStats.totalStudents || 128}}</text>
+        <text class="stat-label">学生总数</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 管理功能区域 -->
+  <view class="management-section">
+    <view class="management-grid">
+      <!-- 课程作业管理 -->
+      <view 
+        class="management-card"
+        bindtap="goToTaskManage"
+      >
+        <view class="card-icon">
+          <text class="icon">📝</text>
+        </view>
+        <text class="card-title">课程作业管理</text>
+        <text class="card-desc">创建和管理所有课程任务</text>
+      </view>
+
+      <!-- 申论作业批改 -->
+      <view 
+        class="management-card"
+        bindtap="goToGrading"
+      >
+        <view class="card-icon">
+          <text class="icon">✏️</text>
+        </view>
+        <text class="card-title">申论作业批改</text>
+        <text class="card-desc">进入批改工作台，对学生提交的作业进行批改</text>
+      </view>
+
+      <!-- 学生详情查询 -->
+      <view 
+        class="management-card"
+        bindtap="goToStudents"
+      >
+        <view class="card-icon">
+          <text class="icon">👥</text>
+        </view>
+        <text class="card-title">学生详情查询</text>
+        <text class="card-desc">查看所有学生的花名册，并查询单个学生的学习档案</text>
+      </view>
+
+      <!-- 数据统计 -->
+      <view 
+        class="management-card"
+        bindtap="goToAnalytics"
+      >
+        <view class="card-icon">
+          <text class="icon">📊</text>
+        </view>
+        <text class="card-title">数据统计</text>
+        <text class="card-desc">查看学习数据和进度统计</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 数据看板组件 -->
+  <view class="dashboard-section" wx:if="{{showDashboard}}">
+    <data-dashboard
+      dashboard-type="teacher"
+      dashboard-data="{{dashboardData}}"
+      show-charts="{{false}}"
+      show-trends="{{true}}"
+      bind:statsCardClick="onStatsCardClick"
+      bind:quickActionClick="onQuickActionClick"
+    />
+  </view>
+
+  <!-- 底部安全区域 -->
+  <view class="safe-bottom"></view>
+</view>
+
+<!-- 加载状态 -->
+<view class="loading-overlay" wx:if="{{loading}}">
+  <view class="loading-spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view>

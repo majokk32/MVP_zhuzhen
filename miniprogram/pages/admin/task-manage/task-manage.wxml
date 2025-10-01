@@ -24,13 +24,6 @@
             全部
           </view>
           <view 
-            class="filter-tab {{currentFilter === 'draft' ? 'active' : ''}}"
-            data-filter="draft"
-            bindtap="onFilterChange"
-          >
-            草稿
-          </view>
-          <view 
             class="filter-tab {{currentFilter === 'ongoing' ? 'active' : ''}}"
             data-filter="ongoing"
             bindtap="onFilterChange"
@@ -60,63 +53,44 @@
     bindscrolltolower="onLoadMore"
   >
     <!-- 任务卡片 -->
-    <view wx:for="{{taskList}}" wx:key="id" class="task-manage-card" bindtap="onTaskClick" data-task="{{item}}">
-      <view class="task-header">
-        <view class="task-title">{{item.title}}</view>
-        <view class="task-status status-{{item.status}}">{{item.statusText}}</view>
-      </view>
-      
-      <view class="task-meta">
-        <view class="meta-item">
+    <view wx:for="{{taskList}}" wx:key="id" class="task-card status-{{item.status}}" bindtap="onTaskClick" data-task="{{item}}">
+      <view class="task-content">
+        <view class="task-header">
+          <view class="task-title">{{item.title}}</view>
+          <view class="task-status status-{{item.status}}">{{item.statusText}}</view>
+        </view>
+        
+        <view class="task-meta">
           <text class="meta-label">创建时间：</text>
           <text class="meta-value">{{item.created_at}}</text>
         </view>
-        <view class="meta-item">
+        <view class="task-meta" wx:if="{{item.course_date}}">
           <text class="meta-label">直播时间：</text>
-          <text class="meta-value">{{item.course_date || '未设置'}}</text>
+          <text class="meta-value">{{item.course_date}}</text>
+        </view>
+
+        <!-- 简化的统计信息 -->
+        <view class="task-stats">
+          <view class="stat-item">
+            <text class="stat-number">{{item.stats.submitted || 0}}</text>
+            <text class="stat-label">已提交</text>
+          </view>
+          <view class="stat-divider">/</view>
+          <view class="stat-item">
+            <text class="stat-number">{{item.stats.reviewed || 0}}</text>
+            <text class="stat-label">已批改</text>
+          </view>
+          <view class="stat-divider">/</view>
+          <view class="stat-item">
+            <text class="stat-number">{{item.stats.total_students || 0}}</text>
+            <text class="stat-label">总学生</text>
+          </view>
         </view>
       </view>
-
-      <!-- 进度统计 -->
-      <view class="task-progress">
-        <view class="progress-item">
-          <view class="progress-number">{{item.stats.submitted || 0}}</view>
-          <view class="progress-label">已提交</view>
-        </view>
-        <view class="progress-divider">/</view>
-        <view class="progress-item">
-          <view class="progress-number">{{item.stats.reviewed || 0}}</view>
-          <view class="progress-label">已批改</view>
-        </view>
-        <view class="progress-divider">/</view>
-        <view class="progress-item">
-          <view class="progress-number">{{item.stats.total_students || 0}}</view>
-          <view class="progress-label">总学生</view>
-        </view>
-      </view>
-
-      <!-- 操作按钮 -->
-      <view class="task-actions" catchtap="onActionTap">
-        <view class="action-btn" data-action="edit" data-task="{{item}}" bindtap="onActionClick">
-          <text class="action-icon">✏️</text>
-          <text class="action-text">编辑</text>
-        </view>
-        <view wx:if="{{item.status === 'draft'}}" class="action-btn primary" data-action="publish" data-task="{{item}}" bindtap="onActionClick">
-          <text class="action-icon">🚀</text>
-          <text class="action-text">发布</text>
-        </view>
-        <view wx:else class="action-btn" data-action="view" data-task="{{item}}" bindtap="onActionClick">
-          <text class="action-icon">👁️</text>
-          <text class="action-text">查看</text>
-        </view>
-        <view wx:if="{{item.status !== 'draft'}}" class="action-btn" data-action="share" data-task="{{item}}" bindtap="onActionClick">
-          <text class="action-icon">📤</text>
-          <text class="action-text">分享</text>
-        </view>
-        <view class="action-btn danger" data-action="delete" data-task="{{item}}" bindtap="onActionClick">
-          <text class="action-icon">🗑️</text>
-          <text class="action-text">删除</text>
-        </view>
+      
+      <!-- 右箭头 -->
+      <view class="task-arrow">
+        <text class="arrow-icon">›</text>
       </view>
     </view>
 
@@ -152,6 +126,7 @@
   <view class="fab-container">
     <view class="fab-btn" bindtap="onCreateTask">
       <text class="fab-icon">+</text>
+      <text class="fab-text">新建任务</text>
     </view>
   </view>
 </view>

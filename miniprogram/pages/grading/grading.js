@@ -79,6 +79,9 @@ Page({
     
     this.setData({ taskId });
     this.checkAuth();
+    
+    // 添加调试信息
+    console.log('📍 [DEBUG] 批改页面加载完成，taskId:', taskId);
   },
 
   onShow() {
@@ -163,23 +166,86 @@ Page({
         });
       });
       
-      // 处理提交数据
-      const processedSubmissions = submissions.map((item) => ({
-        ...item,
-        submitted_at: this.formatDate(item.submitted_at),
-        graded_at: item.graded_at ? this.formatDate(item.graded_at) : null,
-        gradeText: this.getGradeText(item.grade),
-        attemptNumber: item.attempt_number || 1,
-        images: (item.images || []).map(img => {
-          // 确保图片路径是完整的URL
-          if (img && !img.startsWith('http')) {
-            // 移除 baseUrl 中的 /api/v1 部分，直接拼接域名和端口
-            const baseUrl = getApp().globalData.baseUrl.replace('/api/v1', '');
-            return `${baseUrl}${img}`;
-          }
-          return img;
-        })
-      }));
+      // 首先按时间排序提交 - 最新的在前面
+      const sortedSubmissions = submissions.sort((a, b) => {
+        const timeA = new Date(a.submitted_at || a.created_at);
+        const timeB = new Date(b.submitted_at || b.created_at);
+        return timeB - timeA; // 降序排列，最新的在前
+      });
+      
+      console.log('📍 [DEBUG] 排序后的提交:', sortedSubmissions.map(s => ({
+        id: s.id,
+        student: s.student_info?.nickname,
+        time: s.submitted_at || s.created_at
+      })));
+
+      // 计算每个学生的提交次数
+      const studentSubmissionCounts = {};
+      sortedSubmissions.forEach((submission) => {
+        const studentId = submission.student_id || submission.student_info?.id;
+        if (studentId) {
+          studentSubmissionCounts[studentId] = (studentSubmissionCounts[studentId] || 0) + 1;
+        }
+      });
+
+      console.log('📍 [DEBUG] 学生提交计数:', studentSubmissionCounts);
+
+      // 处理提交数据 - 修复nickname和attempt number
+      const processedSubmissions = sortedSubmissions.map((item, index) => {
+        const studentId = item.student_id || item.student_info?.id;
+        
+        // 计算当前学生的第几次提交（正确逻辑：最新的应该是最高次数）
+        let attemptNumber = 1;
+        if (studentId) {
+          // 计算该学生总共有多少次提交
+          const totalStudentSubmissions = sortedSubmissions.filter(s => 
+            (s.student_id || s.student_info?.id) === studentId
+          );
+          
+          // 计算该学生在当前索引位置之前有多少次提交
+          const submissionsBeforeThisOne = sortedSubmissions.slice(0, index).filter(s => 
+            (s.student_id || s.student_info?.id) === studentId
+          );
+          
+          // attemptNumber = 总数 - 前面的数量
+          // 这样最新的（索引0）会得到最高的数字，最早的会得到1
+          attemptNumber = totalStudentSubmissions.length - submissionsBeforeThisOne.length;
+        }
+        
+        // 修复学生信息
+        const studentInfo = {
+          id: studentId,
+          nickname: item.student_info?.nickname || item.student_info?.name || `学生${studentId}`,
+          avatar_url: item.student_info?.avatar_url || ''
+        };
+        
+        console.log(`📍 [DEBUG] 处理提交 ${index + 1}:`, {
+          studentId,
+          nickname: studentInfo.nickname,
+          attemptNumber,
+          totalSubmissions: studentId ? sortedSubmissions.filter(s => (s.student_id || s.student_info?.id) === studentId).length : 0,
+          时间: item.submitted_at || item.created_at,
+          originalAttempt: item.attempt_number
+        });
+
+        return {
+          ...item,
+          student_info: studentInfo,
+          submitted_at: this.formatDate(item.submitted_at),
+          graded_at: item.graded_at ? this.formatDate(item.graded_at) : null,
+          gradeText: this.getGradeText(item.grade),
+          attemptNumber: attemptNumber,
+          images: (item.images || []).map(img => {
+            // 确保图片路径是完整的URL
+            if (img && !img.startsWith('http')) {
+              // 移除 baseUrl 中的 /api/v1 部分，直接拼接域名和端口
+              const baseUrl = getApp().globalData.baseUrl.replace('/api/v1', '');
+              return `${baseUrl}${img}`;
+            }
+            return img;
+          })
+        };
+      });
       
       // 统计数量 - 修正状态映射
       const pendingCount = submissions.filter(s => s.status === 'submitted').length;
@@ -224,6 +290,8 @@ Page({
   // 选择要批改的作业 - 获取完整submission数据
   async selectSubmission(e) {
     const index = e.currentTarget.dataset.index;
+    console.log('📍 [DEBUG] selectSubmission 被调用，索引:', index);
+    console.log('📍 [DEBUG] 当前submissions数量:', this.data.submissions.length);
     await this.loadSubmissionAtIndex(index);
   },
 
@@ -298,13 +366,29 @@ Page({
     console.log('🔍 [CRITICAL] 最终文档数量:', documents.length, documents);
     console.log('🔍 [CRITICAL] 文本内容存在:', !!submission.text, submission.text);
     
+    // 确保正确的学生信息和尝试次数
+    // 如果submission已经有正确的student_info（从列表传入），则使用它；否则构造默认的
+    console.log('🔍 [DEBUG] processSubmissionData - 原始学生信息:', submission.student_info);
+    console.log('🔍 [DEBUG] processSubmissionData - student_id:', submission.student_id);
+    
+    const studentInfo = submission.student_info && submission.student_info.nickname ? 
+      submission.student_info : 
+      {
+        id: submission.student_id || submission.student_info?.id,
+        nickname: submission.student_info?.nickname || submission.student_info?.name || `学生${submission.student_id}`,
+        avatar_url: submission.student_info?.avatar_url || ''
+      };
+      
+    console.log('🔍 [DEBUG] processSubmissionData - 最终学生信息:', studentInfo);
+
     const processedSubmission = {
       ...submission,
+      student_info: studentInfo,
       images: images, // 只包含图片
       documents: documents, // 文档文件单独处理
       text: submission.text || '',
       submitted_at: this.formatDate(submission.submitted_at || submission.created_at),
-      attemptNumber: submission.attempt_number || submission.submission_count || 1
+      attemptNumber: submission.attemptNumber || submission.attempt_number || submission.submission_count || 1
     };
     
     console.log('🔍 [DEBUG] 处理后的提交数据:', processedSubmission);
@@ -332,6 +416,7 @@ Page({
     console.log('📍 [DEBUG] previousSubmission 被调用');
     console.log('📍 [DEBUG] 当前索引:', this.data.currentIndex);
     console.log('📍 [DEBUG] 总提交数:', this.data.submissions.length);
+    console.log('📍 [DEBUG] 当前submission:', this.data.currentSubmission ? 'exists' : 'null');
     
     // 立即显示反馈，证明函数被调用了
     wx.showToast({
@@ -339,6 +424,23 @@ Page({
       icon: 'loading',
       duration: 1000
     });
+    
+    // 确保有提交列表
+    if (!this.data.submissions || this.data.submissions.length === 0) {
+      console.log('📍 [ERROR] 没有提交列表');
+      wx.showToast({
+        title: '没有可切换的作业',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    // 如果没有当前选中的submission，选择第一个
+    if (!this.data.currentSubmission) {
+      console.log('📍 [DEBUG] 没有当前submission，选择第一个');
+      await this.loadSubmissionAtIndex(0);
+      return;
+    }
     
     if (this.data.currentIndex > 0) {
       const index = this.data.currentIndex - 1;
@@ -371,6 +473,7 @@ Page({
     console.log('📍 [DEBUG] nextSubmission 被调用');
     console.log('📍 [DEBUG] 当前索引:', this.data.currentIndex);
     console.log('📍 [DEBUG] 总提交数:', this.data.submissions.length);
+    console.log('📍 [DEBUG] 当前submission:', this.data.currentSubmission ? 'exists' : 'null');
     
     // 立即显示反馈，证明函数被调用了
     wx.showToast({
@@ -378,6 +481,23 @@ Page({
       icon: 'loading',
       duration: 1000
     });
+    
+    // 确保有提交列表
+    if (!this.data.submissions || this.data.submissions.length === 0) {
+      console.log('📍 [ERROR] 没有提交列表');
+      wx.showToast({
+        title: '没有可切换的作业',
+        icon: 'none'
+      });
+      return;
+    }
+    
+    // 如果没有当前选中的submission，选择第一个
+    if (!this.data.currentSubmission) {
+      console.log('📍 [DEBUG] 没有当前submission，选择第一个');
+      await this.loadSubmissionAtIndex(0);
+      return;
+    }
     
     if (this.data.currentIndex < this.data.submissions.length - 1) {
       const index = this.data.currentIndex + 1;
@@ -429,9 +549,19 @@ Page({
       });
       
       console.log('🔍 [DEBUG] 完整submission数据:', fullSubmission);
+      console.log('🔍 [DEBUG] 列表中的学生信息:', submission.student_info);
       
-      // 使用完整的submission数据
-      this.processSubmissionData(fullSubmission, index);
+      // 保留列表中已处理好的学生信息，合并到完整数据中
+      const mergedSubmission = {
+        ...fullSubmission,
+        student_info: submission.student_info, // 保留列表中正确的学生信息
+        attemptNumber: submission.attemptNumber // 保留正确的尝试次数
+      };
+      
+      console.log('🔍 [DEBUG] 合并后的学生信息:', mergedSubmission.student_info);
+      
+      // 使用合并后的submission数据
+      this.processSubmissionData(mergedSubmission, index);
       
     } catch (error) {
       console.error('获取submission详情失败:', error);
@@ -610,7 +740,7 @@ Page({
     wx.showLoading({ title: '提交中...' });
     
     try {
-      const res = await app.request({
+      await app.request({
         url: '/submissions/grade',
         method: 'POST',
         data: {
@@ -743,6 +873,15 @@ Page({
     // 可以在这里添加默认图片或重试逻辑
   },
 
+
+  // 测试按钮点击 - 用于调试
+  testButtonClick() {
+    console.log('📍 [DEBUG] 测试按钮被点击');
+    wx.showToast({
+      title: '按钮点击测试成功',
+      icon: 'success'
+    });
+  },
 
   // 下载文档
   downloadDocument(e) {

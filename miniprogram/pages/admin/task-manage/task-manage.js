@@ -17,9 +17,8 @@ Page({
     page: 1,
     pageSize: 10,
     
-    // 状态文本映射
+    // 状态文本映射 - 简化为两种状态
     statusTextMap: {
-      'draft': '草稿',
       'ongoing': '进行中',
       'ended': '已结束'
     }
@@ -112,34 +111,89 @@ Page({
 
       const app = getApp();
       const res = await app.request({
-        url: '/tasks',
+        url: '/admin/task-progress',
         method: 'GET',
-        data: params
+        data: {}
       });
       
       console.log('📋 [DEBUG] 任务列表响应:', res);
       console.log('📋 [DEBUG] 响应数据类型:', typeof res, Object.keys(res || {}));
-      console.log('📋 [DEBUG] 任务数量:', res?.tasks?.length || 0);
-      console.log('📋 [DEBUG] 任务总数:', res?.total || 0);
+      console.log('📋 [DEBUG] res是否为数组:', Array.isArray(res));
+      console.log('📋 [DEBUG] 任务数量:', Array.isArray(res) ? res.length : 0);
       console.log('📋 [DEBUG] 当前筛选条件:', this.data.currentFilter);
-      console.log('📋 [DEBUG] 请求参数:', params);
       
-      if (res && res.tasks) {
-        const { tasks, total } = res
-        const has_more = (this.data.page * this.data.pageSize) < total
+      // 修复：app.request已经解包了响应，res直接就是data数组
+      if (res && Array.isArray(res)) {
+        const tasks = res;
+        console.log('📋 [DEBUG] 原始任务数量:', tasks.length);
+        console.log('📋 [DEBUG] 第一个任务示例:', tasks[0]);
         
-        // 处理任务数据
-        const processedTasks = tasks.map(task => ({
-          ...task,
-          statusText: this.data.statusTextMap[task.status] || task.status,
-          created_at: this.formatDate(task.created_at),
-          course_date: task.course_date ? this.formatDate(task.course_date) : null,
-          stats: task.stats || {
-            submitted: 0,
-            reviewed: 0,
-            total_students: 0
+        let filteredTasks = tasks;
+        
+        // 应用筛选条件 - 直接在这里计算状态，使用北京时间
+        if (this.data.currentFilter !== 'all') {
+          filteredTasks = tasks.filter(task => {
+            // 计算当前任务的状态 - 使用北京时间
+            let isEnded = false;
+            if (task.task_deadline) {
+              // 获取北京时间（UTC+8）
+              const nowBeijing = new Date(new Date().getTime() + 8 * 60 * 60 * 1000);
+              const deadline = new Date(task.task_deadline);
+              isEnded = nowBeijing > deadline;
+            }
+            
+            if (this.data.currentFilter === 'ongoing') {
+              return !isEnded;
+            } else if (this.data.currentFilter === 'ended') {
+              return isEnded;
+            }
+            return true;
+          });
+          console.log('📋 [DEBUG] 筛选后任务数量:', filteredTasks.length);
+        }
+        
+        // 应用搜索关键词
+        if (this.data.searchKeyword.trim()) {
+          const keyword = this.data.searchKeyword.trim().toLowerCase();
+          filteredTasks = filteredTasks.filter(task => 
+            task.task_title.toLowerCase().includes(keyword)
+          );
+          console.log('📋 [DEBUG] 搜索后任务数量:', filteredTasks.length);
+        }
+        
+        const has_more = false; // admin接口返回所有数据
+        
+        // 处理任务数据 - 使用 admin API 返回的字段，简化状态逻辑
+        const processedTasks = filteredTasks.map(task => {
+          // 简单的状态判断：对比北京时间和截止时间
+          let statusText = '进行中';
+          let statusValue = 'ongoing';
+          
+          if (task.task_deadline) {
+            // 获取北京时间（UTC+8）
+            const nowBeijing = new Date(new Date().getTime() + 8 * 60 * 60 * 1000);
+            const deadline = new Date(task.task_deadline);
+            if (nowBeijing > deadline) {
+              statusText = '已结束';
+              statusValue = 'ended';
+            }
           }
-        }))
+          
+          return {
+            id: task.task_id,
+            title: task.task_title,
+            status: statusValue,
+            statusText: statusText,
+            created_at: task.task_deadline ? this.formatDate(task.task_deadline) : '未设置',
+            course_date: null,
+            deadline: task.task_deadline,
+            stats: {
+              submitted: task.submitted_count || 0,
+              reviewed: task.graded_count || 0,
+              total_students: task.total_students || 0
+            }
+          }
+        })
 
         this.setData({
           taskList: reset ? processedTasks : [...this.data.taskList, ...processedTasks],
