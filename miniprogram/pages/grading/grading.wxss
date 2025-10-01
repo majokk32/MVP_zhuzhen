@@ -92,6 +92,7 @@
   display: flex;
   gap: 16rpx;
   box-shadow: 0 -4rpx 12rpx rgba(0, 0, 0, 0.1);
+  z-index: 1000;
 }
 
 .nav-btn-bottom {
@@ -102,11 +103,15 @@
   border: none;
   border-radius: 12rpx;
   font-size: 28rpx;
+  z-index: 999;
+  pointer-events: auto;
+  position: relative;
 }
 
 .nav-btn-bottom.disabled {
   background: #e0e0e0;
   color: #bbb;
+  pointer-events: auto;
 }
 
 .submit-btn-bottom {
