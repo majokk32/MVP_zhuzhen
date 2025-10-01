@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "教研中心",
+  "navigationBarBackgroundColor": "#1989fa",
+  "navigationBarTextStyle": "white",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark",
+  "backgroundColor": "#f8fafc",
+  "usingComponents": {
+    "data-dashboard": "/components/data-dashboard/data-dashboard"
+  }
+}

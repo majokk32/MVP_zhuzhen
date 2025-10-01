@@ -265,7 +265,8 @@
       <button 
         class="nav-btn-bottom {{currentIndex === 0 ? 'disabled' : ''}}"
         bindtap="previousSubmission"
-        disabled="{{currentIndex === 0}}"
+        catchtap="previousSubmission"
+        data-debug="previous"
       >
         上一篇
       </button>
@@ -279,7 +280,8 @@
       <button 
         class="nav-btn-bottom {{currentIndex === submissions.length - 1 ? 'disabled' : ''}}"
         bindtap="nextSubmission"
-        disabled="{{currentIndex === submissions.length - 1}}"
+        catchtap="nextSubmission"
+        data-debug="next"
       >
         下一篇
       </button>

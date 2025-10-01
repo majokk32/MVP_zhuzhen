@@ -494,10 +494,25 @@ Page({
 
   // 教研管理入口
   goToTeacherAdmin() {
-    // 创建一个新的页面来展示原来的教研管理功能
-    wx.navigateTo({
-      url: '/pages/admin/teacher-center/teacher-center'
-    })
+    console.log('🎓 [DEBUG] 教研管理按钮被点击')
+    try {
+      // 创建一个新的页面来展示原来的教研管理功能
+      wx.navigateTo({
+        url: '/pages/admin/teacher-center/teacher-center',
+        success: () => {
+          console.log('🎓 [DEBUG] 导航成功')
+        },
+        fail: (error) => {
+          console.error('🎓 [ERROR] 导航失败:', error)
+          wx.showToast({
+            title: '页面跳转失败',
+            icon: 'error'
+          })
+        }
+      })
+    } catch (error) {
+      console.error('🎓 [ERROR] 点击处理失败:', error)
+    }
   },
 
   // 分享设置

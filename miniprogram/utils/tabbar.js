@@ -24,7 +24,7 @@ const TAB_CONFIGS = {
       text: "任务"
     },
     {
-      pagePath: "pages/admin/index/index",
+      pagePath: "pages/admin/teacher-center/teacher-center",
       text: "教研"
     },
     {
@@ -44,7 +44,7 @@ function setTabBarByRole(userRole = 'student') {
     wx.setTabBarItem({
       index: 1,
       text: '教研',
-      pagePath: 'pages/admin/index/index'
+      pagePath: 'pages/admin/teacher-center/teacher-center'
     })
     
     console.log(`TabBar设置完成，用户角色：${userRole}`)
