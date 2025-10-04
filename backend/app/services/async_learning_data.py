@@ -58,6 +58,16 @@ class AsyncLearningDataService:
         # 更新用户的连续天数和最后打卡日期
         await self._update_user_streak(user_id, today)
         
+        # 每日打卡基础积分 +1分
+        await self.add_score_record(
+            user_id=user_id,
+            score_type=ScoreType.DAILY_CHECKIN,
+            score_value=1,
+            description="每日打卡",
+            related_task_id=related_task_id,
+            related_submission_id=related_submission_id
+        )
+        
         # 如果是连续打卡，给予奖励积分
         await self._check_streak_bonus(user_id)
         

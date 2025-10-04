@@ -167,6 +167,7 @@ class ScoreType(str, enum.Enum):
     SUBMISSION = "submission"        # 提交作业 +1分
     GOOD_GRADE = "good_grade"       # 优秀评价 +2分
     EXCELLENT_GRADE = "excellent_grade"  # 极佳评价 +5分
+    DAILY_CHECKIN = "daily_checkin" # 每日打卡 +1分
     STREAK_BONUS = "streak_bonus"   # 连续打卡奖励
     REVIEW_COMPLETE = "review_complete"  # 复盘完成 +1分
 
