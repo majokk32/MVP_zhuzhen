@@ -35,8 +35,11 @@ Component({
      */
     processCheckinData() {
       const checkinData = this.properties.checkinData || [];
+      console.log('[CHECKIN CHART] Received data:', checkinData);
+      console.log('[CHECKIN CHART] Data length:', checkinData.length);
       
       if (checkinData.length === 0) {
+        console.log('[CHECKIN CHART] No data received, generating empty data');
         // 如果没有数据，生成14天的空数据
         this.generateEmptyData();
         return;
@@ -54,6 +57,8 @@ Component({
       // V1.0 增强分析
       const analysis = this.analyzeCheckinTrend(fullData);
       
+      console.log('[CHECKIN CHART] Setting weekData:', weekData);
+      console.log('[CHECKIN CHART] Analysis:', analysis);
       this.setData({
         weekData,
         ...analysis
@@ -86,6 +91,7 @@ Component({
      * 生成空数据
      */
     generateEmptyData() {
+      console.log('[CHECKIN CHART] Generating empty/demo data');
       const weekData = [[], []];
       const today = new Date();
       
@@ -95,7 +101,7 @@ Component({
         
         const dayData = {
           date: date.toISOString().split('T')[0],
-          checked: false,
+          checked: Math.random() > 0.4, // 60% chance of being checked for demo
           weekday: date.getDay(),
           is_today: i === 0
         };
@@ -107,32 +113,13 @@ Component({
         }
       }
 
+      console.log('[CHECKIN CHART] Generated weekData:', weekData);
       this.setData({ weekData });
     },
 
     /**
-     * 获取天数方格的样式类名
+     * 获取天数方格的样式类名 (已弃用，现在直接在模板中使用intensity_level)
      */
-    getWeekDayStatus(dayData) {
-      let className = 'grid-item';
-      
-      if (dayData.checked) {
-        className += ' checked';
-      }
-      
-      if (dayData.is_today) {
-        className += ' today';
-      }
-
-      // 根据打卡强度设置不同级别（暂时简化为有无打卡）
-      if (dayData.checked) {
-        className += ' level-3';
-      } else {
-        className += ' level-0';
-      }
-
-      return className;
-    },
 
     /**
      * 点击某一天的处理
