@@ -13,10 +13,12 @@ import pytz
 from app.database import get_db
 from app.models import (
     User, Submission, Task, Grade, 
-    EbbinghausReviewRecord, EbbinghausMasteredTask, EbbinghausReviewStatus
+    EbbinghausReviewRecord, EbbinghausMasteredTask, EbbinghausReviewStatus,
+    ScoreType, CheckinType
 )
 from app.schemas import ResponseBase
 from app.auth import get_current_user
+from app.services.async_learning_data import trigger_checkin_async
 
 router = APIRouter(prefix="/ebbinghaus", tags=["艾宾浩斯复盘系统"])
 
@@ -124,20 +126,35 @@ async def get_today_review_tasks(
     try:
         today = date.today()
         
-        # 查询今日待复盘的任务
+        # 查询今日及过期的待复盘任务
         query = select(EbbinghausReviewRecord).join(Submission).join(Task).where(
             and_(
                 EbbinghausReviewRecord.user_id == current_user.id,
-                EbbinghausReviewRecord.scheduled_date == today,
+                EbbinghausReviewRecord.scheduled_date <= today,  # 包含过期任务
                 EbbinghausReviewRecord.status == EbbinghausReviewStatus.PENDING
             )
-        ).order_by(EbbinghausReviewRecord.created_at)
+        ).order_by(EbbinghausReviewRecord.scheduled_date)
         
         result = await db.execute(query)
         review_records = result.scalars().all()
         
+        # 首先处理过期任务的自动升级逻辑
+        await auto_upgrade_overdue_tasks(review_records, today, db)
+        
+        # 重新查询更新后的记录
+        updated_query = select(EbbinghausReviewRecord).join(Submission).join(Task).where(
+            and_(
+                EbbinghausReviewRecord.user_id == current_user.id,
+                EbbinghausReviewRecord.scheduled_date <= today,
+                EbbinghausReviewRecord.status == EbbinghausReviewStatus.PENDING
+            )
+        ).order_by(EbbinghausReviewRecord.scheduled_date)
+        
+        updated_result = await db.execute(updated_query)
+        updated_records = updated_result.scalars().all()
+        
         formatted_tasks = []
-        for record in review_records:
+        for record in updated_records:
             # 获取提交和任务信息
             submission_query = select(Submission).where(Submission.id == record.submission_id)
             submission_result = await db.execute(submission_query)
@@ -149,6 +166,10 @@ async def get_today_review_tasks(
                 task = task_result.scalar_one_or_none()
                 
                 if task:
+                    # 判断是否过期
+                    is_overdue = record.scheduled_date < today
+                    overdue_days = (today - record.scheduled_date).days if is_overdue else 0
+                    
                     formatted_tasks.append({
                         "id": record.submission_id,
                         "submission_id": record.submission_id,
@@ -156,11 +177,13 @@ async def get_today_review_tasks(
                         "title": task.title,
                         "subject": task.course,
                         "review_count": record.review_count,
-                        "status": "pending",
+                        "status": "overdue" if is_overdue else "pending",
                         "scheduled_date": record.scheduled_date.isoformat(),
                         "original_date": record.original_graded_date.isoformat(),
                         "ebbinghaus_day": record.ebbinghaus_interval,
-                        "grade": submission.grade
+                        "grade": submission.grade,
+                        "days_overdue": overdue_days,
+                        "is_today": record.scheduled_date == today
                     })
         
         return ResponseBase(
@@ -258,6 +281,38 @@ async def update_review_progress(
         # 更新当前记录状态
         current_record.status = EbbinghausReviewStatus.COMPLETED
         current_record.completed_at = datetime.utcnow()
+        
+        # V1.0 学习激励系统：复盘完成积分和打卡
+        try:
+            # 获取作业信息用于积分记录
+            submission_query = select(Submission).where(Submission.id == submission_id)
+            submission_result = await db.execute(submission_query)
+            submission = submission_result.scalar_one_or_none()
+            
+            if submission:
+                # 复盘完成积分 +1分
+                from app.services.async_learning_data import AsyncLearningDataService
+                learning_service = AsyncLearningDataService(db)
+                await learning_service.add_score_record(
+                    user_id=current_user.id,
+                    score_type=ScoreType.REVIEW_COMPLETE,
+                    score_value=1,
+                    description="完成复盘操作",
+                    related_task_id=submission.task_id,
+                    related_submission_id=submission_id
+                )
+                
+                # 复盘打卡（用于学习数据统计）
+                await trigger_checkin_async(
+                    user_id=current_user.id,
+                    checkin_type=CheckinType.REVIEW_COMPLETE,
+                    db=db,
+                    related_task_id=submission.task_id,
+                    related_submission_id=submission_id
+                )
+        except Exception as e:
+            # 积分记录失败不影响主业务流程
+            print(f"复盘积分记录失败: {e}")
         
         new_review_count = update_data["review_count"]
         is_mastered = update_data["is_mastered"]
@@ -453,3 +508,53 @@ async def generate_daily_review_queue(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"生成复盘队列失败: {str(e)}"
         )
+
+
+async def auto_upgrade_overdue_tasks(review_records: List[EbbinghausReviewRecord], today: date, db: AsyncSession):
+    """
+    自动升级过期任务到下一个复盘级别
+    如果过期时间超过了下一个复盘间隔，就自动跳到下一级
+    """
+    for record in review_records:
+        # 计算过期天数
+        overdue_days = (today - record.scheduled_date).days
+        
+        if overdue_days > 0 and record.review_count < len(EBBINGHAUS_INTERVALS) - 1:
+            # 检查是否需要升级到下一个复盘级别
+            next_review_count = record.review_count + 1
+            if next_review_count < len(EBBINGHAUS_INTERVALS):
+                next_interval = EBBINGHAUS_INTERVALS[next_review_count]
+                
+                # 如果过期天数超过了到下一级别的时间差，就自动升级
+                interval_diff = next_interval - EBBINGHAUS_INTERVALS[record.review_count]
+                
+                if overdue_days >= interval_diff:
+                    # 自动升级：将当前记录标记为已完成，创建新的高级别记录
+                    record.status = EbbinghausReviewStatus.COMPLETED
+                    record.completed_at = datetime.utcnow()
+                    
+                    # 计算新的计划日期（基于原始评分日期）
+                    new_scheduled_date = record.original_graded_date + timedelta(days=next_interval)
+                    
+                    # 如果新计划日期还是过期的，设置为今天
+                    if new_scheduled_date < today:
+                        new_scheduled_date = today
+                    
+                    # 创建新的复盘记录
+                    new_record = EbbinghausReviewRecord(
+                        submission_id=record.submission_id,
+                        user_id=record.user_id,
+                        review_count=next_review_count,
+                        scheduled_date=new_scheduled_date,
+                        original_graded_date=record.original_graded_date,
+                        ebbinghaus_interval=next_interval,
+                        status=EbbinghausReviewStatus.PENDING
+                    )
+                    
+                    db.add(new_record)
+                    
+                    # 记录升级日志
+                    print(f"自动升级过期任务: 用户{record.user_id}, 提交{record.submission_id}, "
+                          f"从第{record.review_count + 1}次升级到第{next_review_count + 1}次复盘")
+    
+    await db.commit()

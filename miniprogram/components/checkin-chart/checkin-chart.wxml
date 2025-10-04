@@ -3,7 +3,7 @@
   <!-- V1.0 新增：智能分析头部 -->
   <view class="analysis-header" wx:if="{{streakInfo.current > 0 || motivationalMsg}}">
     <view class="streak-badge" wx:if="{{streakInfo.current > 0}}">
-      <text class="streak-number">🔥 {{streakInfo.current}}</text>
+      <text class="streak-number">{{streakInfo.current}}</text>
       <text class="streak-label">天连续</text>
     </view>
     <view class="motivational-msg" wx:if="{{motivationalMsg}}">
@@ -26,7 +26,7 @@
   <view class="checkin-grid">
     <!-- 第1行：上周 (Week 2) -->
     <view class="grid-row">
-      <view class="grid-day {{getWeekDayStatus(item)}} {{selectedDay === item.date ? 'selected' : ''}}" 
+      <view class="grid-item level-{{item.intensity_level || 0}} {{item.checked ? 'checked' : ''}} {{item.is_today ? 'today' : ''}} {{selectedDay === item.date ? 'selected' : ''}}" 
             wx:for="{{weekData[1]}}" 
             wx:key="date"
             data-date="{{item.date}}"
@@ -40,7 +40,7 @@
     
     <!-- 第2行：本周 (Week 1) -->
     <view class="grid-row">
-      <view class="grid-day {{getWeekDayStatus(item)}} {{selectedDay === item.date ? 'selected' : ''}}" 
+      <view class="grid-item level-{{item.intensity_level || 0}} {{item.checked ? 'checked' : ''}} {{item.is_today ? 'today' : ''}} {{selectedDay === item.date ? 'selected' : ''}}" 
             wx:for="{{weekData[0]}}" 
             wx:key="date"
             data-date="{{item.date}}"
@@ -53,16 +53,6 @@
     </view>
   </view>
   
-  <!-- V1.0 增强：趋势分析区域 -->
-  <view class="trend-analysis" wx:if="{{trendAnalysis.trend && trendAnalysis.weekComparison}}">
-    <view class="trend-item">
-      <text class="trend-icon">
-        {{trendAnalysis.trend === 'rising' ? '📈' : trendAnalysis.trend === 'declining' ? '📉' : '📊'}}
-      </text>
-      <text class="trend-text">{{trendAnalysis.weekComparison}}</text>
-    </view>
-    <button class="detail-btn" bindtap="showDetailAnalysis" size="mini">详细分析</button>
-  </view>
   
   <!-- 图例说明 -->
   <view class="legend">
