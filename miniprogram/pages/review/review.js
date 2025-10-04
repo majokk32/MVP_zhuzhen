@@ -75,26 +75,35 @@ Page({
   // 加载今日复盘任务 - 基于真实作业数据
   async loadTodayReviewTasks() {
     try {
+      console.log('[REVIEW] 开始获取复盘任务...')
       // 获取今日需要复盘的任务
       const data = await app.request({
         url: '/ebbinghaus/reviews/today',
         method: 'GET'
       })
       
+      console.log('[REVIEW] API返回数据:', data)
+      console.log('[REVIEW] 数据类型:', typeof data, '数组长度:', Array.isArray(data) ? data.length : 'N/A')
+      
       // app.request 成功时直接返回 data 字段
       this.setData({ todayReviewTasks: data || [] })
+      console.log('[REVIEW] 设置页面数据完成，任务数量:', (data || []).length)
       
     } catch (error) {
-      console.error('获取今日复盘任务失败:', error)
+      console.error('[REVIEW] 获取今日复盘任务失败:', error)
+      console.error('[REVIEW] 错误详情:', error.message, error.stack)
       
-      // 降级方案：从本地构建复盘任务
-      try {
-        const todayTasks = await this.buildTodayReviewTasks()
-        this.setData({ todayReviewTasks: todayTasks })
-      } catch (buildError) {
-        console.error('构建复盘任务失败:', buildError)
-        this.setData({ todayReviewTasks: [] })
-      }
+      // 暂时简化：直接设置为空数组，不使用复杂的降级逻辑
+      this.setData({ todayReviewTasks: [] })
+      
+      // TODO: 降级方案暂时禁用，先解决API调用问题
+      // try {
+      //   const todayTasks = await this.buildTodayReviewTasks()
+      //   this.setData({ todayReviewTasks: todayTasks })
+      // } catch (buildError) {
+      //   console.error('构建复盘任务失败:', buildError)
+      //   this.setData({ todayReviewTasks: [] })
+      // }
     }
   },
 

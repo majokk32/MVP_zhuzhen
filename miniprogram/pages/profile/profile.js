@@ -41,7 +41,7 @@ Page({
     userRank: null,
     
     // 通知状态
-    notificationStatus: '已开启',
+    notificationStatus: '',
     
     // 权限状态
     permissionStatus: '试用用户',
@@ -154,11 +154,11 @@ Page({
         stats: {
           totalTasks: stats.total_tasks || 0,
           completedTasks: stats.graded_submissions || 0,
-          excellentCount: 0, // 暂未实现
+          excellentCount: stats.excellent_count || 0,
           completionRate,
           totalSubmissions: stats.total_submissions || 0,
-          achievements: 0, // 暂未实现
-          studentCount: 0, // 教师端功能
+          achievements: stats.achievements || 0,
+          studentCount: stats.student_count || 0,
           pendingGrading: stats.pending_grading || 0
         },
         statsLoading: false
@@ -184,10 +184,15 @@ Page({
         method: 'GET'
       });
       
+      console.log('[DEBUG] Learning overview API response:', overviewRes);
+      
       if (overviewRes) {
+        console.log('[DEBUG] Setting learning data:', overviewRes);
         this.setData({
           learningData: overviewRes
         });
+      } else {
+        console.log('[DEBUG] Learning overview response is empty');
       }
 
       // 加载14天打卡图数据

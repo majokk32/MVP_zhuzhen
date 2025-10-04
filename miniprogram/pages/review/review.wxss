@@ -48,7 +48,24 @@ page {
   align-items: center;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
   border: 2rpx solid #f0f0f0;
+}
+
+/* 过期任务特殊样式 */
+.task-card.overdue {
+  border-color: #ff6b6b;
+  background: #fff5f5;
   transition: all 0.3s ease;
+}
+
+/* 过期状态文本 */
+.task-status.overdue {
+  color: #ff6b6b;
+  font-size: 24rpx;
+  font-weight: bold;
+  background: #ffe5e5;
+  padding: 4rpx 8rpx;
+  border-radius: 8rpx;
+  margin-top: 8rpx;
 }
 
 .task-card:active {
