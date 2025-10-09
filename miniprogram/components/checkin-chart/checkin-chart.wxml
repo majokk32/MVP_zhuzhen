@@ -1,15 +1,5 @@
-<!-- GitHub风格14天打卡图组件 V1.0增强版 -->
+<!-- 简化版14天打卡图组件 -->
 <view class="checkin-chart">
-  <!-- V1.0 新增：智能分析头部 -->
-  <view class="analysis-header" wx:if="{{streakInfo.current > 0 || motivationalMsg}}">
-    <view class="streak-badge" wx:if="{{streakInfo.current > 0}}">
-      <text class="streak-number">{{streakInfo.current}}</text>
-      <text class="streak-label">天连续</text>
-    </view>
-    <view class="motivational-msg" wx:if="{{motivationalMsg}}">
-      <text class="msg-text">{{motivationalMsg}}</text>
-    </view>
-  </view>
   
   <!-- 周标签行 -->
   <view class="week-labels">
@@ -53,14 +43,4 @@
     </view>
   </view>
   
-  
-  <!-- 图例说明 -->
-  <view class="legend">
-    <text class="legend-text">少</text>
-    <view class="legend-item level-0"></view>
-    <view class="legend-item level-1"></view>
-    <view class="legend-item level-2"></view>
-    <view class="legend-item level-3"></view>
-    <text class="legend-text">多</text>
-  </view>
 </view>
