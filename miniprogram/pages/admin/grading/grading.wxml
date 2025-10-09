@@ -28,19 +28,11 @@
           全部任务
         </view>
         <view 
-          class="filter-tab {{currentFilter === 'urgent' ? 'active' : ''}}"
-          data-filter="urgent"
-          bindtap="onFilterChange"
-        >
-          紧急任务
-          <view wx:if="{{urgentCount > 0}}" class="filter-badge">{{urgentCount}}</view>
-        </view>
-        <view 
           class="filter-tab {{currentFilter === 'ongoing' ? 'active' : ''}}"
           data-filter="ongoing"
           bindtap="onFilterChange"
         >
-          进行中
+          待批改
         </view>
         <view 
           class="filter-tab {{currentFilter === 'completed' ? 'active' : ''}}"

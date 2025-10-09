@@ -511,7 +511,7 @@ async def get_grading_stats(
 
 @router.get("/grading/tasks", response_model=ResponseBase)
 async def get_grading_tasks(
-    filter: str = Query("all", description="筛选条件: all, pending, urgent"),
+    filter: str = Query("all", description="筛选条件: all, ongoing, completed"),
     page: int = Query(1, ge=1, description="页码"),  
     page_size: int = Query(10, ge=1, le=50, description="每页数量"),
     current_user: User = Depends(get_current_teacher),
@@ -570,11 +570,9 @@ async def get_grading_tasks(
             )
             
             # 根据筛选条件过滤
-            if filter == "urgent" and not is_urgent:
-                continue
-            elif filter == "ongoing" and task.status != TaskStatus.ONGOING:
+            if filter == "ongoing" and pending < 1:
                 continue  
-            elif filter == "completed" and (task.status != TaskStatus.ENDED or pending > 0):
+            elif filter == "completed" and pending != 0:
                 continue
                 
             task_data = {
@@ -791,8 +789,6 @@ async def get_task_submissions(
             query = query.where(Submission.status == SubmissionStatus.SUBMITTED)
         elif filter == "graded":
             query = query.where(Submission.status == SubmissionStatus.GRADED)
-        elif filter == "pending":
-            query = query.where(Submission.status == SubmissionStatus.SUBMITTED)
         
         # 分页查询
         offset = (page - 1) * page_size

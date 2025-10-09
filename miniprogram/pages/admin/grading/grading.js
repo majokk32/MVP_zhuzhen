@@ -297,26 +297,57 @@ Page({
   async exportTask(task) {
     wx.showModal({
       title: '导出作业',
-      content: `确定要导出任务"${task.title}"的所有作业吗？导出文件将发送到您的邮箱。`,
+      content: `确定要下载任务"${task.title}"的所有学生最新提交的图片吗？将为您生成下载链接。`,
       success: async (res) => {
         if (res.confirm) {
           try {
-            wx.showLoading({ title: '导出中...' })
+            wx.showLoading({ title: '正在准备下载链接...' })
             
-            const result = await this.request(`/admin/tasks/${task.id}/export`, {}, 'POST')
+            // 生成下载链接
+            const app = getApp()
+            const baseUrl = app.globalData.baseUrl || 'http://localhost:8000'
+            const token = wx.getStorageSync('token')
             
-            if (result.code === 0) {
-              wx.showToast({
-                title: '导出成功',
-                icon: 'success'
-              })
-            } else {
-              throw new Error(result.msg || '导出失败')
+            if (!token) {
+              throw new Error('请先登录')
             }
+            
+            // 构建下载URL
+            const downloadUrl = `${baseUrl}/tasks/${task.id}/download-latest-submissions?token=${token}`
+            
+            // 复制链接到剪贴板
+            wx.setClipboardData({
+              data: downloadUrl,
+              success: () => {
+                wx.showModal({
+                  title: '下载链接已复制',
+                  content: '下载链接已复制到剪贴板，请在电脑浏览器中粘贴访问即可下载ZIP文件。\n\n提示：链接包含您的登录信息，请勿分享给他人。',
+                  confirmText: '知道了',
+                  showCancel: false
+                })
+              },
+              fail: () => {
+                // 如果复制失败，显示链接让用户手动复制
+                wx.showModal({
+                  title: '下载链接',
+                  content: downloadUrl,
+                  confirmText: '复制',
+                  cancelText: '关闭',
+                  success: (modalRes) => {
+                    if (modalRes.confirm) {
+                      wx.setClipboardData({
+                        data: downloadUrl
+                      })
+                    }
+                  }
+                })
+              }
+            })
+            
           } catch (error) {
-            console.error('导出任务失败:', error)
+            console.error('生成下载链接失败:', error)
             wx.showToast({
-              title: '导出失败',
+              title: error.message || '操作失败',
               icon: 'error'
             })
           } finally {
@@ -438,9 +469,8 @@ Page({
   getEmptyText() {
     const textMap = {
       'all': '暂无批改任务',
-      'urgent': '暂无紧急任务',
-      'ongoing': '暂无进行中的任务',
-      'completed': '暂无已完成的任务'
+      'ongoing': '暂无待批改任务',
+      'completed': '暂无已完成任务'
     }
     return textMap[this.data.currentFilter] || '暂无任务'
   },
@@ -451,8 +481,7 @@ Page({
   getEmptyHint() {
     const hintMap = {
       'all': '还没有学生提交作业，创建任务让学生开始学习',
-      'urgent': '没有需要紧急处理的任务',
-      'ongoing': '没有正在进行的任务',
+      'ongoing': '没有需要批改的作业',
       'completed': '还没有完成批改的任务'
     }
     return hintMap[this.data.currentFilter] || ''
