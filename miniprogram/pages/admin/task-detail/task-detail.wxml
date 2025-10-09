@@ -73,10 +73,6 @@
         <text class="btn-icon">✏️</text>
         <text class="btn-text">开始批改</text>
       </button>
-      <button class="action-btn secondary" bindtap="onEditTask">
-        <text class="btn-icon">📝</text>
-        <text class="btn-text">编辑任务</text>
-      </button>
       <button class="action-btn warning" bindtap="onDeleteTask" wx:if="{{taskInfo.status === 'draft'}}">
         <text class="btn-icon">🗑️</text>
         <text class="btn-text">删除任务</text>
@@ -103,11 +99,6 @@
             bindtap="onFilterChange"
             data-filter="graded"
           >已批改</text>
-          <text 
-            class="filter-tab {{currentFilter === 'pending' ? 'active' : ''}}" 
-            bindtap="onFilterChange"
-            data-filter="pending"
-          >未提交</text>
         </view>
       </view>
 

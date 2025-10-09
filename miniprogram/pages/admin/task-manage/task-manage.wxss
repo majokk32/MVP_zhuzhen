@@ -62,7 +62,7 @@
 }
 
 .filter-tab.active {
-  background: #667eea;
+  background: #007aff;
   color: white;
 }
 
@@ -91,7 +91,7 @@
 }
 
 .task-card.status-ongoing {
-  border-left-color: #4B206E;
+  border-left-color: #007aff;
 }
 
 .task-card.status-ended {
@@ -131,7 +131,7 @@
 }
 
 .status-ongoing {
-  color: #4B206E;
+  color: #007aff;
   font-weight: 500;
 }
 
@@ -179,7 +179,7 @@
 .stat-number {
   font-size: 28rpx;
   font-weight: bold;
-  color: #4B206E;
+  color: #007aff;
   margin-bottom: 4rpx;
 }
 
@@ -215,13 +215,13 @@
 }
 
 .fab-btn {
-  background: #4B206E;
+  background: #007aff;
   border-radius: 50rpx;
   padding: 20rpx 32rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 30rpx rgba(75, 32, 110, 0.4);
+  box-shadow: 0 8rpx 30rpx rgba(0, 122, 255, 0.4);
   transition: all 0.3s ease;
   min-width: 120rpx;
 }
@@ -256,7 +256,7 @@
   width: 40rpx;
   height: 40rpx;
   border: 3rpx solid #f3f3f3;
-  border-top: 3rpx solid #667eea;
+  border-top: 3rpx solid #007aff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20rpx;
@@ -316,7 +316,7 @@
 }
 
 .empty-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #007aff 0%, #0056b3 100%);
   color: white;
   border-radius: 25rpx;
   padding: 20rpx 40rpx;

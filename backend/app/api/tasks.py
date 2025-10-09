@@ -2,12 +2,19 @@
 Task management API endpoints
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi import status as http_status
+from fastapi.responses import StreamingResponse
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc, and_, func, case
 from typing import Optional, List, Dict
 from datetime import datetime
+import zipfile
+import io
+import os
+import requests
+from urllib.parse import urlparse
 
 from app.database import get_db
 from app.models import Task, TaskStatus, TaskType, User, Submission, SubmissionStatus, CheckinType
@@ -17,7 +24,7 @@ from app.schemas import (
     ResponseBase, TaskCreate, TaskUpdate, TaskInfo, 
     TaskListResponse, TaskCreateWithTags, TaskUpdateWithTags, TaskInfoWithTags
 )
-from app.auth import get_current_user, get_current_teacher, get_current_premium_user
+from app.auth import get_current_user, get_current_teacher, get_current_premium_user, security
 
 router = APIRouter(prefix="/tasks")
 
@@ -476,5 +483,160 @@ async def get_task_summary(
     return ResponseBase(
         data=stats,
         msg="获取任务统计成功"
+    )
+
+
+async def get_current_user_from_token_or_header(
+    token: Optional[str] = Query(None, description="URL token for browser downloads"),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    """Get current user from URL token or Authorization header"""
+    from app.auth import verify_token
+    from fastapi import Request
+    
+    # 优先使用URL中的token
+    auth_token = token
+    
+    if not auth_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No authentication token provided",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # 验证token
+    payload = verify_token(auth_token)
+    user_id = payload.get("sub")
+    
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # 获取用户信息
+    result = await db.execute(select(User).where(User.id == int(user_id)))
+    user = result.scalar_one_or_none()
+    
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return user
+
+
+@router.get("/{task_id}/download-latest-submissions")
+async def download_latest_submissions(
+    task_id: int,
+    token: Optional[str] = Query(None, description="URL token for browser downloads"),
+    current_user: User = Depends(get_current_user_from_token_or_header),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    下载指定任务下所有学生的最新提交图片（打包成zip文件）
+    仅老师可用，对于每个学生只下载最新的提交
+    """
+    # 检查用户权限
+    if current_user.role != "teacher":
+        raise HTTPException(status_code=403, detail="仅限老师访问")
+    # 验证task是否存在
+    task_result = await db.execute(select(Task).where(Task.id == task_id))
+    task = task_result.scalar_one_or_none()
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    
+    # 查询每个学生的最新提交
+    # 使用子查询找到每个学生的最大created_at，然后匹配对应的submission
+    latest_submissions_subquery = select(
+        Submission.student_id,
+        func.max(Submission.created_at).label('latest_created_at')
+    ).where(Submission.task_id == task_id).group_by(Submission.student_id).subquery()
+    
+    latest_submissions_query = select(Submission).join(
+        latest_submissions_subquery,
+        and_(
+            Submission.student_id == latest_submissions_subquery.c.student_id,
+            Submission.created_at == latest_submissions_subquery.c.latest_created_at,
+            Submission.task_id == task_id
+        )
+    ).order_by(Submission.student_id)
+    
+    submissions_result = await db.execute(latest_submissions_query)
+    submissions = submissions_result.scalars().all()
+    
+    if not submissions:
+        raise HTTPException(status_code=404, detail="该任务下没有任何提交")
+    
+    # 创建ZIP文件内容
+    zip_buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for submission in submissions:
+            # 获取学生信息
+            student_result = await db.execute(select(User).where(User.id == submission.student_id))
+            student = student_result.scalar_one_or_none()
+            student_name = student.nickname if student else f"用户{submission.student_id}"
+            
+            # 创建学生文件夹
+            folder_name = f"{student_name}_{submission.student_id}"
+            
+            # 处理图片列表
+            images = submission.images if submission.images else []
+            
+            for i, image_url in enumerate(images):
+                try:
+                    # 处理相对路径URL
+                    if image_url.startswith('/'):
+                        # 相对路径，转换为本地文件路径
+                        local_file_path = f".{image_url}"
+                        if os.path.exists(local_file_path):
+                            with open(local_file_path, 'rb') as f:
+                                image_content = f.read()
+                        else:
+                            raise FileNotFoundError(f"Local file not found: {local_file_path}")
+                    else:
+                        # 绝对URL，通过HTTP下载
+                        response = requests.get(image_url, timeout=30)
+                        response.raise_for_status()
+                        image_content = response.content
+                    
+                    # 获取文件扩展名
+                    parsed_url = urlparse(image_url)
+                    path = parsed_url.path
+                    file_ext = os.path.splitext(path)[1] or '.jpg'
+                    
+                    # 生成文件名
+                    filename = f"image_{i+1}{file_ext}"
+                    full_path = f"{folder_name}/{filename}"
+                    
+                    # 添加到ZIP
+                    zip_file.writestr(full_path, image_content)
+                    
+                except Exception as e:
+                    # 如果某张图片下载失败，创建错误文件说明
+                    error_msg = f"图片下载失败: {str(e)}\n原始URL: {image_url}"
+                    error_filename = f"{folder_name}/error_image_{i+1}.txt"
+                    zip_file.writestr(error_filename, error_msg)
+    
+    zip_buffer.seek(0)
+    
+    # 生成文件名（使用ASCII安全字符）
+    safe_task_title = "".join(c for c in task.title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+    if not safe_task_title:
+        safe_task_title = f"Task_{task.id}"
+    
+    filename = f"{safe_task_title}_submissions_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+    
+    # 确保文件名是ASCII编码安全的
+    safe_filename = filename.encode('ascii', 'ignore').decode('ascii')
+    
+    return StreamingResponse(
+        io.BytesIO(zip_buffer.read()),
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={safe_filename}"}
     )
 
