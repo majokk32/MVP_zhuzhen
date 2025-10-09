@@ -274,16 +274,7 @@ Page({
    */
   onStartGrading() {
     wx.navigateTo({
-      url: `/pages/admin/grading/grading?taskId=${this.data.taskInfo.id}`
-    })
-  },
-
-  /**
-   * 编辑任务
-   */
-  onEditTask() {
-    wx.navigateTo({
-      url: `/pages/admin/task-create/task-create?id=${this.data.taskInfo.id}&mode=edit`
+      url: `/pages/grading/grading?taskId=${this.data.taskInfo.id}`
     })
   },
 
@@ -331,28 +322,58 @@ Page({
    */
   async onExportData() {
     wx.showModal({
-      title: '导出数据',
-      content: `确定要导出任务"${this.data.taskInfo.title}"的完整数据吗？文件将发送到您的邮箱。`,
+      title: '导出作业',
+      content: `确定要下载任务"${this.data.taskInfo.title}"的所有学生最新提交的图片吗？将为您生成下载链接。`,
       success: async (res) => {
         if (res.confirm) {
           try {
-            wx.showLoading({ title: '导出中...' })
+            wx.showLoading({ title: '正在准备下载链接...' })
             
-            const result = await this.request(`/admin/tasks/${this.data.taskInfo.id}/export`, {}, 'POST')
+            // 生成下载链接
+            const app = getApp()
+            const baseUrl = app.globalData.baseUrl || 'http://localhost:8000'
+            const token = wx.getStorageSync('token')
             
-            if (result.code === 0) {
-              wx.showModal({
-                title: '导出成功',
-                content: '任务数据已发送到您的邮箱，请注意查收。',
-                showCancel: false
-              })
-            } else {
-              throw new Error(result.msg || '导出失败')
+            if (!token) {
+              throw new Error('请先登录')
             }
+            
+            // 构建下载URL
+            const downloadUrl = `${baseUrl}/tasks/${this.data.taskInfo.id}/download-latest-submissions?token=${token}`
+            
+            // 复制链接到剪贴板
+            wx.setClipboardData({
+              data: downloadUrl,
+              success: () => {
+                wx.showModal({
+                  title: '下载链接已复制',
+                  content: '下载链接已复制到剪贴板，请在电脑浏览器中粘贴访问即可下载ZIP文件。\n\n提示：链接包含您的登录信息，请勿分享给他人。',
+                  confirmText: '知道了',
+                  showCancel: false
+                })
+              },
+              fail: () => {
+                // 如果复制失败，显示链接让用户手动复制
+                wx.showModal({
+                  title: '下载链接',
+                  content: downloadUrl,
+                  confirmText: '复制',
+                  cancelText: '关闭',
+                  success: (modalRes) => {
+                    if (modalRes.confirm) {
+                      wx.setClipboardData({
+                        data: downloadUrl
+                      })
+                    }
+                  }
+                })
+              }
+            })
+            
           } catch (error) {
-            console.error('导出数据失败:', error)
+            console.error('生成下载链接失败:', error)
             wx.showToast({
-              title: '导出失败',
+              title: error.message || '操作失败',
               icon: 'error'
             })
           } finally {

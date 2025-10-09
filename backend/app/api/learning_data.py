@@ -53,15 +53,6 @@ class CheckinChartItem(BaseModel):
     intensity_level: int       # 强度等级 (0-3)
 
 
-class LeaderboardItem(BaseModel):
-    """排行榜项"""
-    rank: int                  # 排名
-    user_id: int              # 用户ID
-    nickname: str             # 昵称
-    avatar: Optional[str]     # 头像
-    score: int                # 积分
-    is_current_user: bool     # 是否当前用户
-
 
 # ================================
 # API接口
@@ -353,57 +344,28 @@ async def get_submission_heatmap(
         raise HTTPException(status_code=500, detail=f"获取提交热力图失败: {str(e)}")
 
 
-@router.get("/leaderboard/monthly")
-async def get_monthly_leaderboard(
-    year: int = Query(default=None, description="年份，默认当前年份"),
-    month: int = Query(default=None, description="月份，默认当前月份"),
-    limit: int = Query(default=100, ge=1, le=500, description="返回数量限制"),
+@router.get("/leaderboard/streak")
+async def get_streak_leaderboard(
+    limit: int = Query(default=50, ge=1, le=100, description="返回数量限制"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> BaseResponse[Dict]:
     """
-    获取月度积分排行榜
+    获取连续打卡天数排行榜（坚持榜）
     """
     try:
-        # 默认使用当前年月
-        if not year or not month:
-            today = date.today()
-            year = year or today.year
-            month = month or today.month
+        from app.models import User
+        from sqlalchemy import select, desc
         
-        # Get real leaderboard data based on submissions in the given month
-        from app.models import Submission, User, SubmissionStatus
-        from sqlalchemy import select, func, desc, and_
-        from datetime import datetime
-        
-        # Calculate month start and end dates
-        month_start = datetime(year, month, 1)
-        if month == 12:
-            month_end = datetime(year + 1, 1, 1)
-        else:
-            month_end = datetime(year, month + 1, 1)
-        
-        # Query to get user scores for the month
+        # Query to get users by current streak
         leaderboard_query = await db.execute(
             select(
                 User.id,
                 User.nickname,
                 User.avatar,
-                func.coalesce(func.sum(Submission.score), 0).label('total_score')
-            ).select_from(User)
-            .outerjoin(
-                Submission,
-                and_(
-                    User.id == Submission.student_id,
-                    Submission.status == SubmissionStatus.GRADED,
-                    Submission.score.is_not(None),
-                    Submission.created_at >= month_start,
-                    Submission.created_at < month_end
-                )
-            )
-            .where(User.role == "student")  # Only students in leaderboard
-            .group_by(User.id, User.nickname, User.avatar)
-            .order_by(desc('total_score'))
+                User.current_streak
+            ).where(User.role == "student")
+            .order_by(desc(User.current_streak), User.id)
             .limit(limit)
         )
         
@@ -415,126 +377,83 @@ async def get_monthly_leaderboard(
             is_current_user = result.id == current_user.id
             if is_current_user:
                 current_user_rank = rank
-                
+            
             leaderboard_data.append({
                 "rank": rank,
                 "user_id": result.id,
                 "nickname": result.nickname or f"用户{result.id}",
                 "avatar": result.avatar or "",
-                "score": int(result.total_score),
+                "value": result.current_streak,
                 "is_current_user": is_current_user
             })
-        
-        # If current user not in top results, find their rank
-        if current_user_rank is None:
-            # Get current user's score for the month
-            user_score_query = await db.execute(
-                select(func.coalesce(func.sum(Submission.score), 0))
-                .where(
-                    and_(
-                        Submission.student_id == current_user.id,
-                        Submission.status == SubmissionStatus.GRADED,
-                        Submission.score.is_not(None),
-                        Submission.created_at >= month_start,
-                        Submission.created_at < month_end
-                    )
-                )
-            )
-            current_user_score = user_score_query.scalar() or 0
-            
-            # Count users with higher scores
-            rank_query = await db.execute(
-                select(func.count(func.distinct(User.id)))
-                .select_from(User)
-                .join(
-                    Submission,
-                    and_(
-                        User.id == Submission.student_id,
-                        Submission.status == SubmissionStatus.GRADED,
-                        Submission.score.is_not(None),
-                        Submission.created_at >= month_start,
-                        Submission.created_at < month_end
-                    )
-                )
-                .where(User.role == "student")
-                .group_by(User.id)
-                .having(func.sum(Submission.score) > current_user_score)
-            )
-            higher_ranked_users = rank_query.scalar() or 0
-            current_user_rank = higher_ranked_users + 1
-        
-        leaderboard_items = [LeaderboardItem(**item) for item in leaderboard_data]
         
         return BaseResponse(
             code=0,
             msg="获取成功",
             data={
-                "year": year,
-                "month": month,
-                "current_user_rank": current_user_rank,
-                "leaderboard": leaderboard_items
+                "current_user_rank": current_user_rank or 999,
+                "leaderboard": leaderboard_data
             }
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取月度排行榜失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取连续打卡排行榜失败: {str(e)}")
 
 
-@router.get("/leaderboard/quarterly")
-async def get_quarterly_leaderboard(
-    year: int = Query(default=None, description="年份，默认当前年份"),
-    quarter: int = Query(default=None, ge=1, le=4, description="季度(1-4)，默认当前季度"),
-    limit: int = Query(default=100, ge=1, le=500, description="返回数量限制"),
+@router.get("/leaderboard/submissions")
+async def get_submissions_leaderboard(
+    limit: int = Query(default=50, ge=1, le=100, description="返回数量限制"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ) -> BaseResponse[Dict]:
     """
-    获取季度积分排行榜
+    获取作业完成总数排行榜（容量榜）
     """
     try:
-        # 默认使用当前年份和季度
-        if not year or not quarter:
-            today = date.today()
-            year = year or today.year
-            quarter = quarter or ((today.month - 1) // 3 + 1)
+        from app.models import User
+        from sqlalchemy import select, desc
         
-        service = get_learning_service(db)
-        leaderboard_data = service.get_quarterly_leaderboard(year, quarter, limit)
+        # Query to get users by total submissions
+        leaderboard_query = await db.execute(
+            select(
+                User.id,
+                User.nickname,
+                User.avatar,
+                User.total_submissions
+            ).where(User.role == "student")
+            .order_by(desc(User.total_submissions), User.id)
+            .limit(limit)
+        )
         
-        # 标记当前用户
+        leaderboard_results = leaderboard_query.fetchall()
+        leaderboard_data = []
         current_user_rank = None
-        for item in leaderboard_data:
-            if item["user_id"] == current_user.id:
-                item["is_current_user"] = True
-                current_user_rank = item["rank"]
-                break
         
-        leaderboard_items = [LeaderboardItem(**item) for item in leaderboard_data]
-        
-        # 国考季特殊信息
-        season_info = {}
-        if ((today.month - 1) // 3 + 1) == 4:  # 第4季度
-            season_info = {
-                "is_exam_season": True,
-                "season_title": "💯 国考冲刺季",
-                "season_desc": "冲刺国考，一起加油！",
-                "exam_countdown": self._calculate_exam_countdown()
-            }
+        for rank, result in enumerate(leaderboard_results, 1):
+            is_current_user = result.id == current_user.id
+            if is_current_user:
+                current_user_rank = rank
+            
+            leaderboard_data.append({
+                "rank": rank,
+                "user_id": result.id,
+                "nickname": result.nickname or f"用户{result.id}",
+                "avatar": result.avatar or "",
+                "value": result.total_submissions,
+                "is_current_user": is_current_user
+            })
         
         return BaseResponse(
             code=0,
             msg="获取成功",
             data={
-                "year": year,
-                "quarter": quarter,
-                "current_user_rank": current_user_rank,
-                "leaderboard": leaderboard_items,
-                "season_info": season_info
+                "current_user_rank": current_user_rank or 999,
+                "leaderboard": leaderboard_data
             }
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取季度排行榜失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"获取作业完成总数排行榜失败: {str(e)}")
 
 
 @router.get("/stats")

@@ -20,7 +20,7 @@
 .page-title {
   font-size: 48rpx;
   font-weight: bold;
-  color: #4B206E;
+  color: #1e293b;
   line-height: 1.2;
 }
 
@@ -60,7 +60,7 @@
 .stat-number {
   font-size: 40rpx;
   font-weight: bold;
-  color: #4B206E;
+  color: #1e293b;
   line-height: 1.2;
   margin-bottom: 8rpx;
 }

@@ -143,7 +143,10 @@ Page({
         url: `/admin/tasks/${this.data.taskId}/submissions`,
         method: 'GET',
         data: {
-          status: this.data.filterStatus === 'all' ? undefined : this.data.filterStatus
+          filter: this.data.filterStatus === 'all' ? undefined : 
+                  this.data.filterStatus === 'pending' ? 'submitted' :
+                  this.data.filterStatus === 'reviewed' ? 'graded' : 
+                  this.data.filterStatus
         }
       });
       
@@ -856,7 +859,15 @@ Page({
   formatDate(dateStr) {
     if (!dateStr) return '';
     
-    const date = new Date(dateStr);
+    // 解析时间，如果是UTC格式，转换为北京时间
+    let date = new Date(dateStr);
+    
+    // 如果时间字符串以Z结尾或包含UTC标识，说明是UTC时间
+    if (dateStr.endsWith('Z') || dateStr.includes('UTC') || dateStr.includes('+00:00')) {
+      // 转换为北京时间 (UTC+8)
+      date = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+    }
+    
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');

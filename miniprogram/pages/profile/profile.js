@@ -207,23 +207,6 @@ Page({
         });
       }
 
-      // 加载月度排名
-      const today = new Date();
-      const leaderboardRes = await app.request({
-        url: '/learning/leaderboard/monthly',
-        method: 'GET',
-        data: {
-          year: today.getFullYear(),
-          month: today.getMonth() + 1,
-          limit: 50
-        }
-      });
-      
-      if (leaderboardRes && leaderboardRes.current_user_rank) {
-        this.setData({
-          userRank: leaderboardRes.current_user_rank
-        });
-      }
 
     } catch (error) {
       console.error('加载学习数据失败:', error);
@@ -237,21 +220,6 @@ Page({
     }
   },
 
-  // 跳转到排行榜
-  async goToLeaderboard() {
-    if (authModule.isTrialUser()) {
-      wx.showModal({
-        title: '试用学员无法使用',
-        confirmText: '返回',
-        showCancel: false
-      });
-      return;
-    }
-    
-    wx.navigateTo({
-      url: '/pages/leaderboard/leaderboard'
-    });
-  },
 
   // 显示升级信息
   showUpgradeInfo() {
