@@ -20,7 +20,7 @@ from app.schemas import (
     SubmissionInfo, FileUploadResponse
 )
 from app.auth import get_current_user, get_current_teacher, get_current_premium_user
-from app.utils.storage import storage, StorageError, enhanced_storage
+from app.utils.storage_new import StorageError, enhanced_storage
 from app.utils.file_decoder import file_decoder
 from app.config import settings
 from app.services.async_learning_data import trigger_checkin_async, trigger_submission_score_async, trigger_grading_score_async
@@ -92,8 +92,8 @@ async def upload_image(
         )
     
     try:
-        # Upload to storage
-        url = await storage.upload_image(
+        # Upload to enhanced_storage
+        url = await enhanced_storage.upload_image(
             contents, 
             file.filename,
             file.content_type
@@ -237,7 +237,7 @@ async def upload_multiple_files(
         # Handle file upload or text-only submission
         if files_data:
             # Upload files if any
-            upload_result = await enhanced_storage.upload_files_to_submission(
+            upload_result = await enhanced_enhanced_storage.upload_files_to_submission(
                 files_data, task_id, current_user.id
             )
             
@@ -310,7 +310,7 @@ async def get_submission_count(
     获取学生某个任务的提交次数
     """
     try:
-        count = await enhanced_storage.get_submission_count(task_id, current_user.id)
+        count = await enhanced_enhanced_storage.get_submission_count(task_id, current_user.id)
         
         return ResponseBase(
             data={
@@ -718,8 +718,8 @@ async def grade_submission_enhanced(
 # Simplified batch upload handler
 from typing import Dict
 
-# Global storage for batch uploads  
-batch_storage: Dict[str, Dict] = {}
+# Global enhanced_storage for batch uploads  
+batch_enhanced_storage: Dict[str, Dict] = {}
 batch_locks: Dict[str, bool] = {}
 
 async def handle_batch_upload(
@@ -736,12 +736,12 @@ async def handle_batch_upload(
     Simplified batch file upload handler
     """
     print(f"🔄 [BATCH] Processing - batch_id: {batch_id}, file_index: {file_index}, total: {total_files}")
-    global batch_storage
+    global batch_enhanced_storage
     
     # Initialize batch if not exists
-    if batch_id not in batch_storage:
+    if batch_id not in batch_enhanced_storage:
         print(f"🆕 [BATCH] New batch - {batch_id}")
-        batch_storage[batch_id] = {
+        batch_enhanced_storage[batch_id] = {
             'task_id': task_id,
             'student_id': student_id,
             'files_data': [],
@@ -750,7 +750,7 @@ async def handle_batch_upload(
             'received_files': 0
         }
     
-    batch_info = batch_storage[batch_id]
+    batch_info = batch_enhanced_storage[batch_id]
     
     # Process files
     for file in files:
@@ -781,8 +781,8 @@ async def handle_batch_upload(
             return result
         except Exception as e:
             print(f"❌ [BATCH] Failed: {e}")
-            if batch_id in batch_storage:
-                del batch_storage[batch_id]
+            if batch_id in batch_enhanced_storage:
+                del batch_enhanced_storage[batch_id]
             raise e
     else:
         print(f"⏳ [BATCH] Waiting for more files")
@@ -915,19 +915,19 @@ async def create_batch_submission(batch_id: str, db: AsyncSession) -> ResponseBa
     """
     Create final submission record when all batch files are received
     """
-    global batch_storage
+    global batch_enhanced_storage
     
-    if batch_id not in batch_storage:
+    if batch_id not in batch_enhanced_storage:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="批次上传信息不存在"
         )
     
-    batch_info = batch_storage[batch_id]
+    batch_info = batch_enhanced_storage[batch_id]
     
     try:
-        # Upload files to storage
-        upload_result = await enhanced_storage.upload_files_to_submission(
+        # Upload files to enhanced_storage
+        upload_result = await enhanced_enhanced_storage.upload_files_to_submission(
             batch_info['files_data'], batch_info['task_id'], batch_info['student_id']
         )
         
@@ -963,8 +963,8 @@ async def create_batch_submission(batch_id: str, db: AsyncSession) -> ResponseBa
         await db.commit()
         await db.refresh(submission)
         
-        # Clean up batch storage and lock
-        del batch_storage[batch_id]
+        # Clean up batch enhanced_storage and lock
+        del batch_enhanced_storage[batch_id]
         if batch_id in batch_locks:
             del batch_locks[batch_id]
         
@@ -984,8 +984,8 @@ async def create_batch_submission(batch_id: str, db: AsyncSession) -> ResponseBa
         
     except Exception as e:
         # Clean up batch on error
-        if batch_id in batch_storage:
-            del batch_storage[batch_id]
+        if batch_id in batch_enhanced_storage:
+            del batch_enhanced_storage[batch_id]
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"创建提交记录失败: {str(e)}"
