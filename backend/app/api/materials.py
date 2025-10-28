@@ -21,7 +21,7 @@ from app.schemas import (
     MaterialStatsResponse
 )
 from app.auth import get_current_user, get_current_teacher
-from app.utils.storage import storage, StorageError
+from app.utils.storage_new import enhanced_storage, StorageError
 from app.config import settings
 
 router = APIRouter(prefix="/materials")

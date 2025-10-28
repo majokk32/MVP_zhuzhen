@@ -1,13 +1,14 @@
 #!/bin/bash
 
-# 公考督学助手后端部署脚本
-# Usage: ./deploy.sh [dev|prod]
+# 公考督学助手后端部署脚本 - 阿里云生产环境
+# Usage: ./deploy.sh [dev|prod|aliyun]
 
 set -e
 
 ENV=${1:-dev}
 PROJECT_NAME="zhuzhen-backend"
 REGISTRY="registry.cn-shanghai.aliyuncs.com/zhuzhen"
+DOMAIN="your-domain.com"  # 请替换为您的实际域名
 
 echo "🚀 Starting deployment for environment: $ENV"
 
@@ -66,35 +67,93 @@ elif [ "$ENV" = "prod" ]; then
         $PROJECT_NAME:latest
     
     echo "✅ Production deployment complete!"
+
+# Aliyun production deployment
+elif [ "$ENV" = "aliyun" ]; then
+    echo "🌏 Deploying to Aliyun production environment..."
     
-    # Setup Nginx (run once)
-    echo "📝 Nginx configuration example:"
-    cat << 'EOF'
-server {
-    listen 80;
-    server_name api.your-domain.com;
+    # Check if required files exist
+    if [ ! -f "env.production" ]; then
+        echo "❌ Production environment file not found. Please create env.production"
+        exit 1
+    fi
     
-    client_max_body_size 20M;
+    if [ ! -f "docker-compose.production.yml" ]; then
+        echo "❌ Production docker-compose file not found"
+        exit 1
+    fi
     
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
+    # Create necessary directories
+    echo "📁 Creating production directories..."
+    sudo mkdir -p /data/zhuzhen/{data,logs,uploads,ssl}
+    sudo chown -R $USER:$USER /data/zhuzhen
     
-    location /uploads {
-        alias /data/zhuzhen/uploads;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
-    }
+    # Setup SSL certificates (if not exists)
+    if [ ! -f "/data/zhuzhen/ssl/cert.pem" ]; then
+        echo "🔒 Setting up SSL certificates..."
+        echo "Please place your SSL certificates in /data/zhuzhen/ssl/"
+        echo "Required files: cert.pem, key.pem"
+        echo "You can use Let's Encrypt or Aliyun SSL certificates"
+    fi
+    
+    # Update nginx configuration with actual domain
+    if [ "$DOMAIN" != "your-domain.com" ]; then
+        echo "🌐 Updating nginx configuration for domain: $DOMAIN"
+        sed -i "s/your-domain.com/$DOMAIN/g" nginx.conf
+    fi
+    
+    # Build and start production containers
+    echo "📦 Building production images..."
+    docker-compose -f docker-compose.production.yml build --no-cache
+    
+    echo "🔄 Starting production containers..."
+    docker-compose -f docker-compose.production.yml up -d
+    
+    # Wait for services to be ready
+    echo "⏳ Waiting for services to start..."
+    sleep 30
+    
+    # Check service health
+    echo "🔍 Checking service health..."
+    if curl -f http://localhost:8000/health > /dev/null 2>&1; then
+        echo "✅ API service is healthy"
+    else
+        echo "❌ API service health check failed"
+        docker-compose -f docker-compose.production.yml logs zhuzhen-api
+    fi
+    
+    # Setup firewall rules
+    echo "🔥 Configuring firewall..."
+    sudo ufw allow 80/tcp
+    sudo ufw allow 443/tcp
+    sudo ufw allow 22/tcp
+    sudo ufw --force enable
+    
+    echo "✅ Aliyun production deployment complete!"
+    echo "🌐 Your API is available at: https://$DOMAIN"
+    echo "📚 API Documentation: https://$DOMAIN/docs"
+    echo "🔍 View logs: docker-compose -f docker-compose.production.yml logs -f"
+    
+    # Setup log rotation
+    echo "📝 Setting up log rotation..."
+    sudo tee /etc/logrotate.d/zhuzhen > /dev/null << EOF
+/data/zhuzhen/logs/*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 644 $USER $USER
+    postrotate
+        docker-compose -f /srv/zhuzhen/MVP_zhuzhen/backend/docker-compose.production.yml restart zhuzhen-api
+    endscript
 }
 EOF
 
 else
     echo "❌ Unknown environment: $ENV"
-    echo "Usage: ./deploy.sh [dev|prod]"
+    echo "Usage: ./deploy.sh [dev|prod|aliyun]"
     exit 1
 fi
 

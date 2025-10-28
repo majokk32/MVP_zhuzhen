@@ -1,6 +1,6 @@
 # 增强版Dockerfile，支持完整的生产部署
 
-FROM python:3.11-slim
+FROM python:3.9-slim
 
 # 设置工作目录
 WORKDIR /app
