@@ -237,7 +237,7 @@ async def upload_multiple_files(
         # Handle file upload or text-only submission
         if files_data:
             # Upload files if any
-            upload_result = await enhanced_enhanced_storage.upload_files_to_submission(
+            upload_result = await enhanced_storage.upload_files_to_submission(
                 files_data, task_id, current_user.id
             )
             
@@ -310,7 +310,7 @@ async def get_submission_count(
     获取学生某个任务的提交次数
     """
     try:
-        count = await enhanced_enhanced_storage.get_submission_count(task_id, current_user.id)
+        count = await enhanced_storage.get_submission_count(task_id, current_user.id)
         
         return ResponseBase(
             data={
@@ -780,10 +780,16 @@ async def handle_batch_upload(
             result = await create_batch_submission(batch_id, db)
             return result
         except Exception as e:
+            import traceback
+            error_detail = traceback.format_exc()
             print(f"❌ [BATCH] Failed: {e}")
+            print(f"❌ [BATCH] Traceback: {error_detail}")
             if batch_id in batch_enhanced_storage:
                 del batch_enhanced_storage[batch_id]
-            raise e
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"批量上传失败: {str(e)}"
+            )
     else:
         print(f"⏳ [BATCH] Waiting for more files")
         return ResponseBase(
@@ -927,7 +933,7 @@ async def create_batch_submission(batch_id: str, db: AsyncSession) -> ResponseBa
     
     try:
         # Upload files to enhanced_storage
-        upload_result = await enhanced_enhanced_storage.upload_files_to_submission(
+        upload_result = await enhanced_storage.upload_files_to_submission(
             batch_info['files_data'], batch_info['task_id'], batch_info['student_id']
         )
         

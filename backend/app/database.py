@@ -36,5 +36,6 @@ async def get_db():
 # Initialize database
 async def init_db():
     async with engine.begin() as conn:
-        # Create all tables
-        await conn.run_sync(Base.metadata.create_all)
+        # Create all tables (checkfirst=True prevents errors if tables already exist)
+        # This is safe even when multiple workers start simultaneously
+        await conn.run_sync(lambda sync_conn: Base.metadata.create_all(sync_conn, checkfirst=True))

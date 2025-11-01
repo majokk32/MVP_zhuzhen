@@ -1,0 +1,100 @@
+# Docker Compose for production environment on Aliyun
+version: '3.8'
+
+services:
+  # 应用服务
+  zhuzhen-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: zhuzhen-backend-prod
+    ports:
+      - "8000:8000"
+    volumes:
+      - /data/zhuzhen/data:/app/data
+      - /data/zhuzhen/logs:/app/logs  
+      - /data/zhuzhen/uploads:/app/uploads
+      - ./env.production:/app/.env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://zhuzhen:${DB_PASSWORD}@postgres:5432/zhuzhen_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - zhuzhen-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: zhuzhen-postgres-prod
+    environment:
+      POSTGRES_USER: zhuzhen
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: zhuzhen_db
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - zhuzhen-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zhuzhen -d zhuzhen_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: zhuzhen-redis-prod
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - zhuzhen-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: zhuzhen-nginx-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+      - /data/zhuzhen/uploads:/var/www/uploads
+    depends_on:
+      - zhuzhen-api
+    restart: unless-stopped
+    networks:
+      - zhuzhen-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  zhuzhen-network:
+    driver: bridge
