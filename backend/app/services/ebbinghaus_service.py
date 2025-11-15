@@ -60,7 +60,7 @@ class EbbinghausReviewService:
     
     async def _generate_user_daily_reviews(self, user: User, today: date, db: AsyncSession) -> int:
         """
-        为单个用户生成今日复盘任务
+        为单个用户生成今日复盘任务（改进版：支持补创建已过期的复盘任务）
         
         Args:
             user: 用户对象
@@ -100,24 +100,63 @@ class EbbinghausReviewService:
             if is_mastered:
                 continue  # 已掌握的任务跳过
             
-            # 检查每个艾宾浩斯间隔
-            for review_count, interval_days in enumerate(EBBINGHAUS_INTERVALS):
+            # 获取该提交的所有复盘记录（用于检查已完成和未完成的复盘）
+            all_reviews_query = select(EbbinghausReviewRecord).where(
+                and_(
+                    EbbinghausReviewRecord.submission_id == submission.id,
+                    EbbinghausReviewRecord.user_id == user.id
+                )
+            )
+            all_reviews_result = await db.execute(all_reviews_query)
+            existing_reviews = {r.review_count: r for r in all_reviews_result.scalars().all()}
+            
+            # 检查每个艾宾浩斯间隔（只创建前3次复盘：review_count 0, 1, 2）
+            # 按顺序处理，确保前面的复盘先创建
+            for review_count, interval_days in enumerate(EBBINGHAUS_INTERVALS[:3]):  # 只处理前3次
                 scheduled_date = graded_date + timedelta(days=interval_days)
                 
                 # 如果到了复盘时间或已过期
                 if scheduled_date <= today:
                     # 检查是否已有该复盘记录
-                    existing_query = select(EbbinghausReviewRecord).where(
-                        and_(
-                            EbbinghausReviewRecord.submission_id == submission.id,
-                            EbbinghausReviewRecord.user_id == user.id,
-                            EbbinghausReviewRecord.review_count == review_count
-                        )
-                    )
-                    existing_result = await db.execute(existing_query)
-                    existing_record = existing_result.scalar_one_or_none()
+                    existing_record = existing_reviews.get(review_count)
                     
-                    if not existing_record:
+                    if existing_record:
+                        # 如果记录已存在，跳过（无论状态是PENDING还是COMPLETED）
+                        continue
+                    
+                    # 对于已过期的任务，需要检查前面的复盘是否都存在
+                    # 如果前面的复盘不存在，应该先创建前面的复盘任务
+                    if scheduled_date < today:  # 已过期
+                        # 检查前面的复盘是否都存在
+                        for prev_review_count in range(review_count):
+                            prev_record = existing_reviews.get(prev_review_count)
+                            if not prev_record:
+                                # 前面的复盘记录不存在，需要先创建前面的
+                                prev_interval = EBBINGHAUS_INTERVALS[prev_review_count]
+                                prev_scheduled_date = graded_date + timedelta(days=prev_interval)
+                                
+                                prev_record = EbbinghausReviewRecord(
+                                    submission_id=submission.id,
+                                    user_id=user.id,
+                                    review_count=prev_review_count,
+                                    scheduled_date=prev_scheduled_date,
+                                    original_graded_date=graded_date,
+                                    ebbinghaus_interval=prev_interval,
+                                    status=EbbinghausReviewStatus.PENDING
+                                )
+                                
+                                db.add(prev_record)
+                                new_reviews_count += 1
+                                existing_reviews[prev_review_count] = prev_record  # 更新缓存
+                                
+                                logger.info(
+                                    f"补创建过期复盘任务: 用户{user.nickname}, "
+                                    f"提交{submission.id}, 第{prev_review_count+1}次复盘, "
+                                    f"计划日期{prev_scheduled_date} (已过期{(today - prev_scheduled_date).days}天)"
+                                )
+                    
+                    # 再次检查是否已有该复盘记录（可能在补创建前面复盘时已创建）
+                    if review_count not in existing_reviews:
                         # 创建新的复盘记录
                         new_record = EbbinghausReviewRecord(
                             submission_id=submission.id,
@@ -131,11 +170,13 @@ class EbbinghausReviewService:
                         
                         db.add(new_record)
                         new_reviews_count += 1
+                        existing_reviews[review_count] = new_record  # 更新缓存
                         
-                        logger.debug(
+                        status_text = "今天" if scheduled_date == today else f"已过期{(today - scheduled_date).days}天"
+                        logger.info(
                             f"创建复盘任务: 用户{user.nickname}, "
                             f"提交{submission.id}, 第{review_count+1}次复盘, "
-                            f"计划日期{scheduled_date}"
+                            f"计划日期{scheduled_date} ({status_text})"
                         )
         
         return new_reviews_count

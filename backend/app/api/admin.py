@@ -782,8 +782,22 @@ async def get_task_submissions(
                 detail="任务不存在"
             )
         
-        # 构建查询条件
-        query = select(Submission).where(Submission.task_id == task_id)
+        # 只获取每个学生的最新提交（去重逻辑）
+        # 使用子查询找到每个学生的最大created_at，然后匹配对应的submission
+        latest_submissions_subquery = select(
+            Submission.student_id,
+            func.max(Submission.created_at).label('latest_created_at')
+        ).where(Submission.task_id == task_id).group_by(Submission.student_id).subquery()
+        
+        # 构建查询条件 - 只查询每个学生的最新提交
+        query = select(Submission).join(
+            latest_submissions_subquery,
+            and_(
+                Submission.student_id == latest_submissions_subquery.c.student_id,
+                Submission.created_at == latest_submissions_subquery.c.latest_created_at,
+                Submission.task_id == task_id
+            )
+        )
         
         if filter == "submitted":
             query = query.where(Submission.status == SubmissionStatus.SUBMITTED)

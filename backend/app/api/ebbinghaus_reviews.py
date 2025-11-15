@@ -3,11 +3,11 @@
 基于遗忘曲线的任务复盘管理
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, desc, func
 from datetime import datetime, date, timedelta
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import pytz
 
 from app.database import get_db
@@ -153,8 +153,20 @@ async def get_today_review_tasks(
         updated_result = await db.execute(updated_query)
         updated_records = updated_result.scalars().all()
         
-        formatted_tasks = []
+        # 去重：确保每个(submission_id, review_count)组合只保留一条记录（保留ID最小的）
+        seen_keys = {}
         for record in updated_records:
+            key = (record.submission_id, record.review_count)
+            if key not in seen_keys:
+                seen_keys[key] = record
+            else:
+                # 如果已存在，保留ID较小的记录
+                if record.id < seen_keys[key].id:
+                    seen_keys[key] = record
+        unique_records = list(seen_keys.values())
+        
+        formatted_tasks = []
+        for record in unique_records:
             # 获取提交和任务信息
             submission_query = select(Submission).where(Submission.id == record.submission_id)
             submission_result = await db.execute(submission_query)
@@ -171,7 +183,8 @@ async def get_today_review_tasks(
                     overdue_days = (today - record.scheduled_date).days if is_overdue else 0
                     
                     formatted_tasks.append({
-                        "id": record.submission_id,
+                        "id": record.id,  # 使用 review record 的主键 ID，而不是 submission_id
+                        "review_record_id": record.id,  # 明确标识这是 review record 的 ID
                         "submission_id": record.submission_id,
                         "task_id": submission.task_id,
                         "title": task.title,
@@ -200,7 +213,7 @@ async def get_today_review_tasks(
 
 @router.post("/reviews/records", response_model=ResponseBase)
 async def create_review_record(
-    record_data: dict,
+    record_data: Dict[str, Any] = Body(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -254,20 +267,35 @@ async def create_review_record(
 @router.put("/reviews/records/{submission_id}", response_model=ResponseBase)
 async def update_review_progress(
     submission_id: int,
-    update_data: dict,
+    update_data: Dict[str, Any] = Body(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """更新复盘进度"""
     try:
-        # 查找当前的复盘记录
-        query = select(EbbinghausReviewRecord).where(
-            and_(
-                EbbinghausReviewRecord.submission_id == submission_id,
-                EbbinghausReviewRecord.user_id == current_user.id,
-                EbbinghausReviewRecord.status == EbbinghausReviewStatus.PENDING
+        print(f"[DEBUG] 收到复盘更新请求: submission_id={submission_id}, update_data={update_data}")
+        
+        # 优先使用 review_record_id（如果提供），否则回退到通过 submission_id 查找
+        review_record_id = update_data.get("review_record_id")
+        if review_record_id:
+            # 直接通过 review_record_id 查找，更精确
+            query = select(EbbinghausReviewRecord).where(
+                and_(
+                    EbbinghausReviewRecord.id == review_record_id,
+                    EbbinghausReviewRecord.user_id == current_user.id,
+                    EbbinghausReviewRecord.status == EbbinghausReviewStatus.PENDING
+                )
             )
-        ).order_by(desc(EbbinghausReviewRecord.review_count))
+        else:
+            # 回退到原有逻辑：通过 submission_id 查找
+            # 如果有多个PENDING记录，优先选择review_count最小的（最早的复盘）
+            query = select(EbbinghausReviewRecord).where(
+                and_(
+                    EbbinghausReviewRecord.submission_id == submission_id,
+                    EbbinghausReviewRecord.user_id == current_user.id,
+                    EbbinghausReviewRecord.status == EbbinghausReviewStatus.PENDING
+                )
+            ).order_by(EbbinghausReviewRecord.review_count).limit(1)  # 限制只返回1条记录
         
         result = await db.execute(query)
         current_record = result.scalar_one_or_none()
@@ -314,8 +342,8 @@ async def update_review_progress(
             # 积分记录失败不影响主业务流程
             print(f"复盘积分记录失败: {e}")
         
-        new_review_count = update_data["review_count"]
-        is_mastered = update_data["is_mastered"]
+        new_review_count = update_data.get("review_count")
+        is_mastered = update_data.get("is_mastered", False)
         
         if is_mastered:
             # 标记为已掌握
@@ -326,21 +354,39 @@ async def update_review_progress(
             await create_mastered_task_record(submission_id, current_user.id, db)
             
         else:
-            # 创建下次复盘记录
-            next_review_date = datetime.fromisoformat(update_data["next_review_date"]).date()
-            
-            next_record = EbbinghausReviewRecord(
-                submission_id=submission_id,
-                user_id=current_user.id,
-                review_count=new_review_count,
-                scheduled_date=next_review_date,
-                original_graded_date=current_record.original_graded_date,
-                ebbinghaus_interval=EBBINGHAUS_INTERVALS[new_review_count],
-                status=EbbinghausReviewStatus.PENDING
-            )
-            
-            db.add(next_record)
-            current_record.next_review_date = next_review_date
+            # 创建下次复盘记录（只有当next_review_date存在时才创建）
+            next_review_date_str = update_data.get("next_review_date")
+            if next_review_date_str:
+                try:
+                    next_review_date = datetime.fromisoformat(next_review_date_str).date()
+                    
+                    # 检查是否已经存在该review_count的记录，避免重复创建
+                    existing_query = select(EbbinghausReviewRecord).where(
+                        and_(
+                            EbbinghausReviewRecord.submission_id == submission_id,
+                            EbbinghausReviewRecord.user_id == current_user.id,
+                            EbbinghausReviewRecord.review_count == new_review_count
+                        )
+                    )
+                    existing_result = await db.execute(existing_query)
+                    existing_record = existing_result.scalar_one_or_none()
+                    
+                    if not existing_record and new_review_count is not None:
+                        next_record = EbbinghausReviewRecord(
+                            submission_id=submission_id,
+                            user_id=current_user.id,
+                            review_count=new_review_count,
+                            scheduled_date=next_review_date,
+                            original_graded_date=current_record.original_graded_date,
+                            ebbinghaus_interval=EBBINGHAUS_INTERVALS[new_review_count] if new_review_count < len(EBBINGHAUS_INTERVALS) else EBBINGHAUS_INTERVALS[-1],
+                            status=EbbinghausReviewStatus.PENDING
+                        )
+                        
+                        db.add(next_record)
+                        current_record.next_review_date = next_review_date
+                except (ValueError, TypeError) as e:
+                    print(f"解析next_review_date失败: {e}, 值: {next_review_date_str}")
+                    # 如果解析失败，不创建下次复盘记录，但继续完成当前复盘
         
         await db.commit()
         
@@ -350,6 +396,10 @@ async def update_review_progress(
         
     except Exception as e:
         await db.rollback()
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"[ERROR] 更新复盘进度失败: {str(e)}")
+        print(f"[ERROR] 错误堆栈:\n{error_detail}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"更新复盘进度失败: {str(e)}"
@@ -358,7 +408,7 @@ async def update_review_progress(
 
 @router.post("/reviews/mastered", response_model=ResponseBase)
 async def log_mastered_task(
-    mastered_data: dict,
+    mastered_data: Dict[str, Any] = Body(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -396,11 +446,17 @@ async def create_mastered_task_record(submission_id: int, user_id: int, db: Asyn
     # 获取提交和任务信息
     submission_query = select(Submission).where(Submission.id == submission_id)
     submission_result = await db.execute(submission_query)
-    submission = submission_result.scalar_one()
+    submission = submission_result.scalar_one_or_none()
+    
+    if not submission:
+        raise ValueError(f"提交记录不存在: submission_id={submission_id}")
     
     task_query = select(Task).where(Task.id == submission.task_id)
     task_result = await db.execute(task_query)
-    task = task_result.scalar_one()
+    task = task_result.scalar_one_or_none()
+    
+    if not task:
+        raise ValueError(f"任务记录不存在: task_id={submission.task_id}")
     
     # 计算掌握用时
     original_graded_date = submission.graded_at.date()

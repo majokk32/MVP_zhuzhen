@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 from app.config import settings
-from app.database import init_db
+from app.database import init_db, get_db
 from app.api import api_router
 from app.schemas import ResponseBase
 from app.services.scheduler import scheduler_service
@@ -98,6 +98,19 @@ app.include_router(api_router)
 async def startup_event():
     """Initialize database on startup"""
     await init_db()
+    
+    # 应用启动时立即检查并创建所有缺失的复盘任务
+    try:
+        from app.services.ebbinghaus_service import ebbinghaus_service
+        db_gen = get_db()
+        db = await db_gen.__anext__()
+        try:
+            created_count = await ebbinghaus_service.generate_daily_review_queue(db)
+            print(f"📚 启动时创建了 {created_count} 个复盘任务")
+        finally:
+            await db.close()
+    except Exception as e:
+        print(f"⚠️  启动时生成复盘任务失败: {e}")
     
     # 启动定时任务调度器（包括艾宾浩斯复盘队列生成）
     asyncio.create_task(scheduler_service.start())

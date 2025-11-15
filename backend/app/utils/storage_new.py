@@ -8,7 +8,7 @@ import re
 import uuid
 # import oss2  # 暂时不使用OSS，使用本地存储
 from typing import BinaryIO, Optional, List, Dict
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from app.config import settings
 
 
@@ -144,7 +144,9 @@ class EnhancedStorage:
             Tuple of (folder_path, submission_count)
         """
         if not submission_time:
-            submission_time = datetime.now()
+            # 使用北京时间（UTC+8）
+            beijing_tz = timezone(timedelta(hours=8))
+            submission_time = datetime.now(beijing_tz)
             
         time_folder = submission_time.strftime("%Y-%m-%d_%H-%M-%S")
         folder_path = f"task_{task_id}/student_{student_id}/{time_folder}"
@@ -178,7 +180,9 @@ class EnhancedStorage:
         """
         try:
             if not submission_time:
-                submission_time = datetime.now()
+                # 使用北京时间（UTC+8）
+                beijing_tz = timezone(timedelta(hours=8))
+                submission_time = datetime.now(beijing_tz)
             
             # Check file size (10MB limit)
             if len(file_content) > 10 * 1024 * 1024:
@@ -283,7 +287,9 @@ class EnhancedStorage:
         import asyncio
         
         if not submission_time:
-            submission_time = datetime.now()
+            # 使用北京时间（UTC+8）
+            beijing_tz = timezone(timedelta(hours=8))
+            submission_time = datetime.now(beijing_tz)
             
         # Create submission folder first
         folder_path, submission_count = await self.create_submission_folder(

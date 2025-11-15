@@ -25,15 +25,9 @@ async def get_subscription_status(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    获取当前用户的订阅状态详情（仅限学生）
+    获取当前用户的订阅状态详情
+    学生返回实际的订阅状态，教师返回永久订阅状态
     """
-    # Only students need subscription status
-    if current_user.role != UserRole.STUDENT:
-        raise HTTPException(
-            status_code=403,
-            detail="Subscription status is only available for students"
-        )
-    
     service = AsyncSubscriptionService(db)
     status = await service.check_subscription_status(current_user)
     

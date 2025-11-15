@@ -4,11 +4,13 @@ Submission-related API endpoints
 
 import json
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, desc
+from sqlalchemy import select, and_, desc, delete
 from typing import List, Optional
+import os
+import shutil
 
 from app.database import get_db
 from app.models import (
@@ -27,6 +29,121 @@ from app.services.async_learning_data import trigger_checkin_async, trigger_subm
 from app.utils.notification import notification_service
 
 router = APIRouter(prefix="/submissions")
+
+
+def get_beijing_time() -> datetime:
+    """获取北京时间（UTC+8）"""
+    beijing_tz = timezone(timedelta(hours=8))
+    return datetime.now(beijing_tz)
+
+
+def utc_to_beijing(utc_time: datetime) -> datetime:
+    """将UTC时间转换为北京时间（UTC+8）"""
+    if utc_time.tzinfo is None:
+        # 如果没有时区信息，假设是UTC
+        utc_time = utc_time.replace(tzinfo=timezone.utc)
+    beijing_tz = timezone(timedelta(hours=8))
+    return utc_time.astimezone(beijing_tz)
+
+
+async def delete_old_submissions(task_id: int, student_id: int, keep_submission_id: int, db: AsyncSession):
+    """
+    删除该用户对该任务的所有旧提交记录和对应的文件夹
+    只保留指定的提交（通常是刚创建的最新提交）
+    
+    Args:
+        task_id: 任务ID
+        student_id: 学生ID
+        keep_submission_id: 要保留的提交ID（不删除这个）
+        db: 数据库会话
+    """
+    try:
+        # 获取要保留的提交记录，用于确定要保留的文件夹
+        keep_submission_result = await db.execute(
+            select(Submission).where(Submission.id == keep_submission_id)
+        )
+        keep_submission = keep_submission_result.scalar_one_or_none()
+        
+        # 查找该用户对该任务的所有提交（排除要保留的）
+        old_submissions_result = await db.execute(
+            select(Submission).where(
+                and_(
+                    Submission.task_id == task_id,
+                    Submission.student_id == student_id,
+                    Submission.id != keep_submission_id  # 排除要保留的提交
+                )
+            )
+        )
+        submissions_to_delete = list(old_submissions_result.scalars().all())
+        
+        # 删除文件夹和数据库记录
+        upload_dir = getattr(settings, 'UPLOAD_DIR', './uploads')
+        student_folder_path = os.path.join(upload_dir, f"task_{task_id}", f"student_{student_id}")
+        
+        # 收集要保留的文件夹名（从保留的提交记录的 images URL 中提取）
+        keep_folders = set()
+        if keep_submission and keep_submission.images:
+            for image_url in keep_submission.images:
+                # URL格式: /uploads/task_{task_id}/student_{student_id}/{timestamp}/filename
+                # 提取文件夹名（timestamp部分）
+                if '/uploads/' in str(image_url):
+                    parts = str(image_url).split('/')
+                    if len(parts) >= 5:
+                        # parts: ['', 'uploads', 'task_X', 'student_Y', 'timestamp', 'filename']
+                        folder_name = parts[4]  # timestamp部分
+                        if folder_name and folder_name.startswith('202'):
+                            keep_folders.add(folder_name)
+        
+        # 方法1: 根据数据库记录删除对应的文件夹（使用北京时间匹配）
+        for submission in submissions_to_delete:
+            # 删除文件夹 - 将UTC时间转换为北京时间（UTC+8）
+            if os.path.exists(student_folder_path):
+                # 将UTC时间转换为北京时间
+                beijing_time = utc_to_beijing(submission.created_at)
+                submission_time = beijing_time.strftime("%Y-%m-%d_%H-%M-%S")
+                folder_to_delete = os.path.join(student_folder_path, submission_time)
+                
+                if os.path.exists(folder_to_delete):
+                    try:
+                        shutil.rmtree(folder_to_delete)
+                        print(f"🗑️ [DELETE] 已删除提交文件夹: {folder_to_delete}")
+                    except Exception as e:
+                        print(f"⚠️ [DELETE] 删除文件夹失败: {folder_to_delete}, 错误: {e}")
+            
+            # 删除数据库记录
+            await db.delete(submission)
+            print(f"🗑️ [DELETE] 已删除提交记录 ID: {submission.id}")
+        
+        # 方法2: 扫描文件夹，删除所有不在保留列表中的文件夹（清理遗留文件夹）
+        if os.path.exists(student_folder_path):
+            try:
+                all_folders = [d for d in os.listdir(student_folder_path) 
+                              if os.path.isdir(os.path.join(student_folder_path, d)) 
+                              and d.startswith('202')]  # 只处理日期格式的文件夹
+                
+                for folder_name in all_folders:
+                    if folder_name not in keep_folders:
+                        folder_to_delete = os.path.join(student_folder_path, folder_name)
+                        try:
+                            shutil.rmtree(folder_to_delete)
+                            print(f"🗑️ [DELETE] 清理遗留文件夹: {folder_to_delete}")
+                        except Exception as e:
+                            print(f"⚠️ [DELETE] 删除遗留文件夹失败: {folder_to_delete}, 错误: {e}")
+            except Exception as e:
+                print(f"⚠️ [DELETE] 扫描文件夹失败: {e}")
+        
+        if submissions_to_delete:
+            await db.commit()
+            print(f"✅ [DELETE] 成功删除 {len(submissions_to_delete)} 条旧提交记录")
+        else:
+            print(f"ℹ️ [DELETE] 没有需要删除的数据库记录")
+        
+    except Exception as e:
+        print(f"❌ [DELETE] 删除旧提交失败: {e}")
+        import traceback
+        traceback.print_exc()
+        # 不抛出异常，避免影响新提交的创建
+
 
 # Test endpoint to manually trigger auto-merge
 @router.post("/test-merge/{task_id}")
@@ -131,6 +248,14 @@ async def upload_image(
                     db.add(submission)
                     await db.commit()
                     await db.refresh(submission)
+                    
+                    # 删除该用户对该任务的所有旧提交（保留当前提交）
+                    await delete_old_submissions(
+                        task_id=task_id,
+                        student_id=current_user.id,
+                        keep_submission_id=submission.id,
+                        db=db
+                    )
                     
                     print(f"🔍 [DEBUG] Submission created with ID: {submission.id}")
                     
@@ -276,6 +401,14 @@ async def upload_multiple_files(
         await db.commit()
         await db.refresh(submission)
         
+        # 删除该用户对该任务的所有旧提交（保留当前提交）
+        await delete_old_submissions(
+            task_id=task_id,
+            student_id=current_user.id,
+            keep_submission_id=submission.id,
+            db=db
+        )
+        
         # Auto-merge logic: temporarily disabled for debugging
         # await auto_merge_recent_uploads(task_id, current_user.id, db)
         print(f"🔍 [DEBUG] Submission created with ID: {submission.id}")
@@ -403,6 +536,14 @@ async def submit_homework(
         await db.refresh(new_submission)  # 获取生成的ID
         submission_id = new_submission.id
         is_first_submission = True  # 这是首次提交
+    
+    # 删除该用户对该任务的所有旧提交（保留当前提交）
+    await delete_old_submissions(
+        task_id=submission_data.task_id,
+        student_id=current_user.id,
+        keep_submission_id=submission_id,
+        db=db
+    )
     
     # V1.0 学习数据统计：触发打卡和积分记录
     try:
@@ -540,7 +681,7 @@ async def grade_submission(
     submission.grade = Grade(grade_data.grade)
     submission.comment = grade_data.feedback
     submission.graded_by = current_user.id
-    submission.graded_at = datetime.utcnow()
+    submission.graded_at = get_beijing_time()
     submission.status = SubmissionStatus.GRADED
     
     await db.commit()
@@ -675,7 +816,7 @@ async def grade_submission_enhanced(
     submission.comment = grade_data.feedback
     submission.status = SubmissionStatus.GRADED
     submission.graded_by = current_user.id
-    submission.graded_at = datetime.utcnow()
+    submission.graded_at = get_beijing_time()
     
     await db.commit()
     await db.refresh(submission)
@@ -891,6 +1032,14 @@ async def upload_encoded_files(
         await db.commit()
         await db.refresh(submission)
         
+        # 删除该用户对该任务的所有旧提交（保留当前提交）
+        await delete_old_submissions(
+            task_id=task_id,
+            student_id=current_user.id,
+            keep_submission_id=submission.id,
+            db=db
+        )
+        
         print(f"✅ [ENCODED] 编码文件提交成功 - submission_id: {submission.id}")
         
         return ResponseBase(
@@ -969,6 +1118,14 @@ async def create_batch_submission(batch_id: str, db: AsyncSession) -> ResponseBa
         await db.commit()
         await db.refresh(submission)
         
+        # 删除该用户对该任务的所有旧提交（保留当前提交）
+        await delete_old_submissions(
+            task_id=batch_info['task_id'],
+            student_id=batch_info['student_id'],
+            keep_submission_id=submission.id,
+            db=db
+        )
+        
         # Clean up batch enhanced_storage and lock
         del batch_enhanced_storage[batch_id]
         if batch_id in batch_locks:
@@ -1006,7 +1163,7 @@ async def auto_merge_recent_uploads(task_id: int, student_id: int, db: AsyncSess
     try:
         # Find submissions from the last 3 seconds for this task/student
         from datetime import timedelta
-        cutoff_time = datetime.utcnow() - timedelta(seconds=3)
+        cutoff_time = get_beijing_time() - timedelta(seconds=3)
         
         recent_submissions = await db.execute(
             select(Submission).where(

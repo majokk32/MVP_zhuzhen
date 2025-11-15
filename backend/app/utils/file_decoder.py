@@ -6,7 +6,7 @@
 import base64
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any
 from pathlib import Path
 
@@ -83,8 +83,9 @@ class FileDecoder:
         Returns:
             str: 文件夹路径
         """
-        # 创建时间戳文件夹
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        # 创建时间戳文件夹（使用北京时间 UTC+8）
+        beijing_tz = timezone(timedelta(hours=8))
+        timestamp = datetime.now(beijing_tz).strftime("%Y-%m-%d_%H-%M-%S")
         folder_name = f"task_{task_id}/student_{student_id}/{timestamp}"
         
         # 本地存储路径

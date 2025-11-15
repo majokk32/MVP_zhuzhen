@@ -31,22 +31,26 @@ class SubscriptionService:
         """检查用户订阅状态"""
         now = datetime.utcnow()
         
-        # 检查是否过期
-        if user.subscription_expires_at and now > user.subscription_expires_at:
-            if user.subscription_type != SubscriptionType.EXPIRED:
-                user.subscription_type = SubscriptionType.EXPIRED
-                self.db.commit()
+        # 检查是否过期（只有试用用户才检查过期时间，付费用户永久有效）
+        if user.subscription_type == SubscriptionType.TRIAL:
+            if user.subscription_expires_at and now > user.subscription_expires_at:
+                if user.subscription_type != SubscriptionType.EXPIRED:
+                    user.subscription_type = SubscriptionType.EXPIRED
+                    self.db.commit()
         
-        # 计算剩余天数
+        # 计算剩余天数（只有试用用户才计算）
         days_remaining = 0
-        if user.subscription_expires_at:
+        if user.subscription_type == SubscriptionType.TRIAL and user.subscription_expires_at:
             remaining = user.subscription_expires_at - now
             days_remaining = max(0, remaining.days)
+        elif user.subscription_type == SubscriptionType.PREMIUM:
+            # 付费用户拥有无限天数
+            days_remaining = 999999
         
         return {
             "subscription_type": user.subscription_type,
             "is_active": user.is_active and user.subscription_type != SubscriptionType.EXPIRED,
-            "expires_at": user.subscription_expires_at,
+            "expires_at": None if user.subscription_type == SubscriptionType.PREMIUM else user.subscription_expires_at,
             "days_remaining": days_remaining,
             "is_trial": user.subscription_type == SubscriptionType.TRIAL,
             "is_premium": user.subscription_type == SubscriptionType.PREMIUM,
@@ -69,9 +73,10 @@ class SubscriptionService:
             return "试用已过期"
     
     def upgrade_to_premium(self, user: User, days: int = 365) -> User:
-        """升级为付费用户"""
+        """升级为付费用户（永久有效）"""
         user.subscription_type = SubscriptionType.PREMIUM
-        user.subscription_expires_at = datetime.utcnow() + timedelta(days=days)
+        # 学生的付费会员是永久有效的，不需要过期时间
+        user.subscription_expires_at = None
         user.is_active = True
         
         self.db.commit()
